@@ -103,7 +103,10 @@ public static class ServiceDefaultsExtensions
         }
 
         builder.Services.AddFrameworkAuthentication(builder.Configuration);
-        builder.Services.AddFrameworkAuthorization();
+        bool requireAuthenticatedByDefault = builder.Configuration
+            .GetSection(ServiceDefaultsOptions.SectionName)
+            .GetValue(nameof(ServiceDefaultsOptions.RequireAuthenticatedByDefault), true);
+        builder.Services.AddFrameworkAuthorization(requireAuthenticatedByDefault);
         builder.Services.AddMultiTenancy(builder.Configuration);
         builder.Services.AddFrameworkCaching(builder.Configuration);
         builder.Services.AddFrameworkHealthChecks(builder.Configuration);
@@ -232,12 +235,14 @@ public static class ServiceDefaultsExtensions
             app.UseFrameworkLocalization();
         }
 
-        if (defaults.EnableSwagger && app.Environment.IsDevelopment())
+        if (defaults.EnableSwagger)
         {
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
-                options.RoutePrefix = defaults.SwaggerRoutePrefix;
+                options.RoutePrefix = string.IsNullOrWhiteSpace(defaults.SwaggerRoutePrefix)
+                    ? string.Empty
+                    : defaults.SwaggerRoutePrefix.Trim().Trim('/');
                 options.DocumentTitle = $"{defaults.ServiceName} API";
 
                 if (defaults.SwaggerEndpoints.Length > 0)

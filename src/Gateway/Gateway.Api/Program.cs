@@ -16,8 +16,13 @@ builder.Services.AddReverseProxy()
 WebApplication app = builder.Build();
 
 app.UseServiceDefaults();
+
+app.MapGet("/", () => Results.Redirect("/swagger"))
+    .AllowAnonymous()
+    .ExcludeFromDescription();
+
 app.MapGatewaySwaggerDocuments();
-app.MapReverseProxy();
+app.MapReverseProxy().AllowAnonymous();
 
 await app.RunAsync();
 

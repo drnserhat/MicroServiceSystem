@@ -29,6 +29,12 @@ public sealed class ServiceDefaultsOptions
 
     public bool EnableIdempotency { get; set; } = true;
 
+    /// <summary>
+    /// When true, endpoints require an authenticated user unless marked <c>[AllowAnonymous]</c>.
+    /// API gateways should set this to false so anonymous routes (login/register/swagger) can pass through.
+    /// </summary>
+    public bool RequireAuthenticatedByDefault { get; set; } = true;
+
     public string DefaultApiVersion { get; set; } = "1.0";
 
     public CorsPolicyOptions Cors { get; set; } = new();

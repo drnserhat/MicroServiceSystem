@@ -9,23 +9,32 @@ namespace MicroServiceSystem.BuildingBlocks.Authorization.Extensions;
 public static class AuthorizationExtensions
 {
     /// <summary>
-    /// Enables permission policies and makes authentication the default for every endpoint, so an
-    /// endpoint becomes public only by explicitly allowing anonymous access.
+    /// Enables permission policies. When <paramref name="requireAuthenticatedByDefault"/> is true,
+    /// every endpoint requires authentication unless it explicitly allows anonymous access.
+    /// API gateways typically pass false so proxied anonymous routes and Swagger stay reachable.
     /// </summary>
-    public static IServiceCollection AddFrameworkAuthorization(this IServiceCollection services)
+    public static IServiceCollection AddFrameworkAuthorization(
+        this IServiceCollection services,
+        bool requireAuthenticatedByDefault = true)
     {
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddScoped<IPermissionProvider, ClaimsPermissionProvider>();
 
-        services.AddAuthorizationBuilder()
-            .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
-            .AddPolicy(
-                InternalApiKeyDefaults.PolicyName,
-                policy => policy
-                    .AddAuthenticationSchemes(InternalApiKeyDefaults.AuthenticationScheme)
-                    .RequireAuthenticatedUser()
-                    .RequireClaim(FrameworkClaimTypes.TokenType, InternalApiKeyDefaults.TokenTypeValue));
+        AuthorizationBuilder authorizationBuilder = services.AddAuthorizationBuilder();
+
+        if (requireAuthenticatedByDefault)
+        {
+            authorizationBuilder.SetFallbackPolicy(
+                new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+        }
+
+        authorizationBuilder.AddPolicy(
+            InternalApiKeyDefaults.PolicyName,
+            policy => policy
+                .AddAuthenticationSchemes(InternalApiKeyDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .RequireClaim(FrameworkClaimTypes.TokenType, InternalApiKeyDefaults.TokenTypeValue));
 
         return services;
     }
