@@ -10,6 +10,17 @@ public sealed class ServiceDefaultsOptions
 
     public bool EnableSwagger { get; set; } = true;
 
+    /// <summary>
+    /// Swagger UI URL prefix. Empty string serves the UI at the site root ("/").
+    /// </summary>
+    public string SwaggerRoutePrefix { get; set; } = "swagger";
+
+    /// <summary>
+    /// Optional extra OpenAPI documents (e.g. gateway aggregating downstream services).
+    /// When non-empty, these replace the default local "/swagger/v1/swagger.json" entry.
+    /// </summary>
+    public SwaggerEndpointOptions[] SwaggerEndpoints { get; set; } = [];
+
     public bool EnableResponseCompression { get; set; } = true;
 
     public bool EnableRateLimiting { get; set; } = true;
@@ -64,4 +75,11 @@ public sealed class SecurityHeaderOptions
     public string PermissionsPolicy { get; set; } = "geolocation=(), microphone=(), camera=()";
 
     public int StrictTransportSecurityMaxAgeDays { get; set; } = 365;
+}
+
+public sealed class SwaggerEndpointOptions
+{
+    public string Name { get; set; } = string.Empty;
+
+    public string Url { get; set; } = string.Empty;
 }

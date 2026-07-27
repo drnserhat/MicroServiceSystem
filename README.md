@@ -84,7 +84,7 @@ docker compose -f deploy/docker/docker-compose.yml \
 
 Host Postgres is published on **5433** by default (`POSTGRES_HOST_PORT`) so it does not clash with a local/other Postgres on 5432.
 
-Gateway: `http://localhost:8080`
+Gateway: `http://localhost:8080` (opens Swagger UI; choose a service from the dropdown — **Registration** is under **Coordinator**)
 
 | Prefix | Service |
 |--------|---------|

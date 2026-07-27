@@ -237,8 +237,25 @@ public static class ServiceDefaultsExtensions
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", $"{defaults.ServiceName} v1");
-                options.RoutePrefix = ApiRoutes.SwaggerRoutePrefix;
+                options.RoutePrefix = defaults.SwaggerRoutePrefix;
+                options.DocumentTitle = $"{defaults.ServiceName} API";
+
+                if (defaults.SwaggerEndpoints.Length > 0)
+                {
+                    foreach (SwaggerEndpointOptions endpoint in defaults.SwaggerEndpoints)
+                    {
+                        if (string.IsNullOrWhiteSpace(endpoint.Url) || string.IsNullOrWhiteSpace(endpoint.Name))
+                        {
+                            continue;
+                        }
+
+                        options.SwaggerEndpoint(endpoint.Url, endpoint.Name);
+                    }
+                }
+                else
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", $"{defaults.ServiceName} v1");
+                }
             });
         }
 

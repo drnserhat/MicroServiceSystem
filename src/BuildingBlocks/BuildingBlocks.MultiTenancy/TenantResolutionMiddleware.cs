@@ -75,7 +75,8 @@ public sealed class TenantResolutionMiddleware(RequestDelegate next, ILogger<Ten
         PathString path = httpContext.Request.Path;
         return path.StartsWithSegments("/health")
             || path.StartsWithSegments("/metrics")
-            || path.StartsWithSegments("/swagger");
+            || path.StartsWithSegments("/swagger")
+            || path.StartsWithSegments("/docs");
     }
 
     private static async Task<TenantInfo?> ResolveTenantAsync(
