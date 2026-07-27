@@ -1,0 +1,122 @@
+<Solution>
+
+  <Folder Name="/solution-items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path=".editorconfig" />
+    <File Path="README.md" />
+  </Folder>
+
+  <Folder Name="/src/">
+  </Folder>
+
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/SharedKernel/MicroServiceSystem.SharedKernel.csproj" />
+    <Project Path="src/Shared/Contracts/MicroServiceSystem.Contracts.csproj" />
+  </Folder>
+
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Application/MicroServiceSystem.BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Authentication/MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Authorization/MicroServiceSystem.BuildingBlocks.Authorization.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Caching/MicroServiceSystem.BuildingBlocks.Caching.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.HealthChecks/MicroServiceSystem.BuildingBlocks.HealthChecks.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Idempotency/MicroServiceSystem.BuildingBlocks.Idempotency.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Localization/MicroServiceSystem.BuildingBlocks.Localization.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Logging/MicroServiceSystem.BuildingBlocks.Logging.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Messaging/MicroServiceSystem.BuildingBlocks.Messaging.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.MultiTenancy/MicroServiceSystem.BuildingBlocks.MultiTenancy.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.OpenTelemetry/MicroServiceSystem.BuildingBlocks.OpenTelemetry.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Persistence/MicroServiceSystem.BuildingBlocks.Persistence.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Resilience/MicroServiceSystem.BuildingBlocks.Resilience.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.ServiceDefaults/MicroServiceSystem.BuildingBlocks.ServiceDefaults.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Storage/MicroServiceSystem.BuildingBlocks.Storage.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/Gateway.Api/Gateway.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Coordinator/">
+    <Project Path="src/Coordinator/Coordinator.Domain/Coordinator.Domain.csproj" />
+    <Project Path="src/Coordinator/Coordinator.Application/Coordinator.Application.csproj" />
+    <Project Path="src/Coordinator/Coordinator.Persistence/Coordinator.Persistence.csproj" />
+    <Project Path="src/Coordinator/Coordinator.Infrastructure/Coordinator.Infrastructure.csproj" />
+    <Project Path="src/Coordinator/Coordinator.Api/Coordinator.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/">
+  </Folder>
+
+  <Folder Name="/src/Services/Identity/">
+    <Project Path="src/Services/Identity/MicroServiceSystem.Services.Identity.Domain/MicroServiceSystem.Services.Identity.Domain.csproj" />
+    <Project Path="src/Services/Identity/MicroServiceSystem.Services.Identity.Application/MicroServiceSystem.Services.Identity.Application.csproj" />
+    <Project Path="src/Services/Identity/MicroServiceSystem.Services.Identity.Persistence/MicroServiceSystem.Services.Identity.Persistence.csproj" />
+    <Project Path="src/Services/Identity/MicroServiceSystem.Services.Identity.Infrastructure/MicroServiceSystem.Services.Identity.Infrastructure.csproj" />
+    <Project Path="src/Services/Identity/MicroServiceSystem.Services.Identity.Api/MicroServiceSystem.Services.Identity.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/User/">
+    <Project Path="src/Services/User/MicroServiceSystem.Services.User.Domain/MicroServiceSystem.Services.User.Domain.csproj" />
+    <Project Path="src/Services/User/MicroServiceSystem.Services.User.Application/MicroServiceSystem.Services.User.Application.csproj" />
+    <Project Path="src/Services/User/MicroServiceSystem.Services.User.Persistence/MicroServiceSystem.Services.User.Persistence.csproj" />
+    <Project Path="src/Services/User/MicroServiceSystem.Services.User.Infrastructure/MicroServiceSystem.Services.User.Infrastructure.csproj" />
+    <Project Path="src/Services/User/MicroServiceSystem.Services.User.Api/MicroServiceSystem.Services.User.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/Notification/">
+    <Project Path="src/Services/Notification/MicroServiceSystem.Services.Notification.Domain/MicroServiceSystem.Services.Notification.Domain.csproj" />
+    <Project Path="src/Services/Notification/MicroServiceSystem.Services.Notification.Application/MicroServiceSystem.Services.Notification.Application.csproj" />
+    <Project Path="src/Services/Notification/MicroServiceSystem.Services.Notification.Persistence/MicroServiceSystem.Services.Notification.Persistence.csproj" />
+    <Project Path="src/Services/Notification/MicroServiceSystem.Services.Notification.Infrastructure/MicroServiceSystem.Services.Notification.Infrastructure.csproj" />
+    <Project Path="src/Services/Notification/MicroServiceSystem.Services.Notification.Api/MicroServiceSystem.Services.Notification.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/File/">
+    <Project Path="src/Services/File/MicroServiceSystem.Services.File.Domain/MicroServiceSystem.Services.File.Domain.csproj" />
+    <Project Path="src/Services/File/MicroServiceSystem.Services.File.Application/MicroServiceSystem.Services.File.Application.csproj" />
+    <Project Path="src/Services/File/MicroServiceSystem.Services.File.Persistence/MicroServiceSystem.Services.File.Persistence.csproj" />
+    <Project Path="src/Services/File/MicroServiceSystem.Services.File.Infrastructure/MicroServiceSystem.Services.File.Infrastructure.csproj" />
+    <Project Path="src/Services/File/MicroServiceSystem.Services.File.Api/MicroServiceSystem.Services.File.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/Audit/">
+    <Project Path="src/Services/Audit/MicroServiceSystem.Services.Audit.Domain/MicroServiceSystem.Services.Audit.Domain.csproj" />
+    <Project Path="src/Services/Audit/MicroServiceSystem.Services.Audit.Application/MicroServiceSystem.Services.Audit.Application.csproj" />
+    <Project Path="src/Services/Audit/MicroServiceSystem.Services.Audit.Persistence/MicroServiceSystem.Services.Audit.Persistence.csproj" />
+    <Project Path="src/Services/Audit/MicroServiceSystem.Services.Audit.Infrastructure/MicroServiceSystem.Services.Audit.Infrastructure.csproj" />
+    <Project Path="src/Services/Audit/MicroServiceSystem.Services.Audit.Api/MicroServiceSystem.Services.Audit.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/Settings/">
+    <Project Path="src/Services/Settings/MicroServiceSystem.Services.Settings.Domain/MicroServiceSystem.Services.Settings.Domain.csproj" />
+    <Project Path="src/Services/Settings/MicroServiceSystem.Services.Settings.Application/MicroServiceSystem.Services.Settings.Application.csproj" />
+    <Project Path="src/Services/Settings/MicroServiceSystem.Services.Settings.Persistence/MicroServiceSystem.Services.Settings.Persistence.csproj" />
+    <Project Path="src/Services/Settings/MicroServiceSystem.Services.Settings.Infrastructure/MicroServiceSystem.Services.Settings.Infrastructure.csproj" />
+    <Project Path="src/Services/Settings/MicroServiceSystem.Services.Settings.Api/MicroServiceSystem.Services.Settings.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/Location/">
+    <Project Path="src/Services/Location/MicroServiceSystem.Services.Location.Domain/MicroServiceSystem.Services.Location.Domain.csproj" />
+    <Project Path="src/Services/Location/MicroServiceSystem.Services.Location.Application/MicroServiceSystem.Services.Location.Application.csproj" />
+    <Project Path="src/Services/Location/MicroServiceSystem.Services.Location.Persistence/MicroServiceSystem.Services.Location.Persistence.csproj" />
+    <Project Path="src/Services/Location/MicroServiceSystem.Services.Location.Infrastructure/MicroServiceSystem.Services.Location.Infrastructure.csproj" />
+    <Project Path="src/Services/Location/MicroServiceSystem.Services.Location.Api/MicroServiceSystem.Services.Location.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/src/Services/Logging/">
+    <Project Path="src/Services/Logging/MicroServiceSystem.Services.Logging.Domain/MicroServiceSystem.Services.Logging.Domain.csproj" />
+    <Project Path="src/Services/Logging/MicroServiceSystem.Services.Logging.Application/MicroServiceSystem.Services.Logging.Application.csproj" />
+    <Project Path="src/Services/Logging/MicroServiceSystem.Services.Logging.Persistence/MicroServiceSystem.Services.Logging.Persistence.csproj" />
+    <Project Path="src/Services/Logging/MicroServiceSystem.Services.Logging.Infrastructure/MicroServiceSystem.Services.Logging.Infrastructure.csproj" />
+    <Project Path="src/Services/Logging/MicroServiceSystem.Services.Logging.Api/MicroServiceSystem.Services.Logging.Api.csproj" />
+  </Folder>
+
+  <Folder Name="/tests/">
+    <Project Path="tests/Architecture/MicroServiceSystem.Architecture.Tests/MicroServiceSystem.Architecture.Tests.csproj" />
+    <Project Path="tests/BuildingBlocks/MicroServiceSystem.BuildingBlocks.IntegrationTests/MicroServiceSystem.BuildingBlocks.IntegrationTests.csproj" />
+    <Project Path="tests/Testing/MicroServiceSystem.Testing.Utilities/MicroServiceSystem.Testing.Utilities.csproj" />
+  </Folder>
+
+</Solution>

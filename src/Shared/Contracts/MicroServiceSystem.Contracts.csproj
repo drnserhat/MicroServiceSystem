@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Public integration event contracts exchanged between services. Contains no domain model, no persistence type and no service specific logic.</Description>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,83 @@
+# Memory caps + globalization for local Docker Desktop.
+# Always merge this file when running apps locally.
+#
+# Lite (default, ~3–4 GB):
+#   docker compose -f deploy/docker/docker-compose.yml \
+#     -f deploy/docker/docker-compose.apps.yml \
+#     -f deploy/docker/docker-compose.resources.yml \
+#     up -d --build
+#
+# Full stack (~8–12 GB):
+#   docker compose -f deploy/docker/docker-compose.yml \
+#     -f deploy/docker/docker-compose.apps.yml \
+#     -f deploy/docker/docker-compose.resources.yml \
+#     --profile full up -d --build
+#
+# Observability only on top of lite:
+#   ... --profile obs up -d
+
+x-dotnet-app: &dotnet-app
+  mem_limit: 384m
+  mem_reservation: 192m
+  environment:
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "false"
+    DOTNET_EnableDiagnostics: "0"
+
+services:
+  postgres:
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  mongodb:
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  redis:
+    mem_limit: 128m
+    mem_reservation: 64m
+
+  rabbitmq:
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  seq:
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  prometheus:
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  grafana:
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  gateway:
+    <<: *dotnet-app
+
+  identity:
+    <<: *dotnet-app
+
+  user:
+    <<: *dotnet-app
+
+  coordinator:
+    <<: *dotnet-app
+
+  notification:
+    <<: *dotnet-app
+
+  file:
+    <<: *dotnet-app
+
+  audit:
+    <<: *dotnet-app
+
+  settings:
+    <<: *dotnet-app
+
+  location:
+    <<: *dotnet-app
+
+  logging:
+    <<: *dotnet-app

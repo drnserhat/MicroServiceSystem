@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Domain primitives shared by every bounded context: entities, aggregates, value objects, domain events, specifications and the Result pattern. Contains no infrastructure dependency.</Description>
+  </PropertyGroup>
+
+</Project>

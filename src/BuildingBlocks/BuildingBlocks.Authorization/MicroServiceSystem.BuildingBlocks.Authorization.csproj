@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Permission and policy based authorization primitives shared by all services.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\SharedKernel\MicroServiceSystem.SharedKernel.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Authentication\MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
+  </ItemGroup>
+
+</Project>

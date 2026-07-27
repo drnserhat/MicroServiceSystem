@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\SharedKernel\MicroServiceSystem.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

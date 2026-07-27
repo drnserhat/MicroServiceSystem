@@ -1,0 +1,330 @@
+﻿services:
+  gateway:
+    build:
+      context: ../..
+      dockerfile: src/Gateway/Gateway.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      MultiTenancy__RequireTenant: "false"
+      Cache__ConnectionString: redis:6379
+      ReverseProxy__Clusters__identity__Destinations__d1__Address: http://identity:8080/
+      ReverseProxy__Clusters__user__Destinations__d1__Address: http://user:8080/
+      ReverseProxy__Clusters__coordinator__Destinations__d1__Address: http://coordinator:8080/
+      ReverseProxy__Clusters__notification__Destinations__d1__Address: http://notification:8080/
+      ReverseProxy__Clusters__file__Destinations__d1__Address: http://file:8080/
+      ReverseProxy__Clusters__audit__Destinations__d1__Address: http://audit:8080/
+      ReverseProxy__Clusters__settings__Destinations__d1__Address: http://settings:8080/
+      ReverseProxy__Clusters__location__Destinations__d1__Address: http://location:8080/
+      ReverseProxy__Clusters__logging__Destinations__d1__Address: http://logging:8080/
+      Logging__Framework__SeqServerUrl: http://seq
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    # Lite default: only wait for the core path. Optional services use profile "full".
+    depends_on:
+      redis:
+        condition: service_healthy
+      identity:
+        condition: service_healthy
+      user:
+        condition: service_healthy
+      coordinator:
+        condition: service_healthy
+
+  identity:
+    build:
+      context: ../..
+      dockerfile: src/Services/Identity/MicroServiceSystem.Services.Identity.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Authentication__InternalService__Enabled: "true"
+      Authentication__InternalService__ApiKey: dev-internal-api-key-change-me
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=identity;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Cache__ConnectionString: redis:6379
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  user:
+    build:
+      context: ../..
+      dockerfile: src/Services/User/MicroServiceSystem.Services.User.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Authentication__InternalService__Enabled: "true"
+      Authentication__InternalService__ApiKey: dev-internal-api-key-change-me
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=user;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Cache__ConnectionString: redis:6379
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  coordinator:
+    build:
+      context: ../..
+      dockerfile: src/Coordinator/Coordinator.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Authentication__InternalService__Enabled: "true"
+      Authentication__InternalService__ApiKey: dev-internal-api-key-change-me
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=coordinator;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Services__Identity__BaseUrl: http://identity:8080/
+      Services__User__BaseUrl: http://user:8080/
+      Cache__ConnectionString: redis:6379
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      identity:
+        condition: service_healthy
+      user:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification:
+    profiles: ["full"]
+    build:
+      context: ../..
+      dockerfile: src/Services/Notification/MicroServiceSystem.Services.Notification.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=notification;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Cache__ConnectionString: redis:6379
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  file:
+    profiles: ["full"]
+    build:
+      context: ../..
+      dockerfile: src/Services/File/MicroServiceSystem.Services.File.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=file;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Storage__Provider: Local
+      Storage__Local__RootPath: /data/files
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
+      Logging__Framework__SeqServerUrl: http://seq
+    volumes:
+      - file_data:/data/files
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  audit:
+    profiles: ["full"]
+    build:
+      context: ../..
+      dockerfile: src/Services/Audit/MicroServiceSystem.Services.Audit.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=audit;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  settings:
+    profiles: ["full"]
+    build:
+      context: ../..
+      dockerfile: src/Services/Settings/MicroServiceSystem.Services.Settings.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=settings;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Cache__ConnectionString: redis:6379
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  location:
+    profiles: ["full"]
+    build:
+      context: ../..
+      dockerfile: src/Services/Location/MicroServiceSystem.Services.Location.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=location;Username=msf;Password=msf
+      Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Cache__ConnectionString: redis:6379
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  logging:
+    profiles: ["full"]
+    build:
+      context: ../..
+      dockerfile: src/Services/Logging/MicroServiceSystem.Services.Logging.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Authentication__Jwt__Issuer: msf
+      Authentication__Jwt__Audience: msf
+      Authentication__Jwt__SigningKey: 0123456789abcdef0123456789abcdef01234567
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Persistence__Mongo__ConnectionString: mongodb://mongodb:27017
+      Persistence__Mongo__DatabaseName: logging
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
+      Logging__Framework__SeqServerUrl: http://seq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  file_data:

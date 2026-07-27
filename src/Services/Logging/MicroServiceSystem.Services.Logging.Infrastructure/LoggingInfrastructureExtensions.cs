@@ -1,0 +1,2 @@
+using Microsoft.Extensions.Configuration;using Microsoft.Extensions.DependencyInjection;
+namespace MicroServiceSystem.Services.Logging.Infrastructure;public static class LoggingInfrastructureExtensions{public static IServiceCollection AddLoggingInfrastructure(this IServiceCollection services,IConfiguration configuration)=>services;}

@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "MicroServiceSystem",
+  "classifications": [ "CQRS", "CRUD", "DDD" ],
+  "identity": "MicroServiceSystem.Templates.Crud",
+  "name": "MicroServiceSystem CRUD Aggregate",
+  "shortName": "msf-crud",
+  "tags": {
+    "language": "C#",
+    "type": "item"
+  },
+  "sourceName": "MsfEntity",
+  "defaultName": "Sample",
+  "symbols": {
+    "service": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "MsfService",
+      "replaces": "MsfService",
+      "fileRename": "MsfService",
+      "description": "Service the aggregate belongs to, for example Identity."
+    },
+    "route": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "items",
+      "replaces": "plural-route-segment",
+      "description": "Plural route segment of the resource, for example products."
+    },
+    "permissionPrefix": {
+      "type": "parameter",
+      "datatype": "string",
+      "defaultValue": "msfservice",
+      "replaces": "permission-prefix",
+      "description": "Permission namespace used by the generated endpoints."
+    },
+    "publishesEvents": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Emits an integration event when the aggregate is created."
+    }
+  }
+}

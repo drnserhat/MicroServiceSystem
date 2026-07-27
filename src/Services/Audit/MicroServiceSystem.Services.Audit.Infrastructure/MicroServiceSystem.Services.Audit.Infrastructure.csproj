@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\MicroServiceSystem.Services.Audit.Application\MicroServiceSystem.Services.Audit.Application.csproj" />
+    <ProjectReference Include="..\MicroServiceSystem.Services.Audit.Persistence\MicroServiceSystem.Services.Audit.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Messaging\MicroServiceSystem.BuildingBlocks.Messaging.csproj" />
+  </ItemGroup>
+</Project>

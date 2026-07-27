@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\MicroServiceSystem.Services.User.Domain\MicroServiceSystem.Services.User.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Application\MicroServiceSystem.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Caching\MicroServiceSystem.BuildingBlocks.Caching.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Contracts\MicroServiceSystem.Contracts.csproj" />
+  </ItemGroup>
+</Project>

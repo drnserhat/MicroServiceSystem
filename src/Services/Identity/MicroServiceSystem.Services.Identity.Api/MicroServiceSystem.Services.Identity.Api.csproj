@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <UserSecretsId>microservicesystem-identity</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MicroServiceSystem.Services.Identity.Application\MicroServiceSystem.Services.Identity.Application.csproj" />
+    <ProjectReference Include="..\MicroServiceSystem.Services.Identity.Infrastructure\MicroServiceSystem.Services.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\MicroServiceSystem.Services.Identity.Persistence\MicroServiceSystem.Services.Identity.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.ServiceDefaults\MicroServiceSystem.BuildingBlocks.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

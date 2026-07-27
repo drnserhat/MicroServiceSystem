@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Coordinator.Application\Coordinator.Application.csproj" />
+    <ProjectReference Include="..\Coordinator.Persistence\Coordinator.Persistence.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Authentication\MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Messaging\MicroServiceSystem.BuildingBlocks.Messaging.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+</Project>

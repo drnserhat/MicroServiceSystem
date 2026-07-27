@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "MicroServiceSystem",
+  "classifications": [ "Microservice", "Clean Architecture", "CQRS", "DDD" ],
+  "identity": "MicroServiceSystem.Templates.Service",
+  "name": "MicroServiceSystem Microservice",
+  "shortName": "msf-service",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "MsfService",
+  "preferNameDirectory": true,
+  "defaultName": "Sample",
+  "symbols": {
+    "database": {
+      "type": "parameter",
+      "datatype": "choice",
+      "choices": [
+        { "choice": "postgres", "description": "PostgreSQL primary store with EF Core, outbox and inbox." },
+        { "choice": "mongo", "description": "MongoDB primary store for document shaped data." }
+      ],
+      "defaultValue": "postgres",
+      "description": "Primary datastore of the service."
+    },
+    "usePostgres": {
+      "type": "computed",
+      "value": "(database == \"postgres\")"
+    },
+    "useMongo": {
+      "type": "computed",
+      "value": "(database == \"mongo\")"
+    },
+    "publishesEvents": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "true",
+      "description": "Registers the outbox processor so the service can publish integration events."
+    },
+    "consumesEvents": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "true",
+      "description": "Registers the RabbitMQ consumer host with inbox de-duplication."
+    },
+    "useRedis": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "true",
+      "description": "Registers the distributed cache."
+    },
+    "servicePort": {
+      "type": "parameter",
+      "datatype": "int",
+      "defaultValue": "8080",
+      "description": "Container port exposed by the service."
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(!usePostgres)",
+          "exclude": [ "**/Persistence/Migrations/**" ]
+        }
+      ]
+    }
+  ],
+  "primaryOutputs": [
+    { "path": "MicroServiceSystem.Services.MsfService.Api/MicroServiceSystem.Services.MsfService.Api.csproj" }
+  ]
+}

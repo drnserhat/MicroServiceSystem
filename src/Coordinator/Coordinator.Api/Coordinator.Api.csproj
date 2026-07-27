@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <UserSecretsId>microservicesystem-coordinator</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Coordinator.Application\Coordinator.Application.csproj" />
+    <ProjectReference Include="..\Coordinator.Infrastructure\Coordinator.Infrastructure.csproj" />
+    <ProjectReference Include="..\Coordinator.Persistence\Coordinator.Persistence.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.ServiceDefaults\MicroServiceSystem.BuildingBlocks.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

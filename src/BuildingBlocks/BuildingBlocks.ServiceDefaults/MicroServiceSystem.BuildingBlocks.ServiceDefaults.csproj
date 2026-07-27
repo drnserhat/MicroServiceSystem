@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Opinionated host defaults: exception handling, correlation, rate limiting, compression, OpenAPI, versioning, health endpoints and observability wiring.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\SharedKernel\MicroServiceSystem.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\Shared\Contracts\MicroServiceSystem.Contracts.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Application\MicroServiceSystem.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Authentication\MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Authorization\MicroServiceSystem.BuildingBlocks.Authorization.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Caching\MicroServiceSystem.BuildingBlocks.Caching.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.HealthChecks\MicroServiceSystem.BuildingBlocks.HealthChecks.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Idempotency\MicroServiceSystem.BuildingBlocks.Idempotency.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Localization\MicroServiceSystem.BuildingBlocks.Localization.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Logging\MicroServiceSystem.BuildingBlocks.Logging.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.MultiTenancy\MicroServiceSystem.BuildingBlocks.MultiTenancy.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.OpenTelemetry\MicroServiceSystem.BuildingBlocks.OpenTelemetry.csproj" />
+    <ProjectReference Include="..\BuildingBlocks.Resilience\MicroServiceSystem.BuildingBlocks.Resilience.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+</Project>

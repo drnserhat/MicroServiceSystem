@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+artifacts/
+TestResults/
+coverage/
+*.trx
+*.coverage
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+node_modules/

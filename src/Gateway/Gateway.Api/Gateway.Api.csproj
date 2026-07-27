@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <UserSecretsId>microservicesystem-gateway</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Yarp.ReverseProxy" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.ServiceDefaults\MicroServiceSystem.BuildingBlocks.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

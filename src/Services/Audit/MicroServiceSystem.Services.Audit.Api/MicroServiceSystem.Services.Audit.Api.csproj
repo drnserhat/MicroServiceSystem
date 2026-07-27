@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\MicroServiceSystem.Services.Audit.Application\MicroServiceSystem.Services.Audit.Application.csproj" />
+    <ProjectReference Include="..\MicroServiceSystem.Services.Audit.Infrastructure\MicroServiceSystem.Services.Audit.Infrastructure.csproj" />
+    <ProjectReference Include="..\MicroServiceSystem.Services.Audit.Persistence\MicroServiceSystem.Services.Audit.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.ServiceDefaults\MicroServiceSystem.BuildingBlocks.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>

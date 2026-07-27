@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json.schemastore.org/dotnetcli.host",
+  "symbolInfo": {
+    "database": {
+      "longName": "database",
+      "shortName": "db"
+    },
+    "publishesEvents": {
+      "longName": "publishes-events",
+      "shortName": "pe"
+    },
+    "consumesEvents": {
+      "longName": "consumes-events",
+      "shortName": "ce"
+    },
+    "useRedis": {
+      "longName": "redis",
+      "shortName": "r"
+    },
+    "servicePort": {
+      "longName": "port",
+      "shortName": "p"
+    }
+  }
+}

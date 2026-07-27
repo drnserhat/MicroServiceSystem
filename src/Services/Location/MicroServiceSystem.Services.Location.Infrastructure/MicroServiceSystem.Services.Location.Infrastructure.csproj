@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\MicroServiceSystem.Services.Location.Application\MicroServiceSystem.Services.Location.Application.csproj" />
+    <ProjectReference Include="..\MicroServiceSystem.Services.Location.Persistence\MicroServiceSystem.Services.Location.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Messaging\MicroServiceSystem.BuildingBlocks.Messaging.csproj" />
+  </ItemGroup>
+</Project>

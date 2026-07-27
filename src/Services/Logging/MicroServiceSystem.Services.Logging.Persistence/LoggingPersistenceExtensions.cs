@@ -1,0 +1,2 @@
+using Microsoft.Extensions.Configuration;using Microsoft.Extensions.DependencyInjection;using MicroServiceSystem.BuildingBlocks.Persistence.Extensions;using MicroServiceSystem.Services.Logging.Application.Abstractions;
+namespace MicroServiceSystem.Services.Logging.Persistence;public static class LoggingPersistenceExtensions{public static IServiceCollection AddLoggingPersistence(this IServiceCollection services,IConfiguration configuration){services.AddMongoPersistence(configuration);services.AddScoped<ISystemLogRepository,SystemLogRepository>();return services;}}
