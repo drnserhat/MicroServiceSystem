@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MicroServiceSystem.BuildingBlocks.Authentication.Abstractions;
 using MicroServiceSystem.BuildingBlocks.Authentication.Configuration;
@@ -15,7 +17,13 @@ public static class AuthenticationExtensions
 {
     public static IServiceCollection AddFrameworkAuthentication(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration) =>
+        AddFrameworkAuthentication(services, configuration, environment: null);
+
+    public static IServiceCollection AddFrameworkAuthentication(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment? environment)
     {
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
@@ -35,20 +43,37 @@ public static class AuthenticationExtensions
                 "Authentication:InternalService:ApiKey must be at least 16 characters when Enabled.")
             .ValidateOnStart();
 
+        if (environment is not null)
+        {
+            services.AddSingleton<IValidateOptions<JwtOptions>>(new JwtOptionsValidator(environment));
+            services.AddSingleton<IValidateOptions<InternalServiceOptions>>(
+                new InternalServiceOptionsValidator(environment));
+        }
+        else
+        {
+            services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
+            services.AddSingleton<IValidateOptions<InternalServiceOptions>, InternalServiceOptionsValidator>();
+        }
+
         services.AddHttpContextAccessor();
         services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<ICurrentUser, CurrentUser>();
 
-        JwtOptions jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
-
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+            .AddJwtBearer()
+            .AddScheme<AuthenticationSchemeOptions, InternalApiKeyAuthenticationHandler>(
+                InternalApiKeyDefaults.AuthenticationScheme,
+                _ => { });
+
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>>((bearerOptions, jwtOptionsAccessor) =>
             {
-                options.RequireHttpsMetadata = jwtOptions.RequireHttpsMetadata;
-                options.MapInboundClaims = false;
-                options.TokenValidationParameters = new TokenValidationParameters
+                JwtOptions jwtOptions = jwtOptionsAccessor.Value;
+                bearerOptions.RequireHttpsMetadata = jwtOptions.RequireHttpsMetadata;
+                bearerOptions.MapInboundClaims = false;
+                bearerOptions.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
@@ -61,10 +86,7 @@ public static class AuthenticationExtensions
                     NameClaimType = FrameworkClaimTypes.UserName,
                     RoleClaimType = FrameworkClaimTypes.Role
                 };
-            })
-            .AddScheme<AuthenticationSchemeOptions, InternalApiKeyAuthenticationHandler>(
-                InternalApiKeyDefaults.AuthenticationScheme,
-                _ => { });
+            });
 
         return services;
     }

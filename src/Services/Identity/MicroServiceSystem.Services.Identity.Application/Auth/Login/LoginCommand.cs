@@ -1,7 +1,10 @@
 using FluentValidation;
 using MicroServiceSystem.BuildingBlocks.Application.Messaging;
 using MicroServiceSystem.BuildingBlocks.Authentication.Abstractions;
+using MicroServiceSystem.BuildingBlocks.MultiTenancy;
+using MicroServiceSystem.BuildingBlocks.MultiTenancy.Abstractions;
 using MicroServiceSystem.Services.Identity.Application.Abstractions;
+using MicroServiceSystem.Services.Identity.Application.Tenants;
 using MicroServiceSystem.Services.Identity.Domain.Aggregates;
 using MicroServiceSystem.SharedKernel.Abstractions;
 using MicroServiceSystem.SharedKernel.Results;
@@ -39,13 +42,22 @@ public sealed class LoginCommandHandler(
     IPasswordHasher passwordHasher,
     ITokenService tokenService,
     ICurrentTenant currentTenant,
+    ITenantStore tenants,
     IDateTimeProvider clock) : ICommandHandler<LoginCommand, LoginResponse>
 {
     private const int MaxFailedAccessAttempts = 5;
 
     public async Task<Result<LoginResponse>> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
-        using IDisposable tenantScope = currentTenant.Change(command.TenantId);
+        Result<TenantInfo> tenant =
+            await TenantAccess.RequireActiveAsync(tenants, command.TenantId, cancellationToken);
+
+        if (tenant.IsFailure)
+        {
+            return Result.Failure<LoginResponse>(tenant.Error);
+        }
+
+        using IDisposable tenantScope = currentTenant.Change(command.TenantId, tenant.Value.Name);
 
         IdentityUser? user = await users.FindByEmailAsync(command.Email, cancellationToken);
 

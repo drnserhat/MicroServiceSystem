@@ -11,7 +11,8 @@ public static class AuthorizationExtensions
     /// <summary>
     /// Enables permission policies. When <paramref name="requireAuthenticatedByDefault"/> is true,
     /// every endpoint requires authentication unless it explicitly allows anonymous access.
-    /// API gateways typically pass false so proxied anonymous routes and Swagger stay reachable.
+    /// Gateways should keep this true and mark public YARP routes with
+    /// <c>AuthorizationPolicy = Anonymous</c> instead of disabling the fallback policy.
     /// </summary>
     public static IServiceCollection AddFrameworkAuthorization(
         this IServiceCollection services,

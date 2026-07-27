@@ -13,6 +13,8 @@ public static class IdentityInfrastructureExtensions
     {
         services.AddFrameworkMessaging(configuration, "identity", IdentityApplicationExtensions.ApplicationAssembly);
         services.AddOutboxProcessor();
+        services.AddHostedService<DevelopmentTenantSeeder>();
+        services.AddHostedService<DevelopmentAdminSeeder>();
 
         return services;
     }

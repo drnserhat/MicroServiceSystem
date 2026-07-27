@@ -9,7 +9,7 @@ public sealed class InternalServiceOptions
 {
     public const string SectionName = "Authentication:InternalService";
 
-    public bool Enabled { get; set; } = true;
+    public bool Enabled { get; set; }
 
     /// <summary>
     /// Shared API key. Leave empty to disable the scheme (internal endpoints will reject callers).

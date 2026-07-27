@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using MicroServiceSystem.SharedKernel.Constants;
+using MicroServiceSystem.SharedKernel.Security;
 
 namespace MicroServiceSystem.Testing.Utilities;
 
@@ -16,7 +17,7 @@ public static class TestJwtFactory
         IEnumerable<string>? permissions = null,
         string issuer = "msf-tests",
         string audience = "msf-tests",
-        string signingKey = "0123456789abcdef0123456789abcdef")
+        string signingKey = KnownInsecureSecrets.DevelopmentJwtSigningKey)
     {
         var claims = new Dictionary<string, object>
         {

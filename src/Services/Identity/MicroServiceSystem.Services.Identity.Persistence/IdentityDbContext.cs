@@ -15,6 +15,8 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+
     protected override string Schema => DefaultSchema;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

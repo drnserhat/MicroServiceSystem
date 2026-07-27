@@ -16,12 +16,32 @@
 # Observability only on top of lite:
 #   ... --profile obs up -d
 
+# The ASP.NET Core SDK turns Server GC on by default, which allocates a heap per core. Ten services
+# doing that inside 384 MB caps on a multi core host is the single largest source of resident memory
+# here, so the shared profile runs Workstation GC and only opts a service into Server GC when its
+# throughput actually needs it (see x-dotnet-app-throughput).
 x-dotnet-app: &dotnet-app
   mem_limit: 384m
   mem_reservation: 192m
+  cpus: 1.0
   environment:
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "false"
     DOTNET_EnableDiagnostics: "0"
+    DOTNET_gcServer: "0"
+    DOTNET_gcConcurrent: "1"
+    DOTNET_GCConserveMemory: "5"
+
+# Server GC with a bounded heap count, for services that are actually throughput bound.
+x-dotnet-app-throughput: &dotnet-app-throughput
+  mem_limit: 768m
+  mem_reservation: 384m
+  cpus: 2.0
+  environment:
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "false"
+    DOTNET_EnableDiagnostics: "0"
+    DOTNET_gcServer: "1"
+    DOTNET_GCHeapCount: "2"
+    DOTNET_gcConcurrent: "1"
 
 services:
   postgres:
@@ -44,6 +64,10 @@ services:
     mem_limit: 512m
     mem_reservation: 256m
 
+  jaeger:
+    mem_limit: 512m
+    mem_reservation: 256m
+
   prometheus:
     mem_limit: 256m
     mem_reservation: 128m
@@ -52,8 +76,9 @@ services:
     mem_limit: 256m
     mem_reservation: 128m
 
+  # Every external request passes through the gateway, so it is the one process worth the extra heap.
   gateway:
-    <<: *dotnet-app
+    <<: *dotnet-app-throughput
 
   identity:
     <<: *dotnet-app

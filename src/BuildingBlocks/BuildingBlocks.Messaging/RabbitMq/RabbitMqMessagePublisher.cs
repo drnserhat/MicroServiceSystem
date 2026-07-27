@@ -1,8 +1,5 @@
-using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 using MicroServiceSystem.BuildingBlocks.Messaging.Abstractions;
-using MicroServiceSystem.BuildingBlocks.Messaging.Configuration;
 using MicroServiceSystem.BuildingBlocks.Messaging.Serialization;
 using MicroServiceSystem.Contracts.Abstractions;
 using RabbitMQ.Client;
@@ -10,9 +7,8 @@ using RabbitMQ.Client;
 namespace MicroServiceSystem.BuildingBlocks.Messaging.RabbitMq;
 
 public sealed class RabbitMqMessagePublisher(
-    RabbitMqConnectionProvider connectionProvider,
-    MessagingTopology topology,
-    IOptions<RabbitMqOptions> options) : IMessagePublisher
+    RabbitMqChannelPool channelPool,
+    MessagingTopology topology) : IMessagePublisher
 {
     public const string TenantHeader = "x-tenant-id";
     public const string CorrelationHeader = "x-correlation-id";
@@ -22,12 +18,6 @@ public sealed class RabbitMqMessagePublisher(
     public async Task PublishAsync(IntegrationEventEnvelope envelope, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(envelope);
-
-        RabbitMqOptions rabbitOptions = options.Value;
-
-        await using IChannel channel = await connectionProvider.CreateChannelAsync(
-            rabbitOptions.PublisherConfirms,
-            cancellationToken);
 
         var properties = new BasicProperties
         {
@@ -40,16 +30,26 @@ public sealed class RabbitMqMessagePublisher(
             Headers = BuildHeaders(envelope)
         };
 
-        byte[] body = Encoding.UTF8.GetBytes(
-            JsonSerializer.Serialize(envelope, IntegrationEventSerializer.SerializerOptions));
+        byte[] body = JsonSerializer.SerializeToUtf8Bytes(
+            envelope,
+            IntegrationEventSerializer.SerializerOptions);
 
-        await channel.BasicPublishAsync(
-            topology.Exchange,
-            envelope.EventName,
-            mandatory: false,
-            basicProperties: properties,
-            body: body,
-            cancellationToken: cancellationToken);
+        IChannel channel = await channelPool.RentAsync(cancellationToken);
+
+        try
+        {
+            await channel.BasicPublishAsync(
+                topology.Exchange,
+                envelope.EventName,
+                mandatory: false,
+                basicProperties: properties,
+                body: body,
+                cancellationToken: cancellationToken);
+        }
+        finally
+        {
+            await channelPool.ReturnAsync(channel);
+        }
     }
 
     private static Dictionary<string, object?> BuildHeaders(IntegrationEventEnvelope envelope)

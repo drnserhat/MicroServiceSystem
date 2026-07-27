@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using MicroServiceSystem.BuildingBlocks.Authentication.Extensions;
 using MicroServiceSystem.BuildingBlocks.Authorization.Extensions;
@@ -40,6 +41,9 @@ public static class ServiceDefaultsExtensions
             .Bind(builder.Configuration.GetSection(ServiceDefaultsOptions.SectionName))
             .ValidateOnStart();
 
+        builder.Services.AddSingleton<IValidateOptions<ServiceDefaultsOptions>>(
+            new ServiceDefaultsOptionsValidator(builder.Environment));
+
         ServiceDefaultsOptions defaults = builder.Configuration
             .GetSection(ServiceDefaultsOptions.SectionName)
             .Get<ServiceDefaultsOptions>() ?? new ServiceDefaultsOptions { ServiceName = serviceName };
@@ -48,6 +52,10 @@ public static class ServiceDefaultsExtensions
         {
             defaults.ServiceName = serviceName;
         }
+
+        // Swagger stays off unless Development (or an explicit non-Production opt-in via config that
+        // still passes ServiceDefaultsOptionsValidator — i.e. Development only by default).
+        bool enableSwagger = defaults.EnableSwagger && builder.Environment.IsDevelopment();
 
         builder.AddFrameworkLogging(serviceName);
         builder.AddFrameworkOpenTelemetry(serviceName);
@@ -74,7 +82,7 @@ public static class ServiceDefaultsExtensions
                 options.SubstituteApiVersionInUrl = true;
             });
 
-        if (defaults.EnableSwagger)
+        if (enableSwagger)
         {
             builder.Services.AddSwaggerGen(options =>
             {
@@ -102,12 +110,12 @@ public static class ServiceDefaultsExtensions
             });
         }
 
-        builder.Services.AddFrameworkAuthentication(builder.Configuration);
+        builder.Services.AddFrameworkAuthentication(builder.Configuration, builder.Environment);
         bool requireAuthenticatedByDefault = builder.Configuration
             .GetSection(ServiceDefaultsOptions.SectionName)
             .GetValue(nameof(ServiceDefaultsOptions.RequireAuthenticatedByDefault), true);
         builder.Services.AddFrameworkAuthorization(requireAuthenticatedByDefault);
-        builder.Services.AddMultiTenancy(builder.Configuration);
+        builder.Services.AddMultiTenancy(builder.Configuration, builder.Environment);
         builder.Services.AddFrameworkCaching(builder.Configuration);
         builder.Services.AddFrameworkHealthChecks(builder.Configuration);
 
@@ -131,13 +139,23 @@ public static class ServiceDefaultsExtensions
             });
         }
 
+        bool isDevelopment = builder.Environment.IsDevelopment();
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy(CorsPolicyOptions.PolicyName, policy =>
             {
                 if (defaults.Cors.AllowedOrigins.Length == 0)
                 {
-                    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                    if (isDevelopment)
+                    {
+                        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                    }
+                    else
+                    {
+                        // Fail closed: empty origins outside Development must not open the API.
+                        policy.SetIsOriginAllowed(_ => false);
+                    }
 
                     return;
                 }
@@ -235,7 +253,9 @@ public static class ServiceDefaultsExtensions
             app.UseFrameworkLocalization();
         }
 
-        if (defaults.EnableSwagger)
+        bool enableSwaggerUi = defaults.EnableSwagger && app.Environment.IsDevelopment();
+
+        if (enableSwaggerUi)
         {
             app.UseSwagger();
             app.UseSwaggerUI(options =>

@@ -1,0 +1,93 @@
+{{- if .Values.apps.gateway.enabled }}
+{{- $root := . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "msf.serviceName" (dict "root" . "name" "gateway") }}
+  labels:
+    {{- include "msf.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: {{ .Values.apps.gateway.replicas }}
+  selector:
+    matchLabels:
+      {{- include "msf.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gateway
+  template:
+    metadata:
+      labels:
+        {{- include "msf.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: gateway
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: gateway
+          image: {{ include "msf.image" (dict "Values" .Values "name" "gateway") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ .Values.aspnetcoreEnvironment | quote }}
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: Authentication__Jwt__Issuer
+              value: {{ .Values.jwt.issuer | quote }}
+            - name: Authentication__Jwt__Audience
+              value: {{ .Values.jwt.audience | quote }}
+            - name: Authentication__Jwt__RequireHttpsMetadata
+              value: {{ .Values.jwt.requireHttpsMetadata | quote }}
+            - name: Authentication__Jwt__SigningKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" . }}-secrets
+                  key: JWT_SIGNING_KEY
+            - name: MultiTenancy__RequireTenant
+              value: "false"
+            - name: Cache__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" . }}-secrets
+                  key: REDIS_CONNECTION
+            {{- range $name, $app := .Values.apps }}
+            {{- if and $app.enabled (ne $name "gateway") }}
+            - name: ReverseProxy__Clusters__{{ $name }}__Destinations__d1__Address
+              value: http://{{ include "msf.serviceName" (dict "root" $root "name" $name) }}:8080/
+            {{- end }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.apps.gateway.healthPath }}
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.apps.gateway.healthPath }}
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "msf.serviceName" (dict "root" . "name" "gateway") }}
+  labels:
+    {{- include "msf.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+spec:
+  type: {{ .Values.apps.gateway.service.type }}
+  selector:
+    {{- include "msf.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+  ports:
+    - name: http
+      port: {{ .Values.apps.gateway.service.port }}
+      targetPort: http
+{{- end }}

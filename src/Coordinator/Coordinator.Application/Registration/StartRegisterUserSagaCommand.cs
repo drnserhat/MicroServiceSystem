@@ -3,6 +3,8 @@ using Coordinator.Application.Abstractions;
 using Coordinator.Domain.Aggregates;
 using MicroServiceSystem.BuildingBlocks.Application.Abstractions;
 using MicroServiceSystem.BuildingBlocks.Application.Messaging;
+using Microsoft.Extensions.Options;
+using MicroServiceSystem.BuildingBlocks.Saga;
 using MicroServiceSystem.Contracts.Events.Audit;
 using MicroServiceSystem.Contracts.Events.Notification;
 using MicroServiceSystem.SharedKernel.Abstractions;
@@ -40,104 +42,125 @@ public sealed class StartRegisterUserSagaCommandHandler(
     IIdentityServiceClient identityClient,
     IUserServiceClient userClient,
     ICurrentTenant currentTenant,
-    IIntegrationEventPublisher integrationEvents) : ICommandHandler<StartRegisterUserSagaCommand, StartRegisterUserSagaResponse>
+    IIntegrationEventPublisher integrationEvents,
+    ISagaCheckpoint checkpoint,
+    IDateTimeProvider clock,
+    IOptions<SagaOptions> sagaOptions) : ICommandHandler<StartRegisterUserSagaCommand, StartRegisterUserSagaResponse>
 {
     public async Task<Result<StartRegisterUserSagaResponse>> Handle(
         StartRegisterUserSagaCommand command,
         CancellationToken cancellationToken)
     {
-        using IDisposable tenantScope = currentTenant.Change(command.TenantId);
+        if (currentTenant.Id is not Guid callerTenantId || callerTenantId != command.TenantId)
+        {
+            return Result.Failure<StartRegisterUserSagaResponse>(CoordinatorErrors.TenantScopeMismatch);
+        }
+
+        // Catalog check before any durable write: an invented TenantId must never become a saga row.
+        TenantCatalogResult? tenant = await identityClient.GetTenantAsync(command.TenantId, cancellationToken);
+
+        if (tenant is null)
+        {
+            return Result.Failure<StartRegisterUserSagaResponse>(CoordinatorErrors.TenantNotFound);
+        }
+
+        if (!tenant.IsActive)
+        {
+            return Result.Failure<StartRegisterUserSagaResponse>(CoordinatorErrors.TenantInactive);
+        }
+
+        using IDisposable tenantScope = currentTenant.Change(command.TenantId, tenant.Name);
 
         string displayName = string.IsNullOrWhiteSpace(command.DisplayName)
             ? $"{command.FirstName.Trim()} {command.LastName.Trim()}"
             : command.DisplayName.Trim();
 
+        var leaseDuration = TimeSpan.FromSeconds(Math.Max(30, sagaOptions.Value.LeaseSeconds));
+
         RegisterUserSaga saga = RegisterUserSaga.Start(command.Email, command.UserName, displayName);
         saga.TenantId = command.TenantId;
+
+        // Claim the saga up front so the recovery worker treats it as owned rather than abandoned.
+        saga.AcquireLease(SagaOwner.Current, clock.UtcNow, leaseDuration);
+
         await sagas.AddAsync(saga, cancellationToken);
+        // Durable: persist Started before any remote side effect.
+        await checkpoint.CommitAsync(cancellationToken);
 
-        IdentityRegistrationResult identityResult;
-        try
-        {
-            identityResult = await identityClient.RegisterAsync(
-                command.Email,
-                command.UserName,
-                command.Password,
-                command.TenantId,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            saga.MarkFailed(ex.Message);
-            sagas.Update(saga);
-            return CoordinatorErrors.IdentityRegistrationFailed;
-        }
+        var sagaContext = new RegisterUserSagaContext(
+            saga,
+            command,
+            displayName,
+            sagas,
+            identityClient,
+            userClient,
+            integrationEvents,
+            checkpoint,
+            clock,
+            leaseDuration);
 
-        saga.MarkIdentityRegistered(identityResult.UserId);
-        sagas.Update(saga);
+        // Deliberately not the request token. Once the first remote call is in flight, abandoning the saga
+        // because the client hung up would strand a half-created user; the lease lets recovery finish it
+        // if this process dies instead.
+        Result sagaResult = await SagaRunner.RunAsync(
+            [
+                new RegisterIdentityStep(),
+                new CreateUserProfileStep()
+            ],
+            sagaContext,
+            CancellationToken.None);
 
-        UserProfileResult profileResult;
-        try
+        // From here on the remote work already happened, so these writes also ignore the request token.
+        if (sagaResult.IsFailure)
         {
-            profileResult = await userClient.CreateProfileAsync(
-                identityResult.UserId,
-                command.FirstName,
-                command.LastName,
-                displayName,
-                command.TenantId,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            saga.MarkCompensating(ex.Message);
-            sagas.Update(saga);
-
-            try
+            // Compensating is a deliberate non-terminal state meaning "the undo still has to happen".
+            // Failing it here would hide the saga from the recovery worker and leak the identity it created.
+            if (!saga.IsTerminal && saga.State != RegisterUserSagaState.Compensating)
             {
-                await identityClient.DisableAsync(
-                    identityResult.UserId,
-                    $"Compensating failed user profile creation: {ex.Message}",
-                    command.TenantId,
-                    cancellationToken);
-            }
-            catch
-            {
-                saga.MarkFailed("User profile creation failed and identity compensation failed.");
-                sagas.Update(saga);
-                return CoordinatorErrors.CompensationFailed;
+                saga.MarkFailed(sagaResult.Error.Description);
+                await sagaContext.PersistAsync(CancellationToken.None);
             }
 
-            saga.MarkFailed(ex.Message);
-            sagas.Update(saga);
-            return CoordinatorErrors.UserProfileCreationFailed;
+            return Result.Failure<StartRegisterUserSagaResponse>(sagaResult.Error);
         }
 
-        saga.MarkUserProfileCreated(profileResult.Id);
+        if (sagaContext.Identity is null || sagaContext.Profile is null)
+        {
+            saga.MarkFailed("Saga completed without identity or profile results.");
+            await sagaContext.PersistAsync(CancellationToken.None);
+            return Result.Failure<StartRegisterUserSagaResponse>(CoordinatorErrors.UserProfileCreationFailed);
+        }
+
         saga.MarkCompleted();
         sagas.Update(saga);
 
         await integrationEvents.PublishAsync(
             new WelcomeNotificationRequestedIntegrationEvent
             {
-                UserId = identityResult.UserId,
-                Email = identityResult.Email,
+                UserId = sagaContext.Identity.UserId,
+                Email = sagaContext.Identity.Email,
                 DisplayName = displayName,
                 TenantId = command.TenantId
             },
-            cancellationToken);
+            CancellationToken.None);
 
         await integrationEvents.PublishAsync(
             new AuditEntryRequestedIntegrationEvent
             {
                 Action = "user.registered",
                 ResourceType = "User",
-                ResourceId = identityResult.UserId.ToString(),
-                ActorUserId = identityResult.UserId,
-                Details = $"User {identityResult.Email} registered via coordinator saga {saga.Id}",
+                ResourceId = sagaContext.Identity.UserId.ToString(),
+                ActorUserId = sagaContext.Identity.UserId,
+                Details = $"User {sagaContext.Identity.Email} registered via coordinator saga {saga.Id}",
                 TenantId = command.TenantId
             },
-            cancellationToken);
+            CancellationToken.None);
 
-        return new StartRegisterUserSagaResponse(saga.Id, identityResult.UserId, identityResult.Email, displayName);
+        // Terminal success + outbox rows committed by UnitOfWorkBehavior.
+        return new StartRegisterUserSagaResponse(
+            saga.Id,
+            sagaContext.Identity.UserId,
+            sagaContext.Identity.Email,
+            displayName);
     }
 }

@@ -10,6 +10,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 Authentication defaults:
 - JWT bearer required (fallback authorization policy)
-- Anonymous endpoints must opt in with [AllowAnonymous]
+- Anonymous endpoints must opt in with [AllowAnonymous] (login/refresh only at the edge)
+- User registration requires `registration.users.create` (no anonymous self-signup)
 - Idempotency header X-Idempotency-Key available for mutations
 - Tenant resolution claim-first, optional X-Tenant-Id when TrustTenantHeader is enabled

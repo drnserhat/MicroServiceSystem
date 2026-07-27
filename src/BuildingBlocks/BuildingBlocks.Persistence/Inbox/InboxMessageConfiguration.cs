@@ -22,5 +22,7 @@ public sealed class InboxMessageConfiguration : IEntityTypeConfiguration<InboxMe
         builder.Property(message => message.Error).HasMaxLength(4000);
 
         builder.HasIndex(message => message.ProcessedOnUtc).HasDatabaseName("ix_inbox_messages_processed");
+
+        builder.HasIndex(message => message.LockedUntilUtc).HasDatabaseName("ix_inbox_messages_locked_until");
     }
 }

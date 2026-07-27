@@ -10,7 +10,9 @@
     <ProjectReference Include="..\..\..\src\Shared\SharedKernel\MicroServiceSystem.SharedKernel.csproj" />
     <ProjectReference Include="..\..\..\src\Shared\Contracts\MicroServiceSystem.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Application\MicroServiceSystem.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Authentication\MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Messaging\MicroServiceSystem.BuildingBlocks.Messaging.csproj" />
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.MultiTenancy\MicroServiceSystem.BuildingBlocks.MultiTenancy.csproj" />
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Persistence\MicroServiceSystem.BuildingBlocks.Persistence.csproj" />
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.ServiceDefaults\MicroServiceSystem.BuildingBlocks.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\..\src\Services\Identity\MicroServiceSystem.Services.Identity.Domain\MicroServiceSystem.Services.Identity.Domain.csproj" />

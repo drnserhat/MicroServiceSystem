@@ -1,0 +1,21 @@
+# One-shot migration job against the shared Postgres from docker-compose.yml.
+# Production apps keep ApplyMigrationsOnStartup=false; run this (or CI) before rolling out.
+#
+# Usage (repo root):
+#   docker compose -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.migrate.yml run --rm migrate
+
+services:
+  migrate:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    working_dir: /src
+    volumes:
+      - ../..:/src:rw
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: msf
+      POSTGRES_PASSWORD: msf
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["bash", "deploy/migrate/migrate-all.sh"]

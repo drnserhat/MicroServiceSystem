@@ -5,7 +5,7 @@ using MicroServiceSystem.SharedKernel.Constants;
 
 namespace MicroServiceSystem.Services.Identity.Application.Auth;
 
-internal static class AccessTokenFactory
+public static class AccessTokenFactory
 {
     public const string MemberRoleName = FrameworkPermissions.MemberRoleName;
 
@@ -25,6 +25,31 @@ internal static class AccessTokenFactory
         role.TenantId = tenantId;
 
         foreach (string permission in FrameworkPermissions.MemberDefaults)
+        {
+            role.GrantPermission(permission);
+        }
+
+        await roles.AddAsync(role, cancellationToken);
+
+        return role;
+    }
+
+    public static async Task<Role> GetOrCreateAdminRoleAsync(
+        IRoleRepository roles,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        Role? existing = await roles.FindByNameAsync(FrameworkPermissions.AdminRoleName, cancellationToken);
+
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        Role role = Role.Create(FrameworkPermissions.AdminRoleName);
+        role.TenantId = tenantId;
+
+        foreach (string permission in FrameworkPermissions.AdminDefaults)
         {
             role.GrantPermission(permission);
         }

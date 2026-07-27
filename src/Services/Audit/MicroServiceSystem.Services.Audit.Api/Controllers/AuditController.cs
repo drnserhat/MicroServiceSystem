@@ -5,6 +5,7 @@ using MicroServiceSystem.BuildingBlocks.Authorization;
 using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Controllers;
 using MicroServiceSystem.Services.Audit.Application;
 using MicroServiceSystem.SharedKernel.Constants;
+using MicroServiceSystem.SharedKernel.Pagination;
 
 namespace MicroServiceSystem.Services.Audit.Api.Controllers;
 
@@ -14,8 +15,10 @@ public sealed class AuditController(ISender sender) : ApiControllerBase
 {
     [HttpGet]
     [HasPermission(FrameworkPermissions.AuditEntriesRead)]
-    public async Task<IActionResult> List(CancellationToken cancellationToken) =>
-        ToActionResult(await sender.Send(new ListAuditEntriesQuery(), cancellationToken));
+    public async Task<IActionResult> List(
+        [FromQuery] PaginationRequest pagination,
+        CancellationToken cancellationToken) =>
+        ToActionResult(await sender.Send(new ListAuditEntriesQuery(pagination), cancellationToken));
 
     [HttpPost]
     [HasPermission(FrameworkPermissions.AuditEntriesCreate)]

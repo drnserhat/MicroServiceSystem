@@ -3,6 +3,7 @@
     <ProjectReference Include="..\Coordinator.Domain\Coordinator.Domain.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Application\MicroServiceSystem.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Caching\MicroServiceSystem.BuildingBlocks.Caching.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Saga\MicroServiceSystem.BuildingBlocks.Saga.csproj" />
     <ProjectReference Include="..\..\Shared\Contracts\MicroServiceSystem.Contracts.csproj" />
   </ItemGroup>
 </Project>

@@ -70,6 +70,15 @@ namespace Coordinator.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_deleted");
 
+                    b.Property<string>("LockedBy")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("locked_by");
+
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
+
                     b.Property<DateTimeOffset?>("ModifiedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("modified_at_utc");
@@ -98,8 +107,17 @@ namespace Coordinator.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_profile_id");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_register_user_sagas");
+
+                    b.HasIndex("State", "LockedUntilUtc")
+                        .HasDatabaseName("ix_register_user_sagas_state_locked_until");
 
                     b.ToTable("register_user_sagas", "coordinator");
                 });
@@ -125,6 +143,10 @@ namespace Coordinator.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("event_name");
 
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
+
                     b.Property<DateTimeOffset?>("ProcessedOnUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_on_utc");
@@ -135,6 +157,9 @@ namespace Coordinator.Persistence.Migrations
 
                     b.HasKey("MessageId")
                         .HasName("pk_inbox_messages");
+
+                    b.HasIndex("LockedUntilUtc")
+                        .HasDatabaseName("ix_inbox_messages_locked_until");
 
                     b.HasIndex("ProcessedOnUtc")
                         .HasDatabaseName("ix_inbox_messages_processed");
@@ -157,6 +182,10 @@ namespace Coordinator.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("correlation_id");
 
+                    b.Property<DateTimeOffset?>("DeadLetteredOnUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dead_lettered_on_utc");
+
                     b.Property<string>("Error")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
@@ -167,6 +196,15 @@ namespace Coordinator.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("event_name");
+
+                    b.Property<string>("LockedBy")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("locked_by");
+
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
 
                     b.Property<DateTimeOffset>("OccurredOnUtc")
                         .HasColumnType("timestamp with time zone")
@@ -197,6 +235,9 @@ namespace Coordinator.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_outbox_messages");
+
+                    b.HasIndex("DeadLetteredOnUtc")
+                        .HasDatabaseName("ix_outbox_messages_dead_lettered");
 
                     b.HasIndex("ProcessedOnUtc", "OccurredOnUtc")
                         .HasDatabaseName("ix_outbox_messages_unprocessed");

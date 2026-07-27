@@ -22,7 +22,10 @@ app.MapGet("/", () => Results.Redirect("/swagger"))
     .ExcludeFromDescription();
 
 app.MapGatewaySwaggerDocuments();
-app.MapReverseProxy().AllowAnonymous();
+
+// Fallback policy requires JWT. Anonymous public routes are allowlisted via
+// ReverseProxy:Routes:*:AuthorizationPolicy = "Anonymous" (login, refresh only).
+app.MapReverseProxy();
 
 await app.RunAsync();
 

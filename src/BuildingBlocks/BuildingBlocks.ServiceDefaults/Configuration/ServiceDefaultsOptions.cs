@@ -8,7 +8,7 @@ public sealed class ServiceDefaultsOptions
 
     public string ServiceDescription { get; set; } = string.Empty;
 
-    public bool EnableSwagger { get; set; } = true;
+    public bool EnableSwagger { get; set; }
 
     /// <summary>
     /// Swagger UI URL prefix. Empty string serves the UI at the site root ("/").
@@ -30,8 +30,9 @@ public sealed class ServiceDefaultsOptions
     public bool EnableIdempotency { get; set; } = true;
 
     /// <summary>
-    /// When true, endpoints require an authenticated user unless marked <c>[AllowAnonymous]</c>.
-    /// API gateways should set this to false so anonymous routes (login/register/swagger) can pass through.
+    /// When true, endpoints require an authenticated user unless marked <c>[AllowAnonymous]</c>
+    /// (or, for YARP, <c>AuthorizationPolicy: Anonymous</c>). Gateways should keep this true and
+    /// allowlist only public login/refresh routes.
     /// </summary>
     public bool RequireAuthenticatedByDefault { get; set; } = true;
 

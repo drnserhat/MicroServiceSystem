@@ -48,6 +48,7 @@ public static class MessagingExtensions
         services.AddSingleton<IIntegrationEventSerializer, IntegrationEventSerializer>();
         services.AddSingleton<IIntegrationEventRegistry>(_ => new IntegrationEventRegistry(assemblies));
         services.AddSingleton<RabbitMqConnectionProvider>();
+        services.AddSingleton<RabbitMqChannelPool>();
         services.AddSingleton<RabbitMqTopologyProvisioner>();
         services.AddSingleton<IMessagePublisher, RabbitMqMessagePublisher>();
         services.AddSingleton<IntegrationEventDispatcher>();
@@ -65,8 +66,14 @@ public static class MessagingExtensions
     /// </summary>
     public static IServiceCollection AddOutboxProcessor(this IServiceCollection services)
     {
+        services.TryAddSingleton<OutboxRelayDiagnostics>();
         services.AddHostedService<OutboxProcessorService>();
         services.AddHostedService<OutboxCleanupService>();
+
+        services.AddHealthChecks()
+            .AddCheck<OutboxRelayHealthCheck>(
+                "outbox-relay",
+                tags: ["ready", "broker"]);
 
         return services;
     }

@@ -1,0 +1,38 @@
+{{- if .Values.migrate.enabled }}
+# Optional Job: image must contain the repository checkout and deploy/migrate/migrate-all.sh.
+# Prefer running deploy/migrate (or CI) before helm install — apps never auto-migrate in Production.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "msf.fullname" . }}-migrate
+  labels:
+    {{- include "msf.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        {{- include "msf.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: migrate
+          image: {{ .Values.migrate.image | quote }}
+          imagePullPolicy: IfNotPresent
+          workingDir: /src
+          command: ["/bin/bash", "deploy/migrate/migrate-all.sh"]
+          env:
+            - name: POSTGRES_HOST
+              value: {{ .Values.migrate.postgresHost | quote }}
+            - name: POSTGRES_PORT
+              value: {{ .Values.migrate.postgresPort | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.migrate.postgresUser | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.migrate.postgresPassword | quote }}
+{{- end }}

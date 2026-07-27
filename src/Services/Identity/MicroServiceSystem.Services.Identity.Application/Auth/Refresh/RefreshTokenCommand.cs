@@ -1,7 +1,10 @@
 using FluentValidation;
 using MicroServiceSystem.BuildingBlocks.Application.Messaging;
 using MicroServiceSystem.BuildingBlocks.Authentication.Abstractions;
+using MicroServiceSystem.BuildingBlocks.MultiTenancy;
+using MicroServiceSystem.BuildingBlocks.MultiTenancy.Abstractions;
 using MicroServiceSystem.Services.Identity.Application.Abstractions;
+using MicroServiceSystem.Services.Identity.Application.Tenants;
 using MicroServiceSystem.Services.Identity.Domain.Aggregates;
 using MicroServiceSystem.SharedKernel.Abstractions;
 using MicroServiceSystem.SharedKernel.Results;
@@ -24,18 +27,52 @@ public sealed class RefreshTokenCommandHandler(
     IRoleRepository roles,
     IRefreshTokenRepository refreshTokens,
     ITokenService tokenService,
-    ICurrentTenant currentTenant) : ICommandHandler<RefreshTokenCommand, Login.LoginResponse>
+    ICurrentTenant currentTenant,
+    ITenantStore tenants,
+    IUnitOfWork unitOfWork) : ICommandHandler<RefreshTokenCommand, Login.LoginResponse>
 {
     public async Task<Result<Login.LoginResponse>> Handle(
         RefreshTokenCommand command,
         CancellationToken cancellationToken)
     {
-        using IDisposable tenantScope = currentTenant.Change(command.TenantId);
+        Result<TenantInfo> tenant =
+            await TenantAccess.RequireActiveAsync(tenants, command.TenantId, cancellationToken);
+
+        if (tenant.IsFailure)
+        {
+            return Result.Failure<Login.LoginResponse>(tenant.Error);
+        }
+
+        using IDisposable tenantScope = currentTenant.Change(command.TenantId, tenant.Value.Name);
 
         string tokenHash = tokenService.ComputeRefreshTokenHash(command.RefreshToken);
         RefreshToken? existing = await refreshTokens.FindByHashAsync(tokenHash, cancellationToken);
 
-        if (existing is null || !existing.IsActive)
+        if (existing is null)
+        {
+            return IdentityErrors.RefreshTokenInvalid;
+        }
+
+        // A token that was already rotated is being presented again. The legitimate client moved on to
+        // the replacement, so a replay means the token leaked; end the whole family rather than just
+        // rejecting this one call, otherwise the thief keeps whatever token they stole.
+        if (existing.RevokedAtUtc is not null)
+        {
+            foreach (RefreshToken active in await refreshTokens.ListActiveForUserAsync(
+                existing.UserId,
+                cancellationToken))
+            {
+                active.Revoke();
+                refreshTokens.Update(active);
+            }
+
+            // The pipeline skips its commit for failed results, so the revocations are saved here.
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return IdentityErrors.RefreshTokenReuseDetected;
+        }
+
+        if (!existing.IsActive)
         {
             return IdentityErrors.RefreshTokenInvalid;
         }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using MicroServiceSystem.BuildingBlocks.Messaging.Abstractions;
 using MicroServiceSystem.Contracts.Abstractions;
 
@@ -11,7 +12,11 @@ public sealed class IntegrationEventSerializer : IIntegrationEventSerializer
     public static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        PropertyNameCaseInsensitive = true
+        // The envelope resolves through generated metadata; event payload types are only known at
+        // runtime, so the reflection resolver stays behind it as a fallback.
+        TypeInfoResolver = JsonTypeInfoResolver.Combine(
+            MessagingJsonContext.Default,
+            new DefaultJsonTypeInfoResolver())
     };
 
     public IntegrationEventEnvelope Serialize(IIntegrationEvent integrationEvent, string source)

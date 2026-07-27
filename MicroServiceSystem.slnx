@@ -31,6 +31,7 @@
     <Project Path="src/BuildingBlocks/BuildingBlocks.Persistence/MicroServiceSystem.BuildingBlocks.Persistence.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Resilience/MicroServiceSystem.BuildingBlocks.Resilience.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.ServiceDefaults/MicroServiceSystem.BuildingBlocks.ServiceDefaults.csproj" />
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Saga/MicroServiceSystem.BuildingBlocks.Saga.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Storage/MicroServiceSystem.BuildingBlocks.Storage.csproj" />
   </Folder>
 

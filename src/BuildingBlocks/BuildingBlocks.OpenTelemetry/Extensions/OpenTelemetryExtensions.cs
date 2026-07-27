@@ -95,7 +95,8 @@ public static class OpenTelemetryExtensions
 
         if (options is { MetricsEnabled: true, PrometheusScrapingEnabled: true })
         {
-            app.MapPrometheusScrapingEndpoint(options.PrometheusScrapingPath);
+            app.MapPrometheusScrapingEndpoint(options.PrometheusScrapingPath)
+                .AllowAnonymous();
         }
 
         return app;

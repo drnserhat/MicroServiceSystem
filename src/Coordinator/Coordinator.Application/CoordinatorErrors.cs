@@ -15,4 +15,15 @@ public static class CoordinatorErrors
 
     public static readonly Error SagaNotFound =
         Error.NotFound("coordinator.saga_not_found", "Registration saga was not found.");
+
+    public static readonly Error TenantNotFound =
+        Error.NotFound("coordinator.tenant_not_found", "Tenant was not found.");
+
+    public static readonly Error TenantInactive =
+        Error.Forbidden("coordinator.tenant_inactive", "Tenant is inactive.");
+
+    public static readonly Error TenantScopeMismatch =
+        Error.Forbidden(
+            "coordinator.tenant_scope_mismatch",
+            "The registration tenant must match the caller's tenant.");
 }

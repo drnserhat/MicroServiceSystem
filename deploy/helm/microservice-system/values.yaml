@@ -1,0 +1,119 @@
+# GHCR images published by CI: ghcr.io/<owner>/msf-<name>:<tag>
+image:
+  registry: ghcr.io
+  # Set to your GitHub org/user (CI uses github.repository_owner).
+  repositoryOwner: REPLACE_ME
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+# - name: ghcr-pull
+
+nameOverride: ""
+fullnameOverride: ""
+
+aspnetcoreEnvironment: Production
+
+jwt:
+  issuer: msf
+  audience: msf
+  requireHttpsMetadata: "false"
+
+# External infrastructure (not deployed by this chart). Provide real endpoints before install.
+infrastructure:
+  redisConnection: redis:6379
+  rabbitmq:
+    host: rabbitmq
+    username: msf
+    # password comes from secrets below
+  mongoConnectionString: mongodb://mongodb:27017
+
+# Secrets — override via --set-file / SealedSecrets / ExternalSecrets in real clusters.
+# Never commit production values.
+secrets:
+  jwtSigningKey: "replace-with-at-least-32-random-bytes"
+  internalApiKey: "replace-with-a-long-random-internal-api-key"
+  rabbitmqPassword: "change-me"
+  connectionStrings:
+    identity: "Host=postgres;Port=5432;Database=identity;Username=msf;Password=change-me"
+    user: "Host=postgres;Port=5432;Database=user;Username=msf;Password=change-me"
+    coordinator: "Host=postgres;Port=5432;Database=coordinator;Username=msf;Password=change-me"
+    audit: "Host=postgres;Port=5432;Database=audit;Username=msf;Password=change-me"
+    file: "Host=postgres;Port=5432;Database=file;Username=msf;Password=change-me"
+    location: "Host=postgres;Port=5432;Database=location;Username=msf;Password=change-me"
+    notification: "Host=postgres;Port=5432;Database=notification;Username=msf;Password=change-me"
+    settings: "Host=postgres;Port=5432;Database=settings;Username=msf;Password=change-me"
+
+# Apply schemas before install (CI migrate job / deploy/migrate). Apps never auto-migrate in Production.
+migrate:
+  # Optional one-shot Job: requires an image that contains the repo + deploy/migrate/migrate-all.sh
+  # (compose uses mcr.microsoft.com/dotnet/sdk:10.0 with a source mount). Disabled by default.
+  enabled: false
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  postgresHost: postgres
+  postgresPort: "5432"
+  postgresUser: msf
+  postgresPassword: change-me
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Lite default: gateway + identity + user + coordinator. Enable the rest for full stack.
+apps:
+  gateway:
+    enabled: true
+    replicas: 1
+    service:
+      type: LoadBalancer
+      port: 80
+    healthPath: /health/live
+  identity:
+    enabled: true
+    replicas: 1
+    database: identity
+    healthPath: /health/ready
+  user:
+    enabled: true
+    replicas: 1
+    database: user
+    healthPath: /health/ready
+  coordinator:
+    enabled: true
+    replicas: 1
+    database: coordinator
+    healthPath: /health/ready
+  notification:
+    enabled: false
+    replicas: 1
+    database: notification
+    healthPath: /health/ready
+  file:
+    enabled: false
+    replicas: 1
+    database: file
+    healthPath: /health/ready
+  audit:
+    enabled: false
+    replicas: 1
+    database: audit
+    healthPath: /health/ready
+  settings:
+    enabled: false
+    replicas: 1
+    database: settings
+    healthPath: /health/ready
+  location:
+    enabled: false
+    replicas: 1
+    database: location
+    healthPath: /health/ready
+  logging:
+    enabled: false
+    replicas: 1
+    # Mongo-backed; no Postgres connection string
+    healthPath: /health/ready

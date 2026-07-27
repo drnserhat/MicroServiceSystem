@@ -36,6 +36,7 @@ public sealed class GetUserProfileByIdQueryHandler(IUserProfileRepository profil
             profile.FirstName,
             profile.LastName,
             profile.DisplayName,
-            profile.IsActive);
+            profile.IsActive,
+            profiles.GetConcurrencyVersion(profile));
     }
 }

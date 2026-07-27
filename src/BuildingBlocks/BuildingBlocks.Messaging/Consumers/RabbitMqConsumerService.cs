@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -15,6 +14,7 @@ namespace MicroServiceSystem.BuildingBlocks.Messaging.Consumers;
 
 public sealed class RabbitMqConsumerService(
     RabbitMqConnectionProvider connectionProvider,
+    RabbitMqChannelPool channelPool,
     RabbitMqTopologyProvisioner topologyProvisioner,
     MessagingTopology topology,
     IntegrationEventDispatcher dispatcher,
@@ -35,8 +35,14 @@ public sealed class RabbitMqConsumerService(
         await topologyProvisioner.ProvisionAsync(declareConsumerQueues: true, stoppingToken);
 
         RabbitMqOptions rabbitOptions = options.Value;
+        ushort dispatchConcurrency = (ushort)Math.Clamp(rabbitOptions.ConsumerConcurrency, 1, ushort.MaxValue);
 
-        _channel = await connectionProvider.CreateChannelAsync(false, stoppingToken);
+        // Without an explicit dispatch concurrency the client hands deliveries to the handler one at a
+        // time, so prefetch alone would only buffer messages instead of processing them in parallel.
+        _channel = await connectionProvider.CreateChannelAsync(
+            publisherConfirms: false,
+            consumerDispatchConcurrency: dispatchConcurrency,
+            cancellationToken: stoppingToken);
 
         await _channel.BasicQosAsync(0, rabbitOptions.PrefetchCount, false, stoppingToken);
 
@@ -46,7 +52,11 @@ public sealed class RabbitMqConsumerService(
 
         await _channel.BasicConsumeAsync(topology.QueueName, autoAck: false, consumer, stoppingToken);
 
-        logger.LogInformation("Consuming {Queue} with prefetch {Prefetch}", topology.QueueName, rabbitOptions.PrefetchCount);
+        logger.LogInformation(
+            "Consuming {Queue} with prefetch {Prefetch} and dispatch concurrency {Concurrency}",
+            topology.QueueName,
+            rabbitOptions.PrefetchCount,
+            dispatchConcurrency);
 
         try
         {
@@ -79,9 +89,8 @@ public sealed class RabbitMqConsumerService(
 
         try
         {
-            string payload = Encoding.UTF8.GetString(deliveryArguments.Body.Span);
             envelope = JsonSerializer.Deserialize<IntegrationEventEnvelope>(
-                payload,
+                deliveryArguments.Body.Span,
                 IntegrationEventSerializer.SerializerOptions);
 
             if (envelope is null)
@@ -90,10 +99,17 @@ public sealed class RabbitMqConsumerService(
                 return;
             }
 
-            await dispatcher.DispatchAsync(envelope, cancellationToken);
+            DispatchOutcome outcome = await dispatcher.DispatchAsync(envelope, cancellationToken);
+
+            if (outcome == DispatchOutcome.Contended)
+            {
+                await RescheduleContendedAsync(deliveryArguments, envelope, cancellationToken);
+                return;
+            }
+
             await _channel!.BasicAckAsync(deliveryArguments.DeliveryTag, multiple: false, cancellationToken);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
                 exception,
@@ -102,6 +118,25 @@ public sealed class RabbitMqConsumerService(
 
             await RetryOrDeadLetterAsync(deliveryArguments, envelope, rabbitOptions, exception, cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Another consumer holds the inbox lease. Requeuing straight away would spin against the broker and
+    /// the database until that lease expires, so the delivery goes through the delayed retry queue instead
+    /// and the attempt counter is left untouched.
+    /// </summary>
+    private async Task RescheduleContendedAsync(
+        BasicDeliverEventArgs deliveryArguments,
+        IntegrationEventEnvelope envelope,
+        CancellationToken cancellationToken)
+    {
+        logger.LogDebug(
+            "Message {MessageId} is reserved by another consumer, rescheduling through {RetryQueue}",
+            envelope.MessageId,
+            topology.RetryQueueName);
+
+        await PublishToRetryQueueAsync(envelope, cancellationToken);
+        await _channel!.BasicAckAsync(deliveryArguments.DeliveryTag, multiple: false, cancellationToken);
     }
 
     private async Task RetryOrDeadLetterAsync(
@@ -119,34 +154,52 @@ public sealed class RabbitMqConsumerService(
             return;
         }
 
-        IntegrationEventEnvelope retryEnvelope = envelope with { AttemptCount = attemptCount };
+        await PublishToRetryQueueAsync(envelope with { AttemptCount = attemptCount }, cancellationToken);
+        await _channel!.BasicAckAsync(deliveryArguments.DeliveryTag, multiple: false, cancellationToken);
 
-        byte[] body = Encoding.UTF8.GetBytes(
-            JsonSerializer.Serialize(retryEnvelope, IntegrationEventSerializer.SerializerOptions));
+        logger.LogWarning(
+            "Message {MessageId} scheduled for retry {AttemptCount}/{MaxAttempts}",
+            envelope.MessageId,
+            attemptCount,
+            rabbitOptions.MaxDeliveryAttempts);
+    }
+
+    /// <summary>
+    /// Uses a confirmed publisher channel: the original delivery is only acked once the broker has
+    /// accepted the retry copy, otherwise a lost republish would silently drop the message.
+    /// </summary>
+    private async Task PublishToRetryQueueAsync(
+        IntegrationEventEnvelope envelope,
+        CancellationToken cancellationToken)
+    {
+        byte[] body = JsonSerializer.SerializeToUtf8Bytes(
+            envelope,
+            IntegrationEventSerializer.SerializerOptions);
 
         var properties = new BasicProperties
         {
-            MessageId = retryEnvelope.MessageId.ToString(),
-            Type = retryEnvelope.EventName,
+            MessageId = envelope.MessageId.ToString(),
+            Type = envelope.EventName,
             ContentType = "application/json",
             DeliveryMode = DeliveryModes.Persistent
         };
 
-        await _channel!.BasicPublishAsync(
-            exchange: string.Empty,
-            routingKey: topology.RetryQueueName,
-            mandatory: false,
-            basicProperties: properties,
-            body: body,
-            cancellationToken: cancellationToken);
+        IChannel channel = await channelPool.RentAsync(cancellationToken);
 
-        await _channel.BasicAckAsync(deliveryArguments.DeliveryTag, multiple: false, cancellationToken);
-
-        logger.LogWarning(
-            "Message {MessageId} scheduled for retry {AttemptCount}/{MaxAttempts}",
-            retryEnvelope.MessageId,
-            attemptCount,
-            rabbitOptions.MaxDeliveryAttempts);
+        try
+        {
+            await channel.BasicPublishAsync(
+                exchange: string.Empty,
+                routingKey: topology.RetryQueueName,
+                mandatory: false,
+                basicProperties: properties,
+                body: body,
+                cancellationToken: cancellationToken);
+        }
+        finally
+        {
+            await channelPool.ReturnAsync(channel);
+        }
     }
 
     private async Task MoveToDeadLetterAsync(

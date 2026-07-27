@@ -6,8 +6,9 @@ using Microsoft.Extensions.Logging;
 namespace MicroServiceSystem.BuildingBlocks.Persistence.EntityFramework;
 
 /// <summary>
-/// Applies pending migrations at startup. Intended for local and container environments; production
-/// pipelines run the migration job separately.
+/// Applies pending migrations at startup. Intended for local and container Development only.
+/// Production keeps <c>ApplyMigrationsOnStartup=false</c> and runs
+/// <c>deploy/migrate/migrate-all.sh</c> (or the CI migrate job) before rolling out new images.
 /// </summary>
 public sealed class DatabaseMigrationService<TContext>(
     IServiceScopeFactory scopeFactory,

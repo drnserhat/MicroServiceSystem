@@ -3,9 +3,11 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MicroServiceSystem.BuildingBlocks.Authorization;
 using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Controllers;
+using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Http;
 using MicroServiceSystem.Services.User.Application.Profiles.Create;
 using MicroServiceSystem.Services.User.Application.Profiles.Deactivate;
 using MicroServiceSystem.Services.User.Application.Profiles.GetById;
+using MicroServiceSystem.Services.User.Application.Profiles.Update;
 using MicroServiceSystem.SharedKernel.Constants;
 using MicroServiceSystem.SharedKernel.Results;
 
@@ -33,7 +35,7 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
                 request.TenantId),
             cancellationToken);
 
-        return ToActionResult(result);
+        return ToActionResultWithETag(result, profile => profile.Version);
     }
 
     [AuthorizeInternalService]
@@ -58,7 +60,31 @@ public sealed class UsersController(ISender sender) : ApiControllerBase
             new GetUserProfileByIdQuery(id),
             cancellationToken);
 
-        return ToActionResult(result);
+        return ToActionResultWithETag(result, profile => profile.Version);
+    }
+
+    [HttpPut("profiles/{id:guid}")]
+    [HasPermission(FrameworkPermissions.UsersProfilesUpdate)]
+    public async Task<IActionResult> UpdateProfile(
+        Guid id,
+        [FromBody] UpdateProfileRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!EntityTag.TryGetIfMatch(Request, out uint expectedVersion))
+        {
+            return MissingIfMatch();
+        }
+
+        Result<UserProfileResponse> result = await sender.Send(
+            new UpdateUserProfileCommand(
+                id,
+                request.FirstName,
+                request.LastName,
+                request.DisplayName,
+                expectedVersion),
+            cancellationToken);
+
+        return ToActionResultWithETag(result, profile => profile.Version);
     }
 }
 
@@ -68,5 +94,7 @@ public sealed record CreateProfileRequest(
     string LastName,
     string? DisplayName,
     Guid TenantId);
+
+public sealed record UpdateProfileRequest(string FirstName, string LastName, string? DisplayName);
 
 public sealed record DeactivateProfileRequest(string Reason, Guid TenantId);

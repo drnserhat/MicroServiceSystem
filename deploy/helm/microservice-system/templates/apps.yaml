@@ -1,0 +1,146 @@
+{{- $root := . }}
+{{- range $name, $app := .Values.apps }}
+{{- if and $app.enabled (ne $name "gateway") }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "msf.serviceName" (dict "root" $root "name" $name) }}
+  labels:
+    {{- include "msf.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  replicas: {{ $app.replicas }}
+  selector:
+    matchLabels:
+      {{- include "msf.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "msf.selectorLabels" $root | nindent 8 }}
+        app.kubernetes.io/component: {{ $name }}
+    spec:
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: {{ include "msf.image" (dict "Values" $root.Values "name" $name) }}
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ $root.Values.aspnetcoreEnvironment | quote }}
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: Authentication__Jwt__Issuer
+              value: {{ $root.Values.jwt.issuer | quote }}
+            - name: Authentication__Jwt__Audience
+              value: {{ $root.Values.jwt.audience | quote }}
+            - name: Authentication__Jwt__RequireHttpsMetadata
+              value: {{ $root.Values.jwt.requireHttpsMetadata | quote }}
+            - name: Authentication__Jwt__SigningKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" $root }}-secrets
+                  key: JWT_SIGNING_KEY
+            {{- if or (eq $name "identity") (eq $name "user") (eq $name "coordinator") }}
+            - name: Authentication__InternalService__Enabled
+              value: "true"
+            - name: Authentication__InternalService__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" $root }}-secrets
+                  key: INTERNAL_API_KEY
+            {{- end }}
+            {{- if ne $name "logging" }}
+            - name: Persistence__Postgres__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" $root }}-secrets
+                  key: {{ $name | upper }}_CONNECTION_STRING
+            - name: Persistence__Postgres__ApplyMigrationsOnStartup
+              value: "false"
+            - name: Messaging__RabbitMq__Host
+              value: {{ $root.Values.infrastructure.rabbitmq.host | quote }}
+            - name: Messaging__RabbitMq__UserName
+              value: {{ $root.Values.infrastructure.rabbitmq.username | quote }}
+            - name: Messaging__RabbitMq__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" $root }}-secrets
+                  key: RABBITMQ_PASSWORD
+            {{- else }}
+            - name: Persistence__Mongo__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" $root }}-secrets
+                  key: MONGO_CONNECTION_STRING
+            {{- end }}
+            {{- if or (eq $name "identity") (eq $name "user") (eq $name "coordinator") (eq $name "notification") }}
+            - name: Cache__ConnectionString
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "msf.fullname" $root }}-secrets
+                  key: REDIS_CONNECTION
+            {{- end }}
+            {{- if eq $name "coordinator" }}
+            - name: Services__Identity__BaseUrl
+              value: http://{{ include "msf.serviceName" (dict "root" $root "name" "identity") }}:8080/
+            - name: Services__User__BaseUrl
+              value: http://{{ include "msf.serviceName" (dict "root" $root "name" "user") }}:8080/
+            {{- end }}
+            {{- if eq $name "file" }}
+            - name: Storage__Provider
+              value: Local
+            - name: Storage__Local__RootPath
+              value: /data/files
+            {{- end }}
+          {{- if eq $name "file" }}
+          volumeMounts:
+            - name: file-data
+              mountPath: /data/files
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: {{ $app.healthPath }}
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: {{ $app.healthPath }}
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            {{- toYaml $root.Values.resources | nindent 12 }}
+      {{- if eq $name "file" }}
+      volumes:
+        - name: file-data
+          emptyDir: {}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "msf.serviceName" (dict "root" $root "name" $name) }}
+  labels:
+    {{- include "msf.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "msf.selectorLabels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+{{- end }}
+{{- end }}

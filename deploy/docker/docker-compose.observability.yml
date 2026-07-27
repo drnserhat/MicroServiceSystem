@@ -1,0 +1,54 @@
+# Optional overlay: export traces/metrics to the Jaeger all-in-one OTLP endpoint.
+# Use with the obs (or full) profile so jaeger is running:
+#
+#   docker compose -f deploy/docker/docker-compose.yml \
+#     -f deploy/docker/docker-compose.apps.yml \
+#     -f deploy/docker/docker-compose.resources.yml \
+#     -f deploy/docker/docker-compose.observability.yml \
+#     --profile obs up -d --build
+#
+# UI: http://localhost:16686  ·  Prometheus: http://localhost:9090  ·  Grafana: http://localhost:3000
+
+services:
+  gateway:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+    depends_on:
+      jaeger:
+        condition: service_started
+
+  identity:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  user:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  coordinator:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  notification:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  file:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  audit:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  settings:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  location:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317
+
+  logging:
+    environment:
+      Telemetry__OtlpEndpoint: http://jaeger:4317

@@ -43,6 +43,12 @@ public sealed class RabbitMqOptions
 
     public bool PublisherConfirms { get; set; } = true;
 
+    /// <summary>
+    /// Channels kept alive for publishing. Opening a channel is a broker round trip, so the relay reuses
+    /// them instead of paying that cost per message.
+    /// </summary>
+    public int PublisherChannelPoolSize { get; set; } = 8;
+
     public int ConnectionRetryCount { get; set; } = 10;
 
     public int ConnectionRetryDelaySeconds { get; set; } = 3;

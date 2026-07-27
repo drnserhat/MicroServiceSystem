@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Application\MicroServiceSystem.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Authentication\MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Caching\MicroServiceSystem.BuildingBlocks.Caching.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.MultiTenancy\MicroServiceSystem.BuildingBlocks.MultiTenancy.csproj" />
     <ProjectReference Include="..\..\..\Shared\Contracts\MicroServiceSystem.Contracts.csproj" />
   </ItemGroup>
 </Project>

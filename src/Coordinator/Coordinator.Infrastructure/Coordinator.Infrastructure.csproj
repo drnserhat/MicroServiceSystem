@@ -4,6 +4,10 @@
     <ProjectReference Include="..\Coordinator.Persistence\Coordinator.Persistence.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Authentication\MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Messaging\MicroServiceSystem.BuildingBlocks.Messaging.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Resilience\MicroServiceSystem.BuildingBlocks.Resilience.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Saga\MicroServiceSystem.BuildingBlocks.Saga.csproj" />
     <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
 </Project>

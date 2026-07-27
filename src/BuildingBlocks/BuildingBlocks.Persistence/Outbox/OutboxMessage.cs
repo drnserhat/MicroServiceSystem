@@ -27,4 +27,17 @@ public sealed class OutboxMessage
     public DateTimeOffset? ProcessedOnUtc { get; set; }
 
     public string? Error { get; set; }
+
+    /// <summary>
+    /// Set when the relay stops retrying this row. A dead-lettered message is never claimed again;
+    /// it stays visible so operators can inspect <see cref="Error"/> instead of vanishing into a
+    /// silent backlog of rows that only <c>attempt_count &gt;= max</c> would have excluded.
+    /// </summary>
+    public DateTimeOffset? DeadLetteredOnUtc { get; set; }
+
+    /// <summary>Exclusive lease end for multi-instance outbox relays.</summary>
+    public DateTimeOffset? LockedUntilUtc { get; set; }
+
+    /// <summary>Worker that currently holds the lease.</summary>
+    public string? LockedBy { get; set; }
 }

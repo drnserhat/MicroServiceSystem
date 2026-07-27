@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MicroServiceSystem.BuildingBlocks.Authorization;
+using MicroServiceSystem.BuildingBlocks.MultiTenancy.Abstractions;
 using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Results;
 using MicroServiceSystem.Services.Identity.Application.Auth.Disable;
 using MicroServiceSystem.Services.Identity.Application.Auth.Login;
@@ -13,19 +14,34 @@ using MicroServiceSystem.SharedKernel.Results;
 
 namespace MicroServiceSystem.Services.Identity.Api.Controllers;
 
+/// <summary>
+/// Auth endpoints take <c>TenantId</c> in the body and switch ambient tenant themselves, so they are
+/// marked tenant-independent at the middleware layer. Catalog membership is still enforced in the
+/// handlers via <see cref="ITenantStore"/>.
+/// </summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
+[TenantIndependent]
 public sealed class AuthController(ISender sender) : ControllerBase
 {
-    [AllowAnonymous]
+    /// <summary>
+    /// Provisioning entry point for the Coordinator registration saga only. It is not anonymous: an
+    /// open endpoint that accepts a caller supplied tenant would let anyone create users in any tenant.
+    /// </summary>
+    [AuthorizeInternalService]
     [HttpPost("register")]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
         Result<RegisterIdentityUserResponse> result = await sender.Send(
-            new RegisterIdentityUserCommand(request.Email, request.UserName, request.Password, request.TenantId),
+            new RegisterIdentityUserCommand(
+                request.UserId,
+                request.Email,
+                request.UserName,
+                request.Password,
+                request.TenantId),
             cancellationToken);
 
         return ToActionResult(result);
@@ -84,7 +100,7 @@ public sealed class AuthController(ISender sender) : ControllerBase
                 ApiResponse<T>.Failure(result.Error, HttpContext.TraceIdentifier));
 }
 
-public sealed record RegisterRequest(string Email, string UserName, string Password, Guid TenantId);
+public sealed record RegisterRequest(Guid UserId, string Email, string UserName, string Password, Guid TenantId);
 
 public sealed record LoginRequest(string Email, string Password, Guid TenantId);
 

@@ -29,8 +29,14 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
 
         builder.Property(message => message.Error).HasMaxLength(4000);
 
+        builder.Property(message => message.LockedBy).HasMaxLength(128);
+
         // The relay always scans unprocessed rows in arrival order; this index serves exactly that scan.
         builder.HasIndex(message => new { message.ProcessedOnUtc, message.OccurredOnUtc })
             .HasDatabaseName("ix_outbox_messages_unprocessed");
+
+        // Health checks count open poison rows; an index keeps that cheap even when the table is large.
+        builder.HasIndex(message => message.DeadLetteredOnUtc)
+            .HasDatabaseName("ix_outbox_messages_dead_lettered");
     }
 }

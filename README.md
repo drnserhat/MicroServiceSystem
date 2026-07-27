@@ -16,6 +16,7 @@ Non negotiable rules:
 - Business rules live in the domain, never in controllers.
 - Repositories are aggregate scoped. Generic repositories are off by default.
 - State changes and published events are kept consistent by the outbox; consumers are idempotent through the inbox.
+- Multi-service write workflows use **orchestration sagas** (Coordinator); fan-out side effects use **choreography** (integration events). Distributed 2PC is intentionally out of scope — see [docs/distributed-workflows.md](docs/distributed-workflows.md).
 
 ## Repository layout
 
@@ -29,7 +30,7 @@ src/
   Services/                  Bounded contexts
 templates/                   dotnet new templates for services and CRUD aggregates
 tests/Architecture/          Architecture rules enforced on every build
-deploy/                      Docker and observability composition
+deploy/                      Docker, Helm, migrate, secrets, observability
 ```
 
 Each service follows the same shape:
@@ -75,16 +76,58 @@ docker compose -f deploy/docker/docker-compose.yml \
   -f deploy/docker/docker-compose.resources.yml \
   --profile full up -d --build
 
-# lite + observability only
+# lite + observability (Seq, Prometheus, Grafana, Jaeger)
 docker compose -f deploy/docker/docker-compose.yml \
   -f deploy/docker/docker-compose.apps.yml \
   -f deploy/docker/docker-compose.resources.yml \
+  -f deploy/docker/docker-compose.observability.yml \
   --profile obs up -d --build
+```
+
+With the observability overlay, apps export OTLP to Jaeger (`http://localhost:16686`). Prometheus scrapes `/metrics` on every service (`http://localhost:9090`); Grafana is at `http://localhost:3000` (admin/admin).
+
+On push to `main`/`master`/`develop`, CI publishes container images to GHCR as `ghcr.io/<owner>/msf-<service>:<sha|branch|latest>`.
+
+Cluster deploy example: [`deploy/helm/microservice-system`](deploy/helm/microservice-system) (lite: gateway + identity + user + coordinator; external Postgres/Redis/RabbitMQ). Apply migrations first, then:
+
+```bash
+helm upgrade --install msf ./deploy/helm/microservice-system \
+  --namespace msf --create-namespace \
+  --set image.repositoryOwner=<owner> \
+  --set image.tag=<sha-or-latest>
 ```
 
 Host Postgres is published on **5433** by default (`POSTGRES_HOST_PORT`) so it does not clash with a local/other Postgres on 5432.
 
+### Production migrations & secrets
+
+Production API `appsettings.json` files leave secrets empty and keep `ApplyMigrationsOnStartup=false`. Apply schemas before rollout, then inject secrets from the environment (or a vault):
+
+```bash
+# host / CI (defaults: localhost:5433, user/password msf)
+./deploy/migrate/migrate-all.sh          # or migrate-all.ps1 on Windows
+
+# one-shot migrate container against the compose network
+docker compose -f deploy/docker/docker-compose.yml \
+  -f deploy/docker/docker-compose.migrate.yml run --rm migrate
+
+# apps with env-injected secrets (copy example.env → deploy/secrets/.env first)
+docker compose --env-file deploy/secrets/.env \
+  -f deploy/docker/docker-compose.yml \
+  -f deploy/docker/docker-compose.apps.yml \
+  -f deploy/docker/docker-compose.secrets.yml \
+  up -d
+```
+
+Template variables live in `deploy/secrets/example.env` (real `.env` is gitignored). CI runs the migrate script against Postgres in the `migrate` job before the Docker compose validation job.
+
 Gateway: `http://localhost:8080` (opens Swagger UI; choose a service from the dropdown — **Registration** is under **Coordinator**)
+
+The gateway validates JWT by default. Anonymous through the edge: `POST /identity/api/v1/auth/login`, `POST /identity/api/v1/auth/refresh`. Health, `/docs/*`, and Dev Swagger stay anonymous; everything else needs `Authorization: Bearer`.
+
+User profile reads return an `ETag` (and `version` in the JSON). Updates require the same value in `If-Match` or the gateway/API responds **428**; a stale version yields **409**.
+
+Self-signup is closed: `POST /registration` requires a JWT with `registration.users.create` (tenant admin). Development seeds `admin@dev.local` / `DevAdmin!Pass1` for the demo tenant.
 
 | Prefix | Service |
 |--------|---------|
@@ -95,16 +138,25 @@ Gateway: `http://localhost:8080` (opens Swagger UI; choose a service from the dr
 | `/notification` | Notification |
 | `/file` | File |
 | `/audit` | Audit |
-| `/settings` | Settings |
-| `/location` | Location |
-| `/logging` | Logging |
+| `/settings` | Settings (list / get / upsert / delete; ETag + If-Match on update/delete) |
+| `/location` | Location (countries CRUD + ETag/If-Match) |
+| `/logging` | Logging (ingest + filtered list + get-by-id) |
+
+Settings is the exemplar tenant CRUD: `GET /settings` is paged, `GET /settings/{key}` returns `ETag`, create via `PUT` without `If-Match`, update/delete require `If-Match` (428 if missing, 409 on conflict).
 
 ### Register a user (saga)
 
 ```bash
+# 1) Login as the Development admin (seeded in Development)
+TOKEN=$(curl -s -X POST http://localhost:8080/identity/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"admin@dev.local\",\"password\":\"DevAdmin!Pass1\",\"tenantId\":\"11111111-1111-1111-1111-111111111111\"}" \
+  | jq -r '.data.accessToken')
+
+# 2) Provision a member (tenantId must match the admin's tenant)
 curl -X POST http://localhost:8080/registration \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-Id: 11111111-1111-1111-1111-111111111111" \
+  -H "Authorization: Bearer $TOKEN" \
   -d "{\"email\":\"demo@example.com\",\"userName\":\"demo\",\"password\":\"Str0ng!Pass\",\"firstName\":\"Demo\",\"lastName\":\"User\",\"tenantId\":\"11111111-1111-1111-1111-111111111111\"}"
 ```
 

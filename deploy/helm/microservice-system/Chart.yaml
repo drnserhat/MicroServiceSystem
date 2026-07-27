@@ -1,0 +1,11 @@
+apiVersion: v2
+name: microservice-system
+description: Minimal Kubernetes deploy for MicroServiceSystem GHCR images (gateway + APIs).
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - microservices
+  - aspnetcore
+  - yarp
+home: https://github.com/drnserhat/MicroServiceSystem

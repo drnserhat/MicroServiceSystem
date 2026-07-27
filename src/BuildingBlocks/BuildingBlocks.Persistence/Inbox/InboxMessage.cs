@@ -1,8 +1,7 @@
 namespace MicroServiceSystem.BuildingBlocks.Persistence.Inbox;
 
 /// <summary>
-/// De-duplication record for consumed messages. Presence of a processed row is what makes a handler
-/// safe under at-least-once delivery.
+/// De-duplication / reservation record for consumed messages.
 /// </summary>
 public sealed class InboxMessage
 {
@@ -17,4 +16,9 @@ public sealed class InboxMessage
     public int AttemptCount { get; set; }
 
     public string? Error { get; set; }
+
+    /// <summary>
+    /// Soft lock while a handler is in flight. Expired locks can be taken over after a crash.
+    /// </summary>
+    public DateTimeOffset? LockedUntilUtc { get; set; }
 }

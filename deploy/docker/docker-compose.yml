@@ -65,6 +65,16 @@ services:
     volumes:
       - seq_data:/data
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.67.0
+    profiles: ["obs", "full"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+
   prometheus:
     image: prom/prometheus:v3.2.1
     profiles: ["obs", "full"]

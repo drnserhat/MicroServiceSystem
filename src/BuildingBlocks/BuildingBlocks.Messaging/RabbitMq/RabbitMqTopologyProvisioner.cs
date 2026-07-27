@@ -23,7 +23,9 @@ public sealed class RabbitMqTopologyProvisioner(
     {
         RabbitMqOptions rabbitOptions = options.Value;
 
-        await using IChannel channel = await connectionProvider.CreateChannelAsync(false, cancellationToken);
+        await using IChannel channel = await connectionProvider.CreateChannelAsync(
+            publisherConfirms: false,
+            cancellationToken: cancellationToken);
 
         await channel.ExchangeDeclareAsync(
             topology.Exchange,

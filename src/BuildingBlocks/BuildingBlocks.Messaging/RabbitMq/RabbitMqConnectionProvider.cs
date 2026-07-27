@@ -71,13 +71,17 @@ public sealed class RabbitMqConnectionProvider : IAsyncDisposable
         }
     }
 
-    public async Task<IChannel> CreateChannelAsync(bool publisherConfirms, CancellationToken cancellationToken = default)
+    public async Task<IChannel> CreateChannelAsync(
+        bool publisherConfirms,
+        ushort? consumerDispatchConcurrency = null,
+        CancellationToken cancellationToken = default)
     {
         IConnection connection = await GetConnectionAsync(cancellationToken);
 
         var channelOptions = new CreateChannelOptions(
             publisherConfirmationsEnabled: publisherConfirms,
-            publisherConfirmationTrackingEnabled: publisherConfirms);
+            publisherConfirmationTrackingEnabled: publisherConfirms,
+            consumerDispatchConcurrency: consumerDispatchConcurrency);
 
         return await connection.CreateChannelAsync(channelOptions, cancellationToken);
     }

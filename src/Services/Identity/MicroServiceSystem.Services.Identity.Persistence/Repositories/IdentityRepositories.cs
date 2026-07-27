@@ -20,6 +20,13 @@ public sealed class RefreshTokenRepository(IdentityDbContext context)
 {
     public Task<RefreshToken?> FindByHashAsync(string tokenHash, CancellationToken cancellationToken = default) =>
         Set.FirstOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
+
+    public async Task<IReadOnlyList<RefreshToken>> ListActiveForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        await Set
+            .Where(token => token.UserId == userId && token.RevokedAtUtc == null)
+            .ToListAsync(cancellationToken);
 }
 
 public sealed class RoleRepository(IdentityDbContext context)
@@ -41,4 +48,13 @@ public sealed class RoleRepository(IdentityDbContext context)
 
         return await Set.Where(role => ids.Contains(role.Id)).ToListAsync(cancellationToken);
     }
+}
+
+public sealed class TenantRepository(IdentityDbContext context)
+    : EfRepository<Tenant, Guid>(context), ITenantRepository
+{
+    public Task<Tenant?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default) =>
+        Set.FirstOrDefaultAsync(
+            tenant => tenant.Slug == Tenant.NormalizeSlug(slug),
+            cancellationToken);
 }

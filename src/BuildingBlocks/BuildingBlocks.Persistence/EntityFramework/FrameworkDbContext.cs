@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using MicroServiceSystem.SharedKernel.Abstractions;
 using MicroServiceSystem.SharedKernel.DomainEvents;
+using MicroServiceSystem.SharedKernel.Primitives;
 
 namespace MicroServiceSystem.BuildingBlocks.Persistence.EntityFramework;
 
@@ -60,7 +61,18 @@ public abstract class FrameworkDbContext : DbContext, IUnitOfWork
     {
         IReadOnlyList<IDomainEvent> domainEvents = CollectDomainEvents();
 
-        int affectedRows = await base.SaveChangesAsync(cancellationToken);
+        int affectedRows;
+
+        try
+        {
+            affectedRows = await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConcurrencyConflictException(
+                "The record was modified by another request. Reload it and try again.",
+                exception);
+        }
 
         await _domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using MicroServiceSystem.BuildingBlocks.Persistence.EntityFramework;
 using MicroServiceSystem.Services.Identity.Domain.Aggregates;
 
 namespace MicroServiceSystem.Services.Identity.Persistence.Configurations;
@@ -10,6 +11,11 @@ public sealed class IdentityUserConfiguration : IEntityTypeConfiguration<Identit
     {
         builder.ToTable("identity_users");
         builder.HasKey(user => user.Id);
+
+        // Login, role assignment and disable all mutate the same row from different requests; without a
+        // concurrency token the last writer silently wins and lockout counters get lost.
+        builder.UseOptimisticConcurrency();
+
         builder.Property(user => user.Id).ValueGeneratedNever();
         builder.Property(user => user.Email).HasMaxLength(IdentityUserConstraints.EmailMaxLength).IsRequired();
         builder.Property(user => user.UserName).HasMaxLength(IdentityUserConstraints.UserNameMaxLength).IsRequired();
@@ -50,6 +56,11 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
     {
         builder.ToTable("refresh_tokens");
         builder.HasKey(token => token.Id);
+
+        // Makes refresh rotation single-winner: two requests racing on the same token both try to write
+        // the revocation, and the loser fails instead of minting a second valid token family.
+        builder.UseOptimisticConcurrency();
+
         builder.Property(token => token.Id).ValueGeneratedNever();
         builder.Property(token => token.TokenHash).HasMaxLength(128).IsRequired();
         builder.HasIndex(token => token.TokenHash).IsUnique();

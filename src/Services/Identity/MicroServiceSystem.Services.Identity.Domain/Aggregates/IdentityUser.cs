@@ -41,8 +41,13 @@ public sealed class IdentityUser : TenantAggregateRoot<Guid>
 
     public IReadOnlyCollection<Guid> RoleIds => _roleIds;
 
-    public static IdentityUser Register(string email, string userName, string passwordHash)
+    /// <summary>
+    /// Creates a user with a caller supplied id. Orchestrators reserve the id before calling so a lost
+    /// response can be retried or undone against a known identity instead of an unknown one.
+    /// </summary>
+    public static IdentityUser Register(Guid id, string email, string userName, string passwordHash)
     {
+        Ensure.NotEmpty(id);
         Ensure.NotNullOrWhiteSpace(email);
         Ensure.NotNullOrWhiteSpace(userName);
         Ensure.NotNullOrWhiteSpace(passwordHash);
@@ -50,7 +55,7 @@ public sealed class IdentityUser : TenantAggregateRoot<Guid>
         Ensure.MaxLength(userName, IdentityUserConstraints.UserNameMaxLength);
 
         var user = new IdentityUser(
-            Guid.CreateVersion7(),
+            id,
             email.Trim().ToLowerInvariant(),
             userName.Trim(),
             passwordHash);

@@ -76,7 +76,20 @@ public sealed class TenantResolutionMiddleware(RequestDelegate next, ILogger<Ten
         return path.StartsWithSegments("/health")
             || path.StartsWithSegments("/metrics")
             || path.StartsWithSegments("/swagger")
-            || path.StartsWithSegments("/docs");
+            || path.StartsWithSegments("/docs")
+            || IsGatewayAnonymousAuthPath(path);
+    }
+
+    /// <summary>
+    /// Public auth entry points on the gateway carry tenant id in the body, before a JWT exists.
+    /// </summary>
+    private static bool IsGatewayAnonymousAuthPath(PathString path)
+    {
+        string value = path.Value ?? string.Empty;
+
+        return value.StartsWith("/identity/", StringComparison.OrdinalIgnoreCase)
+            && (value.Contains("/auth/login", StringComparison.OrdinalIgnoreCase)
+                || value.Contains("/auth/refresh", StringComparison.OrdinalIgnoreCase));
     }
 
     private static async Task<TenantInfo?> ResolveTenantAsync(

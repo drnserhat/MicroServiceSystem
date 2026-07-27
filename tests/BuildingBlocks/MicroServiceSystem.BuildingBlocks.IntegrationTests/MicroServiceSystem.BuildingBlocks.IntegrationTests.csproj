@@ -8,12 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NSubstitute" />
     <PackageReference Include="Shouldly" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Testing\MicroServiceSystem.Testing.Utilities\MicroServiceSystem.Testing.Utilities.csproj" />
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Authentication\MicroServiceSystem.BuildingBlocks.Authentication.csproj" />
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Caching\MicroServiceSystem.BuildingBlocks.Caching.csproj" />
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Messaging\MicroServiceSystem.BuildingBlocks.Messaging.csproj" />
@@ -23,9 +26,13 @@
     <ProjectReference Include="..\..\..\src\BuildingBlocks\BuildingBlocks.Storage\MicroServiceSystem.BuildingBlocks.Storage.csproj" />
     <ProjectReference Include="..\..\..\src\Shared\Contracts\MicroServiceSystem.Contracts.csproj" />
     <ProjectReference Include="..\..\..\src\Shared\SharedKernel\MicroServiceSystem.SharedKernel.csproj" />
-    <ProjectReference Include="..\..\..\src\Services\Identity\MicroServiceSystem.Services.Identity.Api\MicroServiceSystem.Services.Identity.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Services\Identity\MicroServiceSystem.Services.Identity.Api\MicroServiceSystem.Services.Identity.Api.csproj">
+      <Aliases>IdentityApi</Aliases>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\src\Services\User\MicroServiceSystem.Services.User.Api\MicroServiceSystem.Services.User.Api.csproj" />
-    <ProjectReference Include="..\..\..\src\Coordinator\Coordinator.Api\Coordinator.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Coordinator\Coordinator.Api\Coordinator.Api.csproj">
+      <Aliases>CoordinatorApi</Aliases>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\src\Services\Notification\MicroServiceSystem.Services.Notification.Api\MicroServiceSystem.Services.Notification.Api.csproj" />
     <ProjectReference Include="..\..\..\src\Services\File\MicroServiceSystem.Services.File.Api\MicroServiceSystem.Services.File.Api.csproj" />
     <ProjectReference Include="..\..\..\src\Services\Audit\MicroServiceSystem.Services.Audit.Api\MicroServiceSystem.Services.Audit.Api.csproj" />

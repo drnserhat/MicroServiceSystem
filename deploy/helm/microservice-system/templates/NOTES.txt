@@ -1,0 +1,23 @@
+1. Apply Postgres schemas before install (apps set ApplyMigrationsOnStartup=false):
+
+   ./deploy/migrate/migrate-all.sh
+
+   Or enable values.migrate with an image that contains the repo + migrate script.
+
+2. Set image.repositoryOwner to your GHCR owner (CI publishes ghcr.io/<owner>/msf-*).
+
+3. Override secrets (jwtSigningKey, connection strings, rabbitmq password).
+
+4. Install:
+
+   helm upgrade --install msf ./deploy/helm/microservice-system \
+     --namespace msf --create-namespace \
+     --set image.repositoryOwner=<owner> \
+     --set image.tag=<sha-or-latest>
+
+5. Gateway Service ({{ .Values.apps.gateway.service.type }}):
+
+   kubectl get svc -n {{ .Release.Namespace }} {{ include "msf.serviceName" (dict "root" . "name" "gateway") }}
+
+Lite stack (default): gateway, identity, user, coordinator.
+Enable full profile apps with --set apps.settings.enabled=true (etc.).

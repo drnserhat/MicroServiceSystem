@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace MicroServiceSystem.Contracts.Abstractions;
 
 /// <summary>
@@ -10,6 +12,7 @@ public sealed record IntegrationEventEnvelope
 
     public required string EventName { get; init; }
 
+    [JsonConverter(typeof(RawJsonStringConverter))]
     public required string Payload { get; init; }
 
     public required DateTimeOffset OccurredOnUtc { get; init; }

@@ -60,6 +60,9 @@ public sealed class GlobalExceptionHandler(IHostEnvironment environment, IProble
             BusinessRuleValidationException businessRule =>
                 (StatusCodes.Status422UnprocessableEntity, "Business rule violated", businessRule.Message, businessRule.Code),
 
+            ConcurrencyConflictException concurrency =>
+                (StatusCodes.Status409Conflict, "Concurrency conflict", concurrency.Message, concurrency.Code),
+
             DomainException domainException =>
                 (StatusCodes.Status400BadRequest, "Domain error", domainException.Message, domainException.Code),
 

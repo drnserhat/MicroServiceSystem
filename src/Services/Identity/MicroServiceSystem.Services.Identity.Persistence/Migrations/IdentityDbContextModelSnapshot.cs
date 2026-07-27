@@ -45,6 +45,10 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("event_name");
 
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
+
                     b.Property<DateTimeOffset?>("ProcessedOnUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_on_utc");
@@ -55,6 +59,9 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
 
                     b.HasKey("MessageId")
                         .HasName("pk_inbox_messages");
+
+                    b.HasIndex("LockedUntilUtc")
+                        .HasDatabaseName("ix_inbox_messages_locked_until");
 
                     b.HasIndex("ProcessedOnUtc")
                         .HasDatabaseName("ix_inbox_messages_processed");
@@ -77,6 +84,10 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("correlation_id");
 
+                    b.Property<DateTimeOffset?>("DeadLetteredOnUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("dead_lettered_on_utc");
+
                     b.Property<string>("Error")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
@@ -87,6 +98,15 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("event_name");
+
+                    b.Property<string>("LockedBy")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("locked_by");
+
+                    b.Property<DateTimeOffset?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
 
                     b.Property<DateTimeOffset>("OccurredOnUtc")
                         .HasColumnType("timestamp with time zone")
@@ -117,6 +137,9 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_outbox_messages");
+
+                    b.HasIndex("DeadLetteredOnUtc")
+                        .HasDatabaseName("ix_outbox_messages_dead_lettered");
 
                     b.HasIndex("ProcessedOnUtc", "OccurredOnUtc")
                         .HasDatabaseName("ix_outbox_messages_unprocessed");
@@ -205,6 +228,12 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("user_name");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.PrimitiveCollection<List<Guid>>("_roleIds")
                         .IsRequired()
                         .HasColumnType("uuid[]")
@@ -284,6 +313,12 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_refresh_tokens");
 
@@ -357,6 +392,54 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
                         .HasDatabaseName("ix_roles_tenant_id_normalized_name");
 
                     b.ToTable("roles", "identity");
+                });
+
+            modelBuilder.Entity("MicroServiceSystem.Services.Identity.Domain.Aggregates.Tenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTimeOffset?>("ModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified_at_utc");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("modified_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("slug");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tenants");
+
+                    b.HasIndex("Slug")
+                        .IsUnique()
+                        .HasDatabaseName("ix_tenants_slug");
+
+                    b.ToTable("tenants", "identity");
                 });
 #pragma warning restore 612, 618
         }

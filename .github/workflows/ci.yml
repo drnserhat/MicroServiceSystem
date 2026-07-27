@@ -32,9 +32,67 @@ jobs:
       - name: Test
         run: dotnet test MicroServiceSystem.slnx --configuration Release --no-build --verbosity normal
 
-  docker:
+  migrate:
     runs-on: ubuntu-latest
     needs: build-test
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: msf
+          POSTGRES_PASSWORD: msf
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U msf"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: msf
+      POSTGRES_PASSWORD: msf
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Create service databases
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+          create_db() {
+            local name="$1"
+            local sql_name="$2"
+            if PGPASSWORD=msf psql -h localhost -U msf -d postgres -Atqc "SELECT 1 FROM pg_database WHERE datname = '$name'" | grep -q 1; then
+              echo "Database $name already exists"
+            else
+              PGPASSWORD=msf psql -h localhost -U msf -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $sql_name;"
+            fi
+          }
+          create_db identity identity
+          create_db user '"user"'
+          create_db coordinator coordinator
+          create_db location location
+          create_db notification notification
+          create_db audit audit
+          create_db settings settings
+          create_db file file
+
+      - name: Apply EF migrations
+        run: |
+          chmod +x deploy/migrate/migrate-all.sh
+          ./deploy/migrate/migrate-all.sh
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [build-test, migrate]
     if: github.event_name == 'push'
     steps:
       - name: Checkout
@@ -43,5 +101,84 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Validate compose file
-        run: docker compose -f deploy/docker/docker-compose.yml config
+      - name: Validate compose files
+        run: |
+          docker compose -f deploy/docker/docker-compose.yml config
+          docker compose -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.migrate.yml config
+          docker compose --env-file deploy/secrets/example.env \
+            -f deploy/docker/docker-compose.yml \
+            -f deploy/docker/docker-compose.apps.yml \
+            -f deploy/docker/docker-compose.secrets.yml \
+            config
+          docker compose \
+            -f deploy/docker/docker-compose.yml \
+            -f deploy/docker/docker-compose.apps.yml \
+            -f deploy/docker/docker-compose.observability.yml \
+            --profile obs \
+            config
+
+  publish-images:
+    runs-on: ubuntu-latest
+    needs: [build-test, migrate]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: gateway
+            dockerfile: src/Gateway/Gateway.Api/Dockerfile
+          - name: identity
+            dockerfile: src/Services/Identity/MicroServiceSystem.Services.Identity.Api/Dockerfile
+          - name: user
+            dockerfile: src/Services/User/MicroServiceSystem.Services.User.Api/Dockerfile
+          - name: coordinator
+            dockerfile: src/Coordinator/Coordinator.Api/Dockerfile
+          - name: notification
+            dockerfile: src/Services/Notification/MicroServiceSystem.Services.Notification.Api/Dockerfile
+          - name: file
+            dockerfile: src/Services/File/MicroServiceSystem.Services.File.Api/Dockerfile
+          - name: audit
+            dockerfile: src/Services/Audit/MicroServiceSystem.Services.Audit.Api/Dockerfile
+          - name: settings
+            dockerfile: src/Services/Settings/MicroServiceSystem.Services.Settings.Api/Dockerfile
+          - name: location
+            dockerfile: src/Services/Location/MicroServiceSystem.Services.Location.Api/Dockerfile
+          - name: logging
+            dockerfile: src/Services/Logging/MicroServiceSystem.Services.Logging.Api/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/msf-${{ matrix.name }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=msf-${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=msf-${{ matrix.name }}

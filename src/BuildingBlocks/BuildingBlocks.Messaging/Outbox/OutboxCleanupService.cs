@@ -24,9 +24,14 @@ public sealed class OutboxCleanupService(
                 await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
 
                 IOutboxRepository outbox = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
+                OutboxOptions settings = outboxOptions.Value;
 
-                int removedMessages = await outbox.DeletePublishedOlderThanAsync(
-                    DateTimeOffset.UtcNow.AddDays(-outboxOptions.Value.RetentionDays),
+                int removedPublished = await outbox.DeletePublishedOlderThanAsync(
+                    DateTimeOffset.UtcNow.AddDays(-settings.RetentionDays),
+                    stoppingToken);
+
+                int removedDeadLettered = await outbox.DeleteDeadLetteredOlderThanAsync(
+                    DateTimeOffset.UtcNow.AddDays(-Math.Max(settings.RetentionDays, settings.DeadLetterRetentionDays)),
                     stoppingToken);
 
                 IInboxRepository? inbox = scope.ServiceProvider.GetService<IInboxRepository>();
@@ -38,8 +43,9 @@ public sealed class OutboxCleanupService(
                         stoppingToken);
 
                 logger.LogInformation(
-                    "Message store cleanup removed {OutboxCount} outbox and {InboxCount} inbox records",
-                    removedMessages,
+                    "Message store cleanup removed {OutboxCount} published outbox, {DeadLetterCount} dead-lettered outbox, and {InboxCount} inbox records",
+                    removedPublished,
+                    removedDeadLettered,
                     removedInboxEntries);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

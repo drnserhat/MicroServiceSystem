@@ -21,7 +21,8 @@ public sealed record UserProfileResponse(
     string FirstName,
     string LastName,
     string DisplayName,
-    bool IsActive);
+    bool IsActive,
+    uint Version);
 
 public sealed class CreateUserProfileCommandValidator : AbstractValidator<CreateUserProfileCommand>
 {
@@ -39,6 +40,7 @@ public sealed class CreateUserProfileCommandValidator : AbstractValidator<Create
 public sealed class CreateUserProfileCommandHandler(
     IUserProfileRepository profiles,
     ICurrentTenant currentTenant,
+    IUnitOfWork unitOfWork,
     IIntegrationEventPublisher integrationEvents) : ICommandHandler<CreateUserProfileCommand, UserProfileResponse>
 {
     public async Task<Result<UserProfileResponse>> Handle(
@@ -51,16 +53,13 @@ public sealed class CreateUserProfileCommandHandler(
 
         if (existing is not null)
         {
-            // Idempotent for RegisterUser race: event consumer or saga may create first.
+            // Idempotent for RegisterUser retries: an earlier saga attempt may have created the row
+            // before the response was lost.
             existing.Update(command.FirstName, command.LastName, command.DisplayName);
             profiles.Update(existing);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new UserProfileResponse(
-                existing.Id,
-                existing.FirstName,
-                existing.LastName,
-                existing.DisplayName,
-                existing.IsActive);
+            return ToResponse(existing);
         }
 
         UserProfile profile = UserProfile.Create(
@@ -82,11 +81,17 @@ public sealed class CreateUserProfileCommandHandler(
             },
             cancellationToken);
 
-        return new UserProfileResponse(
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToResponse(profile);
+    }
+
+    private UserProfileResponse ToResponse(UserProfile profile) =>
+        new(
             profile.Id,
             profile.FirstName,
             profile.LastName,
             profile.DisplayName,
-            profile.IsActive);
-    }
+            profile.IsActive,
+            profiles.GetConcurrencyVersion(profile));
 }

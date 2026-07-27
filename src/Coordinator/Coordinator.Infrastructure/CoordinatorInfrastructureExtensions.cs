@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MicroServiceSystem.BuildingBlocks.Authentication.Configuration;
 using MicroServiceSystem.BuildingBlocks.Messaging.Extensions;
+using MicroServiceSystem.BuildingBlocks.Resilience.Extensions;
+using MicroServiceSystem.BuildingBlocks.Saga;
 using MicroServiceSystem.SharedKernel.Models;
 
 namespace Coordinator.Infrastructure;
@@ -20,24 +23,29 @@ public static class CoordinatorInfrastructureExtensions
     {
         services.AddFrameworkMessaging(configuration, "coordinator", CoordinatorApplicationExtensions.ApplicationAssembly);
         services.AddOutboxProcessor();
+        services.AddFrameworkSaga();
+        services.Configure<SagaOptions>(configuration.GetSection(SagaOptions.SectionName));
+        services.AddHostedService<RegisterUserSagaRecoveryService>();
 
         services.Configure<IdentityServiceOptions>(configuration.GetSection(IdentityServiceOptions.SectionName));
         services.Configure<UserServiceOptions>(configuration.GetSection(UserServiceOptions.SectionName));
         services.Configure<InternalServiceOptions>(configuration.GetSection(InternalServiceOptions.SectionName));
 
-        services.AddHttpClient<IIdentityServiceClient, IdentityServiceClient>((sp, client) =>
-        {
-            IdentityServiceOptions options = sp.GetRequiredService<IOptions<IdentityServiceOptions>>().Value;
-            client.BaseAddress = new Uri(options.BaseUrl);
-            AttachInternalApiKey(client, sp);
-        });
+        services.AddFrameworkHttpClient<IIdentityServiceClient, IdentityServiceClient>(configuration)
+            .ConfigureHttpClient((sp, client) =>
+            {
+                IdentityServiceOptions options = sp.GetRequiredService<IOptions<IdentityServiceOptions>>().Value;
+                client.BaseAddress = new Uri(options.BaseUrl);
+                AttachInternalApiKey(client, sp);
+            });
 
-        services.AddHttpClient<IUserServiceClient, UserServiceClient>((sp, client) =>
-        {
-            UserServiceOptions options = sp.GetRequiredService<IOptions<UserServiceOptions>>().Value;
-            client.BaseAddress = new Uri(options.BaseUrl);
-            AttachInternalApiKey(client, sp);
-        });
+        services.AddFrameworkHttpClient<IUserServiceClient, UserServiceClient>(configuration)
+            .ConfigureHttpClient((sp, client) =>
+            {
+                UserServiceOptions options = sp.GetRequiredService<IOptions<UserServiceOptions>>().Value;
+                client.BaseAddress = new Uri(options.BaseUrl);
+                AttachInternalApiKey(client, sp);
+            });
 
         return services;
     }
@@ -78,7 +86,38 @@ public sealed class IdentityServiceClient(HttpClient httpClient) : IIdentityServ
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    public async Task<TenantCatalogResult?> GetTenantAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        using HttpResponseMessage response = await httpClient.GetAsync(
+            $"api/v1/tenants/{tenantId:D}",
+            cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        ApiResponse<TenantPayload>? payload = await response.Content.ReadFromJsonAsync<ApiResponse<TenantPayload>>(
+            SerializerOptions,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode || payload is null || !payload.Succeeded || payload.Data is null)
+        {
+            string detail = payload?.Error?.Description ?? response.ReasonPhrase ?? "Tenant lookup failed.";
+            throw new InvalidOperationException(detail);
+        }
+
+        return new TenantCatalogResult(
+            payload.Data.Id,
+            payload.Data.Name,
+            payload.Data.Slug,
+            payload.Data.IsActive);
+    }
+
     public async Task<IdentityRegistrationResult> RegisterAsync(
+        Guid userId,
         string email,
         string userName,
         string password,
@@ -87,7 +126,7 @@ public sealed class IdentityServiceClient(HttpClient httpClient) : IIdentityServ
     {
         using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
             "api/v1/auth/register",
-            new { email, userName, password, tenantId },
+            new { userId, email, userName, password, tenantId },
             cancellationToken);
 
         ApiResponse<RegisterIdentityPayload>? payload = await response.Content.ReadFromJsonAsync<ApiResponse<RegisterIdentityPayload>>(
@@ -110,6 +149,13 @@ public sealed class IdentityServiceClient(HttpClient httpClient) : IIdentityServ
             new { userId, reason, tenantId },
             cancellationToken);
 
+        // Compensation runs against an id the saga reserved before calling register, so the user may never
+        // have been created. Nothing to undo is a successful undo.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return;
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             throw new InvalidOperationException($"Identity disable failed with status {(int)response.StatusCode}.");
@@ -117,6 +163,8 @@ public sealed class IdentityServiceClient(HttpClient httpClient) : IIdentityServ
     }
 
     private sealed record RegisterIdentityPayload(Guid UserId, string Email, string UserName);
+
+    private sealed record TenantPayload(Guid Id, string Name, string Slug, bool IsActive);
 }
 
 public sealed class UserServiceClient(HttpClient httpClient) : IUserServiceClient
