@@ -1,0 +1,222 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { ApiClientError, isServiceUnavailable } from "@/api/client";
+import { deleteSetting, listSettings, upsertSetting } from "@/api/settings";
+import type { SettingItem } from "@/api/types";
+import { FrameworkPermissions } from "@/auth/permissionCodes";
+import { RequirePermission } from "@/auth/RequirePermission";
+import { useAuth } from "@/auth/AuthContext";
+import { ErrorAlert, FieldErrors, PageHeader, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
+
+export function SettingsPage() {
+  return (
+    <RequirePermission permission={FrameworkPermissions.SettingsValuesRead}>
+      <SettingsPageInner />
+    </RequirePermission>
+  );
+}
+
+function SettingsPageInner() {
+  const { can } = useAuth();
+  const canWrite = can(FrameworkPermissions.SettingsValuesWrite);
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState<SettingItem[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasPrevious, setHasPrevious] = useState(false);
+  const [hasNext, setHasNext] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [failures, setFailures] = useState<Record<string, string[]> | undefined>();
+  const [unavailable, setUnavailable] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [key, setKey] = useState("");
+  const [value, setValue] = useState("");
+  const [editing, setEditing] = useState<SettingItem | null>(null);
+
+  async function load(p = page) {
+    setLoading(true);
+    setError(null);
+    setUnavailable(false);
+    try {
+      const data = await listSettings(p, 20);
+      setItems([...data.items]);
+      setTotalPages(data.totalPages || 1);
+      setHasPrevious(data.hasPreviousPage);
+      setHasNext(data.hasNextPage);
+    } catch (err) {
+      if (isServiceUnavailable(err)) {
+        setUnavailable(true);
+      } else {
+        setError(err instanceof ApiClientError ? err.message : "Failed to load settings.");
+      }
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!canWrite) return;
+    setError(null);
+    setFailures(undefined);
+    try {
+      await upsertSetting(key.trim(), value, editing?.version ?? null);
+      setKey("");
+      setValue("");
+      setEditing(null);
+      await load(page);
+    } catch (err) {
+      if (err instanceof ApiClientError) {
+        setError(err.message);
+        setFailures(err.failures);
+      } else {
+        setError("Save failed.");
+      }
+    }
+  }
+
+  async function onDelete(item: SettingItem) {
+    if (!canWrite || !confirm(`Delete setting "${item.key}"?`)) return;
+    try {
+      await deleteSetting(item.key, item.version);
+      await load(page);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : "Delete failed.");
+    }
+  }
+
+  function startEdit(item: SettingItem) {
+    setEditing(item);
+    setKey(item.key);
+    setValue(item.value);
+  }
+
+  return (
+    <>
+      <PageHeader pretitle="Configuration" title="Settings" />
+      <div className="page-body">
+        <div className="container-xl">
+          {unavailable ? <ServiceUnavailableAlert service="Settings" /> : null}
+          <ErrorAlert error={error} />
+          <FieldErrors failures={failures} />
+
+          {canWrite ? (
+            <div className="card mb-3">
+              <div className="card-header">
+                <h3 className="card-title">{editing ? "Update setting" : "Create setting"}</h3>
+              </div>
+              <form className="card-body" onSubmit={onSubmit}>
+                <div className="row g-3">
+                  <div className="col-md-4">
+                    <label className="form-label">Key</label>
+                    <input
+                      className="form-control"
+                      value={key}
+                      onChange={(e) => setKey(e.target.value)}
+                      required
+                      disabled={Boolean(editing)}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Value</label>
+                    <input
+                      className="form-control"
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" className="btn btn-primary w-100">
+                      {editing ? "Update" : "Create"}
+                    </button>
+                  </div>
+                </div>
+                {editing ? (
+                  <button
+                    type="button"
+                    className="btn btn-link px-0 mt-2"
+                    onClick={() => {
+                      setEditing(null);
+                      setKey("");
+                      setValue("");
+                    }}
+                  >
+                    Cancel edit
+                  </button>
+                ) : null}
+              </form>
+            </div>
+          ) : null}
+
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">Tenant settings</h3>
+            </div>
+            <div className="table-responsive">
+              <table className="table table-vcenter card-table">
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th className="w-1">Version</th>
+                    {canWrite ? <th className="w-1" /> : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className="text-secondary">
+                        Loading…
+                      </td>
+                    </tr>
+                  ) : null}
+                  {!loading && items.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-secondary">
+                        No settings yet.
+                      </td>
+                    </tr>
+                  ) : null}
+                  {items.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <code>{item.key}</code>
+                      </td>
+                      <td className="text-secondary">{item.value}</td>
+                      <td>
+                        <span className="badge bg-azure-lt">{item.version}</span>
+                      </td>
+                      {canWrite ? (
+                        <td className="text-nowrap">
+                          <button type="button" className="btn btn-sm" onClick={() => startEdit(item)}>
+                            Edit
+                          </button>{" "}
+                          <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDelete(item)}>
+                            Delete
+                          </button>
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              hasPrevious={hasPrevious}
+              hasNext={hasNext}
+              loading={loading}
+              onChange={setPage}
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
