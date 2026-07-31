@@ -7,6 +7,7 @@ import { RequirePermission } from "@/auth/RequirePermission";
 import { PageFrame } from "@/components/control";
 import { UserPicker } from "@/components/UserPicker";
 import { ErrorAlert, ServiceUnavailableAlert } from "@/components/ui";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export function NotificationsPage() {
   return (
@@ -17,6 +18,7 @@ export function NotificationsPage() {
 }
 
 function NotificationsInner() {
+  const toast = useToast();
   const [selected, setSelected] = useState<IdentityUserItem | null>(null);
   const [channel, setChannel] = useState("email");
   const [error, setError] = useState<string | null>(null);
@@ -39,9 +41,14 @@ function NotificationsInner() {
         channel: channel.trim(),
       });
       setSuccess(true);
+      toast.success(`Notification queued for ${selected.email}.`);
     } catch (err) {
       if (isServiceUnavailable(err)) setUnavailable(true);
-      else setError(err instanceof ApiClientError ? err.message : "Failed to send.");
+      else {
+        const msg = err instanceof ApiClientError ? err.message : "Failed to send.";
+        setError(msg);
+        toast.error(msg);
+      }
     } finally {
       setBusy(false);
     }

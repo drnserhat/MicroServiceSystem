@@ -6,6 +6,7 @@ import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
 import { PageFrame } from "@/components/control";
 import { ErrorAlert, FieldErrors } from "@/components/ui";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export function RegisterUserPage() {
   return (
@@ -16,6 +17,7 @@ export function RegisterUserPage() {
 }
 
 function RegisterUserInner() {
+  const toast = useToast();
   const { session } = useAuth();
   const [email, setEmail] = useState("");
   const [userName, setUserName] = useState("");
@@ -44,7 +46,9 @@ function RegisterUserInner() {
         displayName: displayName.trim() || undefined,
         tenantId: session!.tenantId,
       });
-      setSuccess(`Registered ${result.email} (user ${result.userId}, saga ${result.sagaId})`);
+      const msg = `Registered ${result.email} (user ${result.userId}, saga ${result.sagaId})`;
+      setSuccess(msg);
+      toast.success(msg, "User registered");
       setEmail("");
       setUserName("");
       setPassword("");
@@ -55,8 +59,10 @@ function RegisterUserInner() {
       if (err instanceof ApiClientError) {
         setError(err.message);
         setFailures(err.failures);
+        toast.error(err.message);
       } else {
         setError("Registration failed.");
+        toast.error("Registration failed.");
       }
     } finally {
       setBusy(false);

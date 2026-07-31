@@ -2,6 +2,7 @@ import type { HealthTone } from "./tones";
 import { badgeClass, toneFromStatus } from "./tones";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export { HubTabs, type HubTab } from "./HubTabs";
 export { FilterBar } from "./FilterBar";
@@ -539,11 +540,13 @@ export function CopyCommandBlock({
   command: string;
   label?: string;
 }) {
+  const toast = useToast();
   const [copied, setCopied] = useState(false);
 
   async function copy() {
     await navigator.clipboard.writeText(command);
     setCopied(true);
+    toast.success("Command copied to clipboard.");
     window.setTimeout(() => setCopied(false), 1500);
   }
 

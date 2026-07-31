@@ -7,6 +7,8 @@ import { RequirePermission } from "@/auth/RequirePermission";
 import { PageFrame, DataTableShell, TableSkeleton } from "@/components/control";
 import { useAuth } from "@/auth/AuthContext";
 import { ErrorAlert, FieldErrors, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
+import { useToast } from "@/ui/toast/ToastContext";
+import { useConfirm } from "@/ui/dialog/ConfirmContext";
 
 export function SettingsPage() {
   return (
@@ -17,6 +19,8 @@ export function SettingsPage() {
 }
 
 function SettingsPageInner() {
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const { can } = useAuth();
   const canWrite = can(FrameworkPermissions.SettingsValuesWrite);
   const [page, setPage] = useState(1);
@@ -66,6 +70,7 @@ function SettingsPageInner() {
     setFailures(undefined);
     try {
       await upsertSetting(key.trim(), value, editing?.version ?? null);
+      toast.success(editing ? `Setting "${key.trim()}" updated.` : `Setting "${key.trim()}" saved.`);
       setKey("");
       setValue("");
       setEditing(null);
@@ -74,19 +79,31 @@ function SettingsPageInner() {
       if (err instanceof ApiClientError) {
         setError(err.message);
         setFailures(err.failures);
+        toast.error(err.message);
       } else {
         setError("Save failed.");
+        toast.error("Save failed.");
       }
     }
   }
 
   async function onDelete(item: SettingItem) {
-    if (!canWrite || !confirm(`Delete setting "${item.key}"?`)) return;
+    if (!canWrite) return;
+    const ok = await confirm({
+      title: "Delete setting",
+      message: `Delete setting "${item.key}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
     try {
       await deleteSetting(item.key, item.version);
+      toast.success(`Setting "${item.key}" deleted.`);
       await load(page);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Delete failed.");
+      const msg = err instanceof ApiClientError ? err.message : "Delete failed.";
+      setError(msg);
+      toast.error(msg);
     }
   }
 

@@ -4,6 +4,8 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { RequireAuth } from "@/auth/RequireAuth";
 import { Skeleton } from "@/components/control";
 import { AppLayout } from "@/layout/AppLayout";
+import { ToastProvider } from "@/ui/toast/ToastContext";
+import { ConfirmProvider } from "@/ui/dialog/ConfirmContext";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })));
 const HomePage = lazy(() => import("@/pages/HomePage").then((m) => ({ default: m.HomePage })));
@@ -194,6 +196,8 @@ function RouteFallback() {
 
 export default function App() {
   return (
+    <ToastProvider>
+    <ConfirmProvider>
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<RouteFallback />}>
@@ -280,5 +284,7 @@ export default function App() {
         </Suspense>
       </BrowserRouter>
     </AuthProvider>
+    </ConfirmProvider>
+    </ToastProvider>
   );
 }

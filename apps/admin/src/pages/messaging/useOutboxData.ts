@@ -4,8 +4,12 @@ import { getOutboxSnapshot, requeueDeadLetter, type OutboxService } from "@/api/
 import type { OutboxDeadLetter, OutboxPending, OutboxSummary } from "@/api/types";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
+import { useConfirm } from "@/ui/dialog/ConfirmContext";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export function useOutboxData(service: OutboxService = "identity") {
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const { can } = useAuth();
   const canWrite = can(FrameworkPermissions.OpsOutboxWrite);
   const [summary, setSummary] = useState<OutboxSummary | null>(null);
@@ -39,14 +43,24 @@ export function useOutboxData(service: OutboxService = "identity") {
   const onRequeue = useCallback(
     async (id: string) => {
       if (!canWrite) return;
+      const ok = await confirm({
+        title: "Requeue dead letter",
+        message: `Requeue message ${id} on ${service} outbox?`,
+        confirmLabel: "Requeue",
+        tone: "warning",
+      });
+      if (!ok) return;
       try {
         await requeueDeadLetter(service, id);
+        toast.success(`Dead letter ${id.slice(0, 8)}… requeued.`);
         await load();
       } catch (err) {
-        setError(err instanceof ApiClientError ? err.message : "Requeue failed.");
+        const msg = err instanceof ApiClientError ? err.message : "Requeue failed.";
+        setError(msg);
+        toast.error(msg);
       }
     },
-    [canWrite, load, service],
+    [canWrite, confirm, load, service, toast],
   );
 
   return { service, summary, deadLetters, pending, error, loading, canWrite, load, onRequeue, setError };

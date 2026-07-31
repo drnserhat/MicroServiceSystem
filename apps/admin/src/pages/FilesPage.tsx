@@ -6,6 +6,7 @@ import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
 import { PageFrame } from "@/components/control";
 import { ErrorAlert, ServiceUnavailableAlert } from "@/components/ui";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export function FilesPage() {
   return (
@@ -16,6 +17,7 @@ export function FilesPage() {
 }
 
 function FilesInner() {
+  const toast = useToast();
   const [container, setContainer] = useState("admin");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<FileAsset | null>(null);
@@ -31,10 +33,16 @@ function FilesInner() {
     setUnavailable(false);
     setResult(null);
     try {
-      setResult(await uploadFile(file, container.trim() || "admin"));
+      const uploaded = await uploadFile(file, container.trim() || "admin");
+      setResult(uploaded);
+      toast.success(`Uploaded ${uploaded.fileName ?? file.name}.`);
     } catch (err) {
       if (isServiceUnavailable(err)) setUnavailable(true);
-      else setError(err instanceof ApiClientError ? err.message : "Upload failed.");
+      else {
+        const msg = err instanceof ApiClientError ? err.message : "Upload failed.";
+        setError(msg);
+        toast.error(msg);
+      }
     } finally {
       setBusy(false);
     }

@@ -8,6 +8,7 @@ import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
 import { PageFrame } from "@/components/control";
 import { ErrorAlert, FieldErrors } from "@/components/ui";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export function UserProfilePage() {
   return (
@@ -18,6 +19,7 @@ export function UserProfilePage() {
 }
 
 function UserProfileInner() {
+  const toast = useToast();
   const { userId } = useParams<{ userId: string }>();
   const { can } = useAuth();
   const canWrite = can(FrameworkPermissions.UsersProfilesUpdate);
@@ -76,12 +78,15 @@ function UserProfileInner() {
       setFirstName(data.firstName);
       setLastName(data.lastName);
       setDisplayName(data.displayName);
+      toast.success("Profile updated.");
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message);
         setFailures(err.failures);
+        toast.error(err.message);
       } else {
         setError("Update failed.");
+        toast.error("Update failed.");
       }
     } finally {
       setBusy(false);

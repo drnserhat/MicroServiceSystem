@@ -2,8 +2,10 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiClientError } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export function LoginPage() {
+  const toast = useToast();
   const { isAuthenticated, login, defaultTenantId } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,9 +28,12 @@ export function LoginPage() {
 
     try {
       await login(email.trim(), password, tenantId.trim());
+      toast.success("Signed in.");
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Login failed.");
+      const msg = err instanceof ApiClientError ? err.message : "Login failed.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setBusy(false);
     }

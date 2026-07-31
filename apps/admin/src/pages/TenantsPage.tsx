@@ -7,6 +7,8 @@ import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
 import { PageFrame, TableSkeleton } from "@/components/control";
 import { ErrorAlert, PaginationBar } from "@/components/ui";
+import { useToast } from "@/ui/toast/ToastContext";
+import { useConfirm } from "@/ui/dialog/ConfirmContext";
 
 export function TenantsPage() {
   return (
@@ -17,6 +19,8 @@ export function TenantsPage() {
 }
 
 function TenantsInner() {
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const { can } = useAuth();
   const canWrite = can(FrameworkPermissions.IdentityTenantsWrite);
   const [page, setPage] = useState(1);
@@ -57,21 +61,37 @@ function TenantsInner() {
     if (!canWrite) return;
     try {
       await createTenant({ name: name.trim(), slug: slug.trim() });
+      toast.success(`Tenant "${name.trim()}" created.`);
       setName("");
       setSlug("");
       await load(page);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Create failed.");
+      const msg = err instanceof ApiClientError ? err.message : "Create failed.";
+      setError(msg);
+      toast.error(msg);
     }
   }
 
   async function toggle(item: TenantItem) {
     if (!canWrite) return;
+    const next = !item.isActive;
+    const ok = await confirm({
+      title: next ? "Activate tenant" : "Deactivate tenant",
+      message: next
+        ? `Activate tenant "${item.name}" (${item.slug})?`
+        : `Deactivate tenant "${item.name}" (${item.slug})? Users in this tenant may lose access.`,
+      confirmLabel: next ? "Activate" : "Deactivate",
+      tone: next ? "primary" : "warning",
+    });
+    if (!ok) return;
     try {
-      await setTenantActive(item.id, !item.isActive);
+      await setTenantActive(item.id, next);
+      toast.success(`Tenant "${item.name}" ${next ? "activated" : "deactivated"}.`);
       await load(page);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Update failed.");
+      const msg = err instanceof ApiClientError ? err.message : "Update failed.";
+      setError(msg);
+      toast.error(msg);
     }
   }
 

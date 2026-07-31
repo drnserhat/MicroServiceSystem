@@ -8,6 +8,8 @@ import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
 import { DataTableShell, FilterBar, PageFrame, TableSkeleton } from "@/components/control";
 import { ErrorAlert, PaginationBar } from "@/components/ui";
+import { useConfirm } from "@/ui/dialog/ConfirmContext";
+import { useToast } from "@/ui/toast/ToastContext";
 
 export function UsersDirectoryPage() {
   return (
@@ -18,6 +20,8 @@ export function UsersDirectoryPage() {
 }
 
 function UsersInner() {
+  const toast = useToast();
+  const { prompt } = useConfirm();
   const { can } = useAuth();
   const canDisable = can(FrameworkPermissions.IdentityUsersDisable);
   const [page, setPage] = useState(1);
@@ -28,8 +32,6 @@ function UsersInner() {
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [disableTarget, setDisableTarget] = useState<IdentityUserItem | null>(null);
-  const [disableReason, setDisableReason] = useState("Disabled by admin");
 
   async function load(p = page) {
     setLoading(true);
@@ -53,131 +55,115 @@ function UsersInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  async function confirmDisable() {
-    if (!disableTarget || !canDisable) return;
+  async function onDisable(item: IdentityUserItem) {
+    if (!canDisable) return;
+    const reason = await prompt({
+      title: "Disable user",
+      message: `Disable ${item.email}? They will no longer be able to sign in.`,
+      promptLabel: "Reason",
+      defaultValue: "Disabled by admin",
+      confirmLabel: "Disable",
+      tone: "danger",
+      required: true,
+    });
+    if (reason === null) return;
     try {
-      await disableIdentityUser(disableTarget.id, disableReason.trim() || "Disabled by admin");
-      setDisableTarget(null);
+      await disableIdentityUser(item.id, reason.trim() || "Disabled by admin");
+      toast.success(`User ${item.email} disabled.`);
       await load(page);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Disable failed.");
+      const msg = err instanceof ApiClientError ? err.message : "Disable failed.";
+      setError(msg);
+      toast.error(msg);
     }
   }
 
   return (
     <PageFrame
-        pretitle="Identity"
-        title="Users"
-        actions={
-          can(FrameworkPermissions.RegistrationUsersCreate) ? (
-            <Link className="btn btn-primary" to="/users/register">
-              Register user
-            </Link>
-          ) : null
-        }
+      pretitle="Identity"
+      title="Users"
+      actions={
+        can(FrameworkPermissions.RegistrationUsersCreate) ? (
+          <Link className="btn btn-primary" to="/users/register">
+            Register user
+          </Link>
+        ) : null
+      }
     >
-          <ErrorAlert error={error} />
-          <FilterBar
-            search={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search email or username"
-            trailing={
-              <button
-                type="button"
-                className="btn btn-primary w-100"
-                onClick={() => {
-                  if (page === 1) void load(1);
-                  else setPage(1);
-                }}
-              >
-                Search
-              </button>
-            }
-          />
-
-          {disableTarget ? (
-            <div className="card mb-3 border-danger">
-              <div className="card-body">
-                <h3 className="card-title">Disable {disableTarget.email}?</h3>
-                <label className="form-label">Reason</label>
-                <input
-                  className="form-control mb-3"
-                  value={disableReason}
-                  onChange={(e) => setDisableReason(e.target.value)}
-                />
-                <button type="button" className="btn btn-danger me-2" onClick={() => void confirmDisable()}>
-                  Confirm disable
-                </button>
-                <button type="button" className="btn" onClick={() => setDisableTarget(null)}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          <DataTableShell
-            title="Directory"
-            footer={
-              <PaginationBar
-                page={page}
-                totalPages={totalPages}
-                hasPrevious={hasPrevious}
-                hasNext={hasNext}
-                loading={loading}
-                onChange={setPage}
-              />
-            }
+      <ErrorAlert error={error} />
+      <FilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search email or username"
+        trailing={
+          <button
+            type="button"
+            className="btn btn-primary w-100"
+            onClick={() => {
+              if (page === 1) void load(1);
+              else setPage(1);
+            }}
           >
-            <table className="table table-vcenter card-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Username</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? <TableSkeleton rows={5} cols={4} /> : null}
-                {!loading && items.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-secondary">
-                      No users found.
-                    </td>
-                  </tr>
-                ) : null}
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.email}</td>
-                    <td>{item.userName}</td>
-                    <td>
-                      <span className={item.isActive ? "badge bg-green-lt" : "badge bg-red-lt"}>
-                        {item.isActive ? "Active" : "Disabled"}
-                      </span>
-                    </td>
-                    <td className="text-nowrap">
-                      <Link className="btn btn-sm" to={`/users/${item.id}`}>
-                        Open profile
-                      </Link>{" "}
-                      {canDisable && item.isActive ? (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-danger"
-                          onClick={() => {
-                            setDisableReason("Disabled by admin");
-                            setDisableTarget(item);
-                          }}
-                        >
-                          Disable
-                        </button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </DataTableShell>
-    </PageFrame>
+            Search
+          </button>
+        }
+      />
 
+      <DataTableShell
+        title="Directory"
+        footer={
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            hasPrevious={hasPrevious}
+            hasNext={hasNext}
+            loading={loading}
+            onChange={setPage}
+          />
+        }
+      >
+        <table className="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Status</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? <TableSkeleton rows={5} cols={4} /> : null}
+            {!loading && items.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="text-secondary">
+                  No users found.
+                </td>
+              </tr>
+            ) : null}
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>{item.email}</td>
+                <td>{item.userName}</td>
+                <td>
+                  <span className={item.isActive ? "badge bg-green-lt" : "badge bg-red-lt"}>
+                    {item.isActive ? "Active" : "Disabled"}
+                  </span>
+                </td>
+                <td className="text-nowrap">
+                  <Link className="btn btn-sm" to={`/users/${item.id}`}>
+                    Open profile
+                  </Link>{" "}
+                  {canDisable && item.isActive ? (
+                    <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDisable(item)}>
+                      Disable
+                    </button>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </DataTableShell>
+    </PageFrame>
   );
 }
