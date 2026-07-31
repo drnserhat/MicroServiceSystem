@@ -148,7 +148,49 @@ export type OutboxDeadLetter = {
   correlationId?: string | null;
 };
 
+export type OutboxPending = {
+  id: string;
+  eventName: string;
+  occurredOnUtc: string;
+  attemptCount: number;
+  tenantId?: string | null;
+  correlationId?: string | null;
+  lockedUntilUtc?: string | null;
+};
+
 export type OutboxSnapshot = {
   summary: OutboxSummary;
   deadLetters: OutboxDeadLetter[];
+  pending: OutboxPending[];
+};
+
+export type InboxSummary = {
+  service: string;
+  processedCount: number;
+  openCount: number;
+  inFlightCount: number;
+  failedCount: number;
+};
+
+export type SagaItem = {
+  id: string;
+  name: string;
+  state: string;
+  currentStep: string;
+  email: string;
+  userName: string;
+  displayName: string;
+  identityUserId?: string | null;
+  userProfileId?: string | null;
+  failureReason?: string | null;
+  lockedBy?: string | null;
+  lockedUntilUtc?: string | null;
+  tenantId: string;
+  createdAtUtc: string;
+  modifiedAtUtc?: string | null;
+  isTerminal: boolean;
+};
+
+export type SagaList = {
+  items: SagaItem[];
 };

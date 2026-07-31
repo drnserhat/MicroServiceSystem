@@ -18,6 +18,8 @@ public static class AccessTokenFactory
 
         if (existing is not null)
         {
+            SyncPermissions(existing, FrameworkPermissions.MemberDefaults);
+            roles.Update(existing);
             return existing;
         }
 
@@ -43,6 +45,8 @@ public static class AccessTokenFactory
 
         if (existing is not null)
         {
+            SyncPermissions(existing, FrameworkPermissions.AdminDefaults);
+            roles.Update(existing);
             return existing;
         }
 
@@ -57,6 +61,14 @@ public static class AccessTokenFactory
         await roles.AddAsync(role, cancellationToken);
 
         return role;
+    }
+
+    private static void SyncPermissions(Role role, IReadOnlyList<string> expected)
+    {
+        foreach (string permission in expected)
+        {
+            role.GrantPermission(permission);
+        }
     }
 
     public static async Task<(IReadOnlyList<string> Roles, IReadOnlyList<string> Permissions)> ResolveClaimsAsync(

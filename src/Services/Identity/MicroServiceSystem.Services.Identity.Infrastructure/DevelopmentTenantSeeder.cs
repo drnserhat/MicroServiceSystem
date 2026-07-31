@@ -24,24 +24,32 @@ public sealed class DevelopmentTenantSeeder(
             return;
         }
 
-        await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
-        ITenantRepository tenants = scope.ServiceProvider.GetRequiredService<ITenantRepository>();
-        IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-        if (await tenants.GetByIdAsync(KnownTenants.DevelopmentDemo, cancellationToken) is not null)
+        try
         {
-            return;
+            await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
+            ITenantRepository tenants = scope.ServiceProvider.GetRequiredService<ITenantRepository>();
+            IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+            if (await tenants.GetByIdAsync(KnownTenants.DevelopmentDemo, cancellationToken) is not null)
+            {
+                return;
+            }
+
+            await tenants.AddAsync(
+                Tenant.Provision(KnownTenants.DevelopmentDemo, "Development Demo", "dev-demo"),
+                cancellationToken);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Seeded development demo tenant {TenantId}",
+                KnownTenants.DevelopmentDemo);
         }
-
-        await tenants.AddAsync(
-            Tenant.Provision(KnownTenants.DevelopmentDemo, "Development Demo", "dev-demo"),
-            cancellationToken);
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation(
-            "Seeded development demo tenant {TenantId}",
-            KnownTenants.DevelopmentDemo);
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to seed development demo tenant");
+            throw;
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

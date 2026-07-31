@@ -13,7 +13,7 @@ import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { useTheme } from "@/theme/ThemeContext";
 import { displayNameFromEmail, initialsFromName } from "./displayName";
 import { CommandPalette } from "./CommandPalette";
-import { NAV_SECTIONS } from "./navConfig";
+import { NAV_SECTIONS, resolveBreadcrumbs, resolvePathLabel } from "./navConfig";
 import "./controlCenter.css";
 
 const FAVORITES_KEY = "msf.admin.favorites";
@@ -74,17 +74,7 @@ export function AppLayout() {
     });
   }, [location.pathname]);
 
-  const crumbs = useMemo(() => {
-    const parts = location.pathname.split("/").filter(Boolean);
-    if (parts.length === 0) return [{ label: "Platform Overview", to: "/" }];
-    const acc: { label: string; to: string }[] = [{ label: "Overview", to: "/" }];
-    let path = "";
-    for (const part of parts) {
-      path += `/${part}`;
-      acc.push({ label: part, to: path });
-    }
-    return acc;
-  }, [location.pathname]);
+  const crumbs = useMemo(() => resolveBreadcrumbs(location.pathname), [location.pathname]);
 
   function toggleFavorite(path: string) {
     setFavorites((prev) => {
@@ -118,8 +108,8 @@ export function AppLayout() {
             <div className="msf-cc-nav-section">
               <div className="msf-cc-nav-section-label">Favorites</div>
               {favorites.map((fav) => (
-                <NavLink key={fav} to={fav} className={({ isActive }) => (isActive ? "msf-cc-nav-link active" : "msf-cc-nav-link")}>
-                  <span className="msf-cc-nav-label">{fav}</span>
+                <NavLink key={fav} to={fav} className={({ isActive }) => (isActive ? "msf-cc-nav-link active" : "msf-cc-nav-link")} title={fav}>
+                  <span className="msf-cc-nav-label">{resolvePathLabel(fav)}</span>
                 </NavLink>
               ))}
             </div>
@@ -226,8 +216,8 @@ export function AppLayout() {
               <div className="dropdown-menu dropdown-menu-end">
                 <div className="dropdown-item-text small text-secondary">Recent</div>
                 {recent.slice(0, 5).map((path) => (
-                  <Link key={path} className="dropdown-item" to={path}>
-                    {path}
+                  <Link key={path} className="dropdown-item" to={path} title={path}>
+                    {resolvePathLabel(path)}
                   </Link>
                 ))}
                 <div className="dropdown-divider" />

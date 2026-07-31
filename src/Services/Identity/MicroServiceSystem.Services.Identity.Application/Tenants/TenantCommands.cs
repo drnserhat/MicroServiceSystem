@@ -4,7 +4,9 @@ using MicroServiceSystem.BuildingBlocks.MultiTenancy;
 using MicroServiceSystem.BuildingBlocks.MultiTenancy.Abstractions;
 using MicroServiceSystem.Services.Identity.Application.Abstractions;
 using MicroServiceSystem.Services.Identity.Domain.Aggregates;
+using MicroServiceSystem.SharedKernel.Pagination;
 using MicroServiceSystem.SharedKernel.Results;
+using MicroServiceSystem.SharedKernel.Specifications;
 
 namespace MicroServiceSystem.Services.Identity.Application.Tenants;
 
@@ -12,6 +14,10 @@ public sealed record CreateTenantCommand(string Name, string Slug, Guid? TenantI
     : ICommand<TenantResponse>;
 
 public sealed record GetTenantQuery(Guid TenantId) : IQuery<TenantResponse>;
+
+public sealed record ListTenantsQuery(PaginationRequest Pagination) : IQuery<PagedResult<TenantResponse>>;
+
+public sealed record SetTenantActivationCommand(Guid TenantId, bool IsActive) : ICommand<TenantResponse>;
 
 public sealed record TenantResponse(Guid Id, string Name, string Slug, bool IsActive);
 
@@ -30,6 +36,23 @@ public sealed class GetTenantQueryValidator : AbstractValidator<GetTenantQuery>
     public GetTenantQueryValidator()
     {
         RuleFor(query => query.TenantId).NotEmpty();
+    }
+}
+
+public sealed class ListTenantsQueryValidator : AbstractValidator<ListTenantsQuery>
+{
+    public ListTenantsQueryValidator()
+    {
+        RuleFor(query => query.Pagination.PageNumber).GreaterThanOrEqualTo(PaginationDefaults.FirstPageNumber);
+        RuleFor(query => query.Pagination.PageSize).InclusiveBetween(1, PaginationDefaults.MaxPageSize);
+    }
+}
+
+public sealed class SetTenantActivationCommandValidator : AbstractValidator<SetTenantActivationCommand>
+{
+    public SetTenantActivationCommandValidator()
+    {
+        RuleFor(command => command.TenantId).NotEmpty();
     }
 }
 
@@ -78,6 +101,50 @@ public sealed class GetTenantQueryHandler(ITenantRepository tenants)
     }
 }
 
+public sealed class ListTenantsQueryHandler(ITenantRepository tenants)
+    : IQueryHandler<ListTenantsQuery, PagedResult<TenantResponse>>
+{
+    public async Task<Result<PagedResult<TenantResponse>>> Handle(
+        ListTenantsQuery query,
+        CancellationToken cancellationToken)
+    {
+        PagedResult<Tenant> page = await tenants.PagedListAsync(
+            new TenantSearchSpecification(query.Pagination.Search),
+            query.Pagination,
+            cancellationToken);
+
+        return page.Project(TenantMapping.ToResponse);
+    }
+}
+
+public sealed class SetTenantActivationCommandHandler(ITenantRepository tenants)
+    : ICommandHandler<SetTenantActivationCommand, TenantResponse>
+{
+    public async Task<Result<TenantResponse>> Handle(
+        SetTenantActivationCommand command,
+        CancellationToken cancellationToken)
+    {
+        Tenant? tenant = await tenants.GetByIdAsync(command.TenantId, cancellationToken);
+
+        if (tenant is null)
+        {
+            return IdentityErrors.TenantNotFound;
+        }
+
+        if (command.IsActive)
+        {
+            tenant.Activate();
+        }
+        else
+        {
+            tenant.Deactivate();
+        }
+
+        tenants.Update(tenant);
+        return TenantMapping.ToResponse(tenant);
+    }
+}
+
 /// <summary>
 /// Shared validation used by login/register/saga callers that accept a tenant id from the request body.
 /// </summary>
@@ -108,4 +175,20 @@ file static class TenantMapping
 {
     public static TenantResponse ToResponse(Tenant tenant) =>
         new(tenant.Id, tenant.Name, tenant.Slug, tenant.IsActive);
+}
+
+file sealed class TenantSearchSpecification : Specification<Tenant>
+{
+    public TenantSearchSpecification(string? search)
+    {
+        ApplyNoTracking();
+        OrderBy(tenant => tenant.Name);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string term = search.Trim().ToLowerInvariant();
+            Where(tenant =>
+                tenant.Name.ToLower().Contains(term) || tenant.Slug.Contains(term));
+        }
+    }
 }

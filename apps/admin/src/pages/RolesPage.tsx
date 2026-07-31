@@ -4,7 +4,8 @@ import { listRoles } from "@/api/identityAdmin";
 import type { RoleItem } from "@/api/types";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, PageHeader } from "@/components/ui";
+import { PageFrame, Skeleton } from "@/components/control";
+import { ErrorAlert } from "@/components/ui";
 
 export function RolesPage() {
   return (
@@ -39,12 +40,12 @@ function RolesInner() {
   }, []);
 
   return (
-    <>
-      <PageHeader pretitle="Identity" title="Roles & permissions" />
-      <div className="page-body">
-        <div className="container-xl">
+    <PageFrame
+      pretitle="Identity"
+      title="Roles & permissions"
+    >
           <ErrorAlert error={error} />
-          {loading ? <div className="text-secondary">Loading…</div> : null}
+          {loading ? <Skeleton height={120} className="mb-3" /> : null}
           <div className="row row-cards">
             {items.map((role) => (
               <div className="col-md-6" key={role.id}>
@@ -65,8 +66,6 @@ function RolesInner() {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-    </>
+    </PageFrame>
   );
 }

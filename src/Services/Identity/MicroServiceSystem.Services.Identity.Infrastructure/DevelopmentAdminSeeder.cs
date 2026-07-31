@@ -35,41 +35,50 @@ public sealed class DevelopmentAdminSeeder(
             return;
         }
 
-        await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
-        IIdentityUserRepository users = scope.ServiceProvider.GetRequiredService<IIdentityUserRepository>();
-        IRoleRepository roles = scope.ServiceProvider.GetRequiredService<IRoleRepository>();
-        IPasswordHasher passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-        IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        ICurrentTenant currentTenant = scope.ServiceProvider.GetRequiredService<ICurrentTenant>();
-
-        using IDisposable tenantScope = currentTenant.Change(KnownTenants.DevelopmentDemo, "Development Demo");
-
-        if (await users.GetByIdAsync(AdminUserId, cancellationToken) is not null)
+        try
         {
-            return;
+            await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
+            IIdentityUserRepository users = scope.ServiceProvider.GetRequiredService<IIdentityUserRepository>();
+            IRoleRepository roles = scope.ServiceProvider.GetRequiredService<IRoleRepository>();
+            IPasswordHasher passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+            IUnitOfWork unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            ICurrentTenant currentTenant = scope.ServiceProvider.GetRequiredService<ICurrentTenant>();
+
+            using IDisposable tenantScope = currentTenant.Change(KnownTenants.DevelopmentDemo, "Development Demo");
+
+            Role adminRole = await AccessTokenFactory.GetOrCreateAdminRoleAsync(
+                roles,
+                KnownTenants.DevelopmentDemo,
+                cancellationToken);
+
+            if (await users.FindByEmailAsync(AdminEmail, cancellationToken) is not null)
+            {
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+                return;
+            }
+
+            IdentityUser admin = IdentityUser.Register(
+                AdminUserId,
+                AdminEmail,
+                AdminUserName,
+                passwordHasher.Hash(AdminPassword));
+
+            admin.TenantId = KnownTenants.DevelopmentDemo;
+            admin.AssignRole(adminRole.Id);
+
+            await users.AddAsync(admin, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Seeded development admin {Email} for tenant {TenantId}",
+                AdminEmail,
+                KnownTenants.DevelopmentDemo);
         }
-
-        Role adminRole = await AccessTokenFactory.GetOrCreateAdminRoleAsync(
-            roles,
-            KnownTenants.DevelopmentDemo,
-            cancellationToken);
-
-        IdentityUser admin = IdentityUser.Register(
-            AdminUserId,
-            AdminEmail,
-            AdminUserName,
-            passwordHasher.Hash(AdminPassword));
-
-        admin.TenantId = KnownTenants.DevelopmentDemo;
-        admin.AssignRole(adminRole.Id);
-
-        await users.AddAsync(admin, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation(
-            "Seeded development admin {Email} for tenant {TenantId}",
-            AdminEmail,
-            KnownTenants.DevelopmentDemo);
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to seed development admin {Email}", AdminEmail);
+            throw;
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

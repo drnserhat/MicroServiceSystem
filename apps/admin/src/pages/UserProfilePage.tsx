@@ -6,7 +6,8 @@ import type { UserProfile } from "@/api/types";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, FieldErrors, PageHeader } from "@/components/ui";
+import { PageFrame } from "@/components/control";
+import { ErrorAlert, FieldErrors } from "@/components/ui";
 
 export function UserProfilePage() {
   return (
@@ -88,8 +89,7 @@ function UserProfileInner() {
   }
 
   return (
-    <>
-      <PageHeader
+    <PageFrame
         pretitle="Identity"
         title="User profile"
         actions={
@@ -97,9 +97,7 @@ function UserProfileInner() {
             Back to users
           </Link>
         }
-      />
-      <div className="page-body">
-        <div className="container-xl">
+    >
           <ErrorAlert error={error} />
           <FieldErrors failures={failures} />
           {busy && !profile ? <div className="text-secondary">Loading profile…</div> : null}
@@ -152,8 +150,7 @@ function UserProfileInner() {
               </form>
             </div>
           ) : null}
-        </div>
-      </div>
-    </>
+    </PageFrame>
+
   );
 }

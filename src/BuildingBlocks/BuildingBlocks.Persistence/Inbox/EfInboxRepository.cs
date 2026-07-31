@@ -172,6 +172,33 @@ public sealed class EfInboxRepository<TContext>(TContext context, IDateTimeProvi
             .Where(message => message.ProcessedOnUtc != null && message.ProcessedOnUtc < thresholdUtc)
             .ExecuteDeleteAsync(cancellationToken);
 
+    public Task<int> CountProcessedAsync(CancellationToken cancellationToken = default) =>
+        context.Set<InboxMessage>()
+            .AsNoTracking()
+            .CountAsync(message => message.ProcessedOnUtc != null, cancellationToken);
+
+    public Task<int> CountOpenAsync(CancellationToken cancellationToken = default) =>
+        context.Set<InboxMessage>()
+            .AsNoTracking()
+            .CountAsync(message => message.ProcessedOnUtc == null, cancellationToken);
+
+    public Task<int> CountInFlightAsync(DateTimeOffset utcNow, CancellationToken cancellationToken = default) =>
+        context.Set<InboxMessage>()
+            .AsNoTracking()
+            .CountAsync(
+                message =>
+                    message.ProcessedOnUtc == null
+                    && message.LockedUntilUtc != null
+                    && message.LockedUntilUtc > utcNow,
+                cancellationToken);
+
+    public Task<int> CountFailedAsync(CancellationToken cancellationToken = default) =>
+        context.Set<InboxMessage>()
+            .AsNoTracking()
+            .CountAsync(
+                message => message.ProcessedOnUtc == null && message.Error != null,
+                cancellationToken);
+
     private void DetachLocal(Guid messageId)
     {
         EntityEntry<InboxMessage>? tracked = context.ChangeTracker

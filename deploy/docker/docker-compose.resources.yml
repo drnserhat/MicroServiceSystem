@@ -7,11 +7,9 @@
 #     -f deploy/docker/docker-compose.resources.yml \
 #     up -d --build
 #
+# Lite + admin SPA is now default (settings + nginx Tabler UI on :5173).
 # Full stack (~8–12 GB):
-#   docker compose -f deploy/docker/docker-compose.yml \
-#     -f deploy/docker/docker-compose.apps.yml \
-#     -f deploy/docker/docker-compose.resources.yml \
-#     --profile full up -d --build
+#   ... --profile full up -d --build
 #
 # Observability only on top of lite:
 #   ... --profile obs up -d
@@ -106,3 +104,8 @@ services:
 
   logging:
     <<: *dotnet-app
+
+  admin:
+    mem_limit: 64m
+    mem_reservation: 32m
+    cpus: 0.25

@@ -13,6 +13,12 @@ public interface IRegisterUserSagaRepository : IRepository<RegisterUserSaga, Gui
         DateTimeOffset utcNow,
         int take,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Ops read: newest-first saga page, optional exact state filter.</summary>
+    Task<IReadOnlyList<RegisterUserSaga>> ListForOpsAsync(
+        string? state,
+        int take,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IIdentityServiceClient

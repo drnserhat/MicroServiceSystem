@@ -42,6 +42,25 @@ public interface IOutboxRepository
     /// <summary>How many rows are parked as poison and waiting for operator attention.</summary>
     Task<int> CountDeadLetteredAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Unpublished rows that are still eligible for claim (not dead-lettered).</summary>
+    Task<int> CountPendingAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<OutboxDeadLetterRow>> ListDeadLetteredAsync(
+        int take,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Unpublished rows still eligible for claim (not dead-lettered). Metadata only — no payload.
+    /// </summary>
+    Task<IReadOnlyList<OutboxPendingRow>> ListPendingAsync(
+        int take,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Clears dead-letter seal and resets attempts so the relay can claim the row again.
+    /// </summary>
+    Task<bool> RequeueDeadLetteredAsync(Guid messageId, CancellationToken cancellationToken = default);
+
     Task<int> DeletePublishedOlderThanAsync(
         DateTimeOffset thresholdUtc,
         CancellationToken cancellationToken = default);
@@ -54,6 +73,26 @@ public interface IOutboxRepository
         DateTimeOffset thresholdUtc,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record OutboxDeadLetterRow(
+    Guid Id,
+    string EventName,
+    DateTimeOffset OccurredOnUtc,
+    DateTimeOffset? DeadLetteredOnUtc,
+    int AttemptCount,
+    string? Error,
+    Guid? TenantId,
+    string? CorrelationId);
+
+/// <summary>Pending outbox row metadata for ops surfaces — intentionally excludes Payload.</summary>
+public sealed record OutboxPendingRow(
+    Guid Id,
+    string EventName,
+    DateTimeOffset OccurredOnUtc,
+    int AttemptCount,
+    Guid? TenantId,
+    string? CorrelationId,
+    DateTimeOffset? LockedUntilUtc);
 
 public enum OutboxFailureOutcome
 {

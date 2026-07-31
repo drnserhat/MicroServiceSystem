@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { ForbiddenState } from "@/components/control";
 import { useAuth } from "./AuthContext";
 
 export function RequirePermission({
@@ -11,7 +11,7 @@ export function RequirePermission({
   const { can } = useAuth();
 
   if (!can(permission)) {
-    return <Navigate to="/" replace />;
+    return <ForbiddenState permission={permission} />;
   }
 
   return children;

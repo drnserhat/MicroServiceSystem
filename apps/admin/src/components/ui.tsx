@@ -1,3 +1,6 @@
+import { PageFrame } from "@/components/control";
+
+/** @deprecated Prefer PageFrame — thin adapter for remaining callers */
 export function PageHeader({
   pretitle,
   title,
@@ -7,19 +10,7 @@ export function PageHeader({
   title: string;
   actions?: React.ReactNode;
 }) {
-  return (
-    <div className="page-header d-print-none">
-      <div className="container-xl">
-        <div className="row g-2 align-items-center">
-          <div className="col">
-            <div className="page-pretitle">{pretitle}</div>
-            <h2 className="page-title">{title}</h2>
-          </div>
-          {actions ? <div className="col-auto ms-auto d-print-none">{actions}</div> : null}
-        </div>
-      </div>
-    </div>
-  );
+  return <PageFrame pretitle={pretitle} title={title} actions={actions} />;
 }
 
 export function ErrorAlert({ error }: { error: string | null }) {

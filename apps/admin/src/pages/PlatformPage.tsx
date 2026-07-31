@@ -5,8 +5,16 @@ import { getHealthAggregate } from "@/api/ops";
 import type { ServiceHealthItem } from "@/api/types";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, PageHeader } from "@/components/ui";
+import {
+  FilterBar,
+  MetricCard,
+  PageFrame,
+  ServiceCard,
+  StatusBadge,
+} from "@/components/control";
+import { ErrorAlert } from "@/components/ui";
 import { PLATFORM_PACKAGES, type PlatformPackage, type PlatformPackageKind } from "@/platform/catalog";
+import { ExternalToolLink } from "@/platform/tools";
 
 export function PlatformPage() {
   return (
@@ -32,11 +40,20 @@ function statusFor(pkg: PlatformPackage, health: ServiceHealthItem[]): ServiceHe
   return health.find((item) => item.service === pkg.healthService);
 }
 
+const TOOL_BY_PACKAGE: Record<string, string> = {
+  rabbitmq: "rabbitmq",
+  seq: "seq",
+  jaeger: "jaeger",
+  grafana: "grafana",
+  prometheus: "prometheus",
+};
+
 function PlatformInner() {
   const [health, setHealth] = useState<ServiceHealthItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | PlatformPackageKind>("all");
+  const [query, setQuery] = useState("");
 
   async function load() {
     setLoading(true);
@@ -55,10 +72,18 @@ function PlatformInner() {
     void load();
   }, []);
 
-  const packages = useMemo(
-    () => (filter === "all" ? PLATFORM_PACKAGES : PLATFORM_PACKAGES.filter((pkg) => pkg.kind === filter)),
-    [filter],
-  );
+  const packages = useMemo(() => {
+    const byKind =
+      filter === "all" ? PLATFORM_PACKAGES : PLATFORM_PACKAGES.filter((pkg) => pkg.kind === filter);
+    const q = query.trim().toLowerCase();
+    if (!q) return byKind;
+    return byKind.filter(
+      (pkg) =>
+        pkg.name.toLowerCase().includes(q) ||
+        pkg.id.toLowerCase().includes(q) ||
+        pkg.summary.toLowerCase().includes(q),
+    );
+  }, [filter, query]);
 
   const coreHealthy = PLATFORM_PACKAGES.filter((p) => p.kind === "core" && p.healthService).filter((p) => {
     const h = statusFor(p, health);
@@ -72,149 +97,113 @@ function PlatformInner() {
   const addonTotal = PLATFORM_PACKAGES.filter((p) => p.kind === "addon" && p.healthService).length;
 
   return (
-    <>
-      <PageHeader
-        pretitle="Platform"
-        title="Services & packages"
-        actions={
+    <PageFrame
+      pretitle="Platform"
+      title="Packages"
+      description="Compose package inventory with live health where probed. Runtime ops live on Platform Map and Service Center."
+      actions={
+        <div className="btn-list">
+          <Link className="btn" to="/map">
+            Platform Map
+          </Link>
+          <Link className="btn" to="/services">
+            Service Center
+          </Link>
           <button type="button" className="btn" onClick={() => void load()} disabled={loading}>
             Refresh health
           </button>
-        }
-      />
-      <div className="page-body">
-        <div className="container-xl">
-          <ErrorAlert error={error} />
-          <div className="row row-cards mb-3">
-            <div className="col-sm-6 col-lg-3">
-              <div className="card">
-                <div className="card-body">
-                  <div className="subheader">Core services</div>
-                  <div className="h1 mb-0">
-                    {coreHealthy}/{coreTotal}
-                  </div>
-                  <div className="text-secondary">healthy in lite stack</div>
-                </div>
-              </div>
+        </div>
+      }
+    >
+      <ErrorAlert error={error} />
+      <div className="row row-cards mb-3">
+        <div className="col-sm-6 col-lg-3">
+          <MetricCard label="Core healthy" value={`${coreHealthy}/${coreTotal}`} tone="healthy" hint="Lite stack" />
+        </div>
+        <div className="col-sm-6 col-lg-3">
+          <MetricCard
+            label="Add-ons reachable"
+            value={`${addonReachable}/${addonTotal}`}
+            tone={addonReachable > 0 ? "info" : "degraded"}
+            hint="Need profile full"
+          />
+        </div>
+        <div className="col-sm-12 col-lg-6">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="subheader">Enable add-ons</div>
+              <p className="mb-2 text-secondary">
+                Lite: gateway, identity, user, coordinator, settings, admin. Profiles{" "}
+                <code>full</code> / <code>obs</code> add packages and Seq/Jaeger/Prom/Grafana.
+              </p>
+              <code className="d-block text-wrap small">
+                docker compose --profile full --profile obs up -d
+              </code>
             </div>
-            <div className="col-sm-6 col-lg-3">
-              <div className="card">
-                <div className="card-body">
-                  <div className="subheader">Add-on packages</div>
-                  <div className="h1 mb-0">
-                    {addonReachable}/{addonTotal}
-                  </div>
-                  <div className="text-secondary">reachable (need profile full)</div>
-                </div>
-              </div>
-            </div>
-            <div className="col-sm-12 col-lg-6">
-              <div className="card">
-                <div className="card-body">
-                  <div className="subheader">How to enable add-ons</div>
-                  <p className="mb-2">
-                    Lite stack runs gateway, identity, user, coordinator, settings, admin. Add-ons
-                    (audit, logging, location, file, notification + Mongo) and observability (Seq,
-                    Jaeger, Prometheus, Grafana) start with Docker Compose profiles{" "}
-                    <code>full</code> / <code>obs</code>.
-                  </p>
-                  <code className="d-block text-wrap">
-                    docker compose ... --profile full --profile obs up -d
-                  </code>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="btn-list mb-3">
-            {(["all", "core", "addon", "observability"] as const).map((key) => (
-              <button
-                key={key}
-                type="button"
-                className={filter === key ? "btn btn-primary" : "btn"}
-                onClick={() => setFilter(key)}
-              >
-                {key === "all" ? "All" : kindLabel(key)}
-              </button>
-            ))}
-          </div>
-
-          <div className="row row-cards">
-            {packages.map((pkg) => {
-              const live = statusFor(pkg, health);
-              const badge =
-                live == null
-                  ? pkg.kind === "addon" || pkg.kind === "observability"
-                    ? "Optional"
-                    : "Infra"
-                  : live.status;
-
-              const badgeClass =
-                live == null
-                  ? "badge bg-secondary-lt"
-                  : live.status.toLowerCase() === "healthy"
-                    ? "badge bg-green-lt"
-                    : live.reachable
-                      ? "badge bg-yellow-lt"
-                      : "badge bg-red-lt";
-
-              return (
-                <div className="col-md-6 col-xl-4" key={pkg.id}>
-                  <div className="card">
-                    <div className="card-body">
-                      <div className="d-flex align-items-center mb-2">
-                        <div className="subheader mb-0">{kindLabel(pkg.kind)}</div>
-                        <span className={`${badgeClass} ms-auto`}>{badge}</span>
-                      </div>
-                      <h3 className="card-title mb-1">{pkg.name}</h3>
-                      <p className="text-secondary">{pkg.summary}</p>
-                      {pkg.gatewayPrefix ? (
-                        <div className="mb-1">
-                          <span className="text-secondary">API: </span>
-                          <code>{pkg.gatewayPrefix}</code>
-                        </div>
-                      ) : null}
-                      <div className="mb-2 small text-secondary">{pkg.composeNote}</div>
-                      <div className="btn-list">
-                        {pkg.adminPath ? (
-                          <Link className="btn btn-sm" to={pkg.adminPath}>
-                            Open in admin
-                          </Link>
-                        ) : null}
-                        {pkg.id === "rabbitmq" ? (
-                          <a className="btn btn-sm" href="http://localhost:15672" target="_blank" rel="noreferrer">
-                            Management UI
-                          </a>
-                        ) : null}
-                        {pkg.id === "seq" ? (
-                          <a className="btn btn-sm" href="http://localhost:5341" target="_blank" rel="noreferrer">
-                            Open Seq
-                          </a>
-                        ) : null}
-                        {pkg.id === "jaeger" ? (
-                          <a className="btn btn-sm" href="http://localhost:16686" target="_blank" rel="noreferrer">
-                            Open Jaeger
-                          </a>
-                        ) : null}
-                        {pkg.id === "grafana" ? (
-                          <a className="btn btn-sm" href="http://localhost:3000" target="_blank" rel="noreferrer">
-                            Open Grafana
-                          </a>
-                        ) : null}
-                        {pkg.id === "prometheus" ? (
-                          <a className="btn btn-sm" href="http://localhost:9090" target="_blank" rel="noreferrer">
-                            Open Prometheus
-                          </a>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
       </div>
-    </>
+
+      <FilterBar
+        search={query}
+        onSearchChange={setQuery}
+        searchPlaceholder="Filter packages…"
+        chips={[
+          { id: "all", label: "All" },
+          { id: "core", label: "Core" },
+          { id: "addon", label: "Add-on" },
+          { id: "observability", label: "Observability" },
+        ]}
+        activeChipId={filter}
+        onChipChange={(id) => setFilter(id as "all" | PlatformPackageKind)}
+      />
+
+      <div className="row row-cards mt-3">
+        {packages.map((pkg) => {
+          const live = statusFor(pkg, health);
+          const toolId = TOOL_BY_PACKAGE[pkg.id];
+          return (
+            <div className="col-md-6 col-xl-4" key={pkg.id}>
+              <ServiceCard
+                name={pkg.name}
+                summary={pkg.summary}
+                kind={kindLabel(pkg.kind)}
+                status={live?.status}
+                reachable={live?.reachable}
+                actions={
+                  <>
+                    {pkg.gatewayPrefix ? (
+                      <div className="mb-2 small">
+                        <span className="text-secondary">API </span>
+                        <code>{pkg.gatewayPrefix}</code>
+                      </div>
+                    ) : null}
+                    <div className="small text-secondary mb-2">{pkg.composeNote}</div>
+                    {!live && (pkg.kind === "addon" || pkg.kind === "observability") ? (
+                      <div className="mb-2">
+                        <StatusBadge tone="infra">Optional</StatusBadge>
+                      </div>
+                    ) : null}
+                    <div className="btn-list">
+                      {pkg.adminPath ? (
+                        <Link className="btn btn-sm" to={pkg.adminPath}>
+                          Open in admin
+                        </Link>
+                      ) : null}
+                      {pkg.healthService ? (
+                        <Link className="btn btn-sm" to={`/services/${pkg.healthService}`}>
+                          Service
+                        </Link>
+                      ) : null}
+                      {toolId ? <ExternalToolLink id={toolId} className="btn btn-sm" /> : null}
+                    </div>
+                  </>
+                }
+              />
+            </div>
+          );
+        })}
+      </div>
+    </PageFrame>
   );
 }

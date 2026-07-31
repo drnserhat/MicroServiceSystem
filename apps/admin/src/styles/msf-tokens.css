@@ -1,0 +1,66 @@
+/* MSF Platform Console — design tokens (Tabler substrate) */
+
+:root,
+[data-bs-theme="light"],
+[data-bs-theme="dark"] {
+  --msf-space-1: 4px;
+  --msf-space-2: 8px;
+  --msf-space-3: 12px;
+  --msf-space-4: 16px;
+  --msf-space-5: 24px;
+  --msf-space-6: 32px;
+  --msf-space-7: 48px;
+  --msf-space-8: 64px;
+
+  --msf-radius-control: 6px;
+  --msf-radius-card: 8px;
+  --msf-radius-drawer: 12px;
+
+  --msf-page-padding: var(--msf-space-5);
+  --msf-motion: 180ms ease;
+
+  --msf-healthy: var(--tblr-green);
+  --msf-degraded: var(--tblr-orange);
+  --msf-critical: var(--tblr-red);
+  --msf-info: var(--tblr-blue);
+  --msf-messaging: var(--tblr-purple);
+  --msf-infra: var(--tblr-secondary);
+  --msf-workflow: var(--tblr-cyan, var(--tblr-azure));
+  --msf-preview: var(--tblr-azure);
+}
+
+.msf-page-frame__header {
+  margin-bottom: var(--msf-space-4);
+}
+
+.msf-page-frame__header .page-title {
+  margin-bottom: var(--msf-space-1);
+}
+
+.msf-page-frame__description {
+  color: var(--tblr-secondary);
+  max-width: 52rem;
+}
+
+.msf-page-frame__body {
+  min-width: 0;
+}
+
+.msf-mono {
+  font-family: var(--tblr-font-monospace);
+  font-size: 0.85em;
+}
+
+.msf-table-skeleton td {
+  vertical-align: middle;
+}
+
+.msf-forbidden {
+  max-width: 32rem;
+  margin: var(--msf-space-7) auto;
+  text-align: center;
+}
+
+.msf-tool-card .card-title {
+  margin-bottom: var(--msf-space-2);
+}

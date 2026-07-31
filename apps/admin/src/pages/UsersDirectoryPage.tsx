@@ -6,7 +6,8 @@ import type { IdentityUserItem } from "@/api/types";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, PageHeader, PaginationBar } from "@/components/ui";
+import { DataTableShell, FilterBar, PageFrame, TableSkeleton } from "@/components/control";
+import { ErrorAlert, PaginationBar } from "@/components/ui";
 
 export function UsersDirectoryPage() {
   return (
@@ -64,8 +65,7 @@ function UsersInner() {
   }
 
   return (
-    <>
-      <PageHeader
+    <PageFrame
         pretitle="Identity"
         title="Users"
         actions={
@@ -75,34 +75,25 @@ function UsersInner() {
             </Link>
           ) : null
         }
-      />
-      <div className="page-body">
-        <div className="container-xl">
+    >
           <ErrorAlert error={error} />
-          <form
-            className="card mb-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (page === 1) void load(1);
-              else setPage(1);
-            }}
-          >
-            <div className="card-body row g-2">
-              <div className="col-md-8">
-                <input
-                  className="form-control"
-                  placeholder="Search email or username"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <div className="col-md-4">
-                <button type="submit" className="btn btn-primary w-100">
-                  Search
-                </button>
-              </div>
-            </div>
-          </form>
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search email or username"
+            trailing={
+              <button
+                type="button"
+                className="btn btn-primary w-100"
+                onClick={() => {
+                  if (page === 1) void load(1);
+                  else setPage(1);
+                }}
+              >
+                Search
+              </button>
+            }
+          />
 
           {disableTarget ? (
             <div className="card mb-3 border-danger">
@@ -124,67 +115,69 @@ function UsersInner() {
             </div>
           ) : null}
 
-          <div className="card">
-            <div className="table-responsive">
-              <table className="table table-vcenter card-table">
-                <thead>
+          <DataTableShell
+            title="Directory"
+            footer={
+              <PaginationBar
+                page={page}
+                totalPages={totalPages}
+                hasPrevious={hasPrevious}
+                hasNext={hasNext}
+                loading={loading}
+                onChange={setPage}
+              />
+            }
+          >
+            <table className="table table-vcenter card-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Username</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? <TableSkeleton rows={5} cols={4} /> : null}
+                {!loading && items.length === 0 ? (
                   <tr>
-                    <th>Email</th>
-                    <th>Username</th>
-                    <th>Status</th>
-                    <th />
+                    <td colSpan={4} className="text-secondary">
+                      No users found.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4} className="text-secondary">
-                        Loading…
-                      </td>
-                    </tr>
-                  ) : null}
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.email}</td>
-                      <td>{item.userName}</td>
-                      <td>
-                        <span className={item.isActive ? "badge bg-green-lt" : "badge bg-red-lt"}>
-                          {item.isActive ? "Active" : "Disabled"}
-                        </span>
-                      </td>
-                      <td className="text-nowrap">
-                        <Link className="btn btn-sm" to={`/users/${item.id}`}>
-                          Open profile
-                        </Link>{" "}
-                        {canDisable && item.isActive ? (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-danger"
-                            onClick={() => {
-                              setDisableReason("Disabled by admin");
-                              setDisableTarget(item);
-                            }}
-                          >
-                            Disable
-                          </button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <PaginationBar
-              page={page}
-              totalPages={totalPages}
-              hasPrevious={hasPrevious}
-              hasNext={hasNext}
-              loading={loading}
-              onChange={setPage}
-            />
-          </div>
-        </div>
-      </div>
-    </>
+                ) : null}
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>{item.email}</td>
+                    <td>{item.userName}</td>
+                    <td>
+                      <span className={item.isActive ? "badge bg-green-lt" : "badge bg-red-lt"}>
+                        {item.isActive ? "Active" : "Disabled"}
+                      </span>
+                    </td>
+                    <td className="text-nowrap">
+                      <Link className="btn btn-sm" to={`/users/${item.id}`}>
+                        Open profile
+                      </Link>{" "}
+                      {canDisable && item.isActive ? (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger"
+                          onClick={() => {
+                            setDisableReason("Disabled by admin");
+                            setDisableTarget(item);
+                          }}
+                        >
+                          Disable
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DataTableShell>
+    </PageFrame>
+
   );
 }

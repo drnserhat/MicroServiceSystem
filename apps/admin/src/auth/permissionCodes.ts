@@ -21,4 +21,6 @@ export const FrameworkPermissions = {
   OpsHealthRead: "ops.health.read",
   OpsOutboxRead: "ops.outbox.read",
   OpsOutboxWrite: "ops.outbox.write",
+  OpsSagaRead: "ops.saga.read",
+  OpsInboxRead: "ops.inbox.read",
 } as const;

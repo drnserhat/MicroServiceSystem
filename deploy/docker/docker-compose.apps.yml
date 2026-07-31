@@ -22,6 +22,8 @@
       ReverseProxy__Clusters__location__Destinations__d1__Address: http://location:8080/
       ReverseProxy__Clusters__logging__Destinations__d1__Address: http://logging:8080/
       Logging__Framework__SeqServerUrl: http://seq
+      ServiceDefaults__Cors__AllowedOrigins__0: http://localhost:5173
+      ServiceDefaults__Cors__AllowedOrigins__1: http://127.0.0.1:5173
     ports:
       - "8080:8080"
     healthcheck:
@@ -30,7 +32,7 @@
       timeout: 5s
       retries: 5
       start_period: 20s
-    # Lite default: only wait for the core path. Optional services use profile "full".
+    # Lite default: wait for core path + settings (admin UI). Optional services use profile "full".
     depends_on:
       redis:
         condition: service_healthy
@@ -39,6 +41,8 @@
       user:
         condition: service_healthy
       coordinator:
+        condition: service_healthy
+      settings:
         condition: service_healthy
 
   identity:
@@ -241,7 +245,6 @@
         condition: service_healthy
 
   settings:
-    profiles: ["full"]
     build:
       context: ../..
       dockerfile: src/Services/Settings/MicroServiceSystem.Services.Settings.Api/Dockerfile
@@ -255,6 +258,9 @@
       Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=settings;Username=msf;Password=msf
       Persistence__Postgres__ApplyMigrationsOnStartup: "true"
       Cache__ConnectionString: redis:6379
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
       Logging__Framework__SeqServerUrl: http://seq
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
@@ -266,6 +272,8 @@
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   location:
@@ -324,6 +332,26 @@
       mongodb:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+
+  # Tabler admin SPA (nginx). API same-origin via nginx → gateway.
+  # UI: http://localhost:5173
+  admin:
+    build:
+      context: ../..
+      dockerfile: apps/admin/Dockerfile
+    ports:
+      - "${ADMIN_HOST_PORT:-5173}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      gateway:
+        condition: service_healthy
+      settings:
         condition: service_healthy
 
 volumes:

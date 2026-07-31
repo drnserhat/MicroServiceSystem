@@ -31,37 +31,52 @@ export async function login(email: string, password: string, tenantId: string): 
   return session;
 }
 
+/** In-flight refresh so parallel 401s share one rotation (Identity refresh is single-winner). */
+let refreshInFlight: Promise<string | null> | null = null;
+
 export async function refreshSession(): Promise<string | null> {
-  const current = loadSession();
-  if (!current?.refreshToken) {
-    clearSession();
-    return null;
+  if (refreshInFlight) {
+    return refreshInFlight;
   }
 
-  try {
-    const data = await apiRequest<LoginResponse>("/identity/api/v1/auth/refresh", {
-      method: "POST",
-      auth: false,
-      tenantId: current.tenantId,
-      body: {
-        refreshToken: current.refreshToken,
+  refreshInFlight = (async () => {
+    const current = loadSession();
+    if (!current?.refreshToken) {
+      clearSession();
+      return null;
+    }
+
+    try {
+      const data = await apiRequest<LoginResponse>("/identity/api/v1/auth/refresh", {
+        method: "POST",
+        auth: false,
         tenantId: current.tenantId,
-      },
-    });
+        body: {
+          refreshToken: current.refreshToken,
+          tenantId: current.tenantId,
+        },
+      });
 
-    const next: AuthSession = {
-      ...current,
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      accessTokenExpiresAtUtc: data.accessTokenExpiresAtUtc,
-      refreshTokenExpiresAtUtc: data.refreshTokenExpiresAtUtc,
-    };
+      const next: AuthSession = {
+        ...current,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        accessTokenExpiresAtUtc: data.accessTokenExpiresAtUtc,
+        refreshTokenExpiresAtUtc: data.refreshTokenExpiresAtUtc,
+      };
 
-    saveSession(next);
-    return next.accessToken;
-  } catch {
-    clearSession();
-    return null;
+      saveSession(next);
+      return next.accessToken;
+    } catch {
+      clearSession();
+      return null;
+    }
+  })();
+
+  try {
+    return await refreshInFlight;
+  } finally {
+    refreshInFlight = null;
   }
 }
 

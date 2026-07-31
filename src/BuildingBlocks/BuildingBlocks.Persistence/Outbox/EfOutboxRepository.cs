@@ -149,6 +149,77 @@ public sealed class EfOutboxRepository<TContext>(TContext context, IDateTimeProv
             .AsNoTracking()
             .CountAsync(message => message.DeadLetteredOnUtc != null && message.ProcessedOnUtc == null, cancellationToken);
 
+    public Task<int> CountPendingAsync(CancellationToken cancellationToken = default) =>
+        context.Set<OutboxMessage>()
+            .AsNoTracking()
+            .CountAsync(
+                message => message.ProcessedOnUtc == null && message.DeadLetteredOnUtc == null,
+                cancellationToken);
+
+    public async Task<IReadOnlyList<OutboxDeadLetterRow>> ListDeadLetteredAsync(
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+
+        return await context.Set<OutboxMessage>()
+            .AsNoTracking()
+            .Where(message => message.DeadLetteredOnUtc != null && message.ProcessedOnUtc == null)
+            .OrderByDescending(message => message.DeadLetteredOnUtc)
+            .Take(take)
+            .Select(message => new OutboxDeadLetterRow(
+                message.Id,
+                message.EventName,
+                message.OccurredOnUtc,
+                message.DeadLetteredOnUtc,
+                message.AttemptCount,
+                message.Error,
+                message.TenantId,
+                message.CorrelationId))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OutboxPendingRow>> ListPendingAsync(
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(take);
+
+        return await context.Set<OutboxMessage>()
+            .AsNoTracking()
+            .Where(message => message.ProcessedOnUtc == null && message.DeadLetteredOnUtc == null)
+            .OrderBy(message => message.OccurredOnUtc)
+            .Take(take)
+            .Select(message => new OutboxPendingRow(
+                message.Id,
+                message.EventName,
+                message.OccurredOnUtc,
+                message.AttemptCount,
+                message.TenantId,
+                message.CorrelationId,
+                message.LockedUntilUtc))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> RequeueDeadLetteredAsync(Guid messageId, CancellationToken cancellationToken = default)
+    {
+        int updated = await context.Set<OutboxMessage>()
+            .Where(message =>
+                message.Id == messageId
+                && message.DeadLetteredOnUtc != null
+                && message.ProcessedOnUtc == null)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(message => message.DeadLetteredOnUtc, (DateTimeOffset?)null)
+                    .SetProperty(message => message.AttemptCount, 0)
+                    .SetProperty(message => message.Error, (string?)null)
+                    .SetProperty(message => message.LockedUntilUtc, (DateTimeOffset?)null)
+                    .SetProperty(message => message.LockedBy, (string?)null),
+                cancellationToken);
+
+        return updated > 0;
+    }
+
     public Task<int> DeletePublishedOlderThanAsync(
         DateTimeOffset thresholdUtc,
         CancellationToken cancellationToken = default) =>

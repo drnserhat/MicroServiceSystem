@@ -5,7 +5,8 @@ import type { TenantItem } from "@/api/types";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, PageHeader, PaginationBar } from "@/components/ui";
+import { PageFrame, TableSkeleton } from "@/components/control";
+import { ErrorAlert, PaginationBar } from "@/components/ui";
 
 export function TenantsPage() {
   return (
@@ -75,10 +76,8 @@ function TenantsInner() {
   }
 
   return (
-    <>
-      <PageHeader pretitle="Identity" title="Tenants" />
-      <div className="page-body">
-        <div className="container-xl">
+    <PageFrame pretitle="Identity" title="Tenants"
+    >
           <ErrorAlert error={error} />
           <form
             className="card mb-3"
@@ -136,13 +135,7 @@ function TenantsInner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={5} className="text-secondary">
-                        Loading…
-                      </td>
-                    </tr>
-                  ) : null}
+                  {loading ? <TableSkeleton rows={5} cols={5} /> : null}
                   {items.map((item) => (
                     <tr key={item.id}>
                       <td>{item.name}</td>
@@ -178,8 +171,7 @@ function TenantsInner() {
               onChange={setPage}
             />
           </div>
-        </div>
-      </div>
-    </>
+    </PageFrame>
+
   );
 }

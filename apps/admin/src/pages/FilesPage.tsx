@@ -4,7 +4,8 @@ import { uploadFile } from "@/api/files";
 import type { FileAsset } from "@/api/types";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, PageHeader, ServiceUnavailableAlert } from "@/components/ui";
+import { PageFrame } from "@/components/control";
+import { ErrorAlert, ServiceUnavailableAlert } from "@/components/ui";
 
 export function FilesPage() {
   return (
@@ -40,10 +41,8 @@ function FilesInner() {
   }
 
   return (
-    <>
-      <PageHeader pretitle="Tools" title="File upload" />
-      <div className="page-body">
-        <div className="container-xl">
+    <PageFrame pretitle="Tools" title="File upload"
+    >
           {unavailable ? <ServiceUnavailableAlert service="File" /> : null}
           <ErrorAlert error={error} />
           <form className="card card-md" onSubmit={onSubmit}>
@@ -78,8 +77,7 @@ function FilesInner() {
               </div>
             </div>
           ) : null}
-        </div>
-      </div>
-    </>
+    </PageFrame>
+
   );
 }

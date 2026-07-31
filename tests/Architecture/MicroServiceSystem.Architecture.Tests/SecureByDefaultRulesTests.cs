@@ -410,6 +410,47 @@ public sealed class SecureByDefaultRulesTests
         apps.ShouldContain("healthPath");
     }
 
+    [Fact]
+    public void Admin_spa_uses_tabler_and_gateway_jwt_paths()
+    {
+        string repoRoot = FindRepoRoot();
+        string adminDir = Path.Combine(repoRoot, "apps", "admin");
+
+        File.Exists(Path.Combine(adminDir, "package.json")).ShouldBeTrue();
+        File.Exists(Path.Combine(adminDir, "src", "App.tsx")).ShouldBeTrue();
+
+        string packageJson = File.ReadAllText(Path.Combine(adminDir, "package.json"));
+        packageJson.ShouldContain("@tabler/core");
+        packageJson.ShouldContain("react-router-dom");
+
+        string main = File.ReadAllText(Path.Combine(adminDir, "src", "main.tsx"));
+        main.ShouldContain("@tabler/core");
+
+        string auth = File.ReadAllText(Path.Combine(adminDir, "src", "api", "auth.ts"));
+        auth.ShouldContain("/identity/api/v1/auth/login");
+        auth.ShouldContain("/identity/api/v1/auth/refresh");
+
+        string settings = File.ReadAllText(Path.Combine(adminDir, "src", "api", "settings.ts"));
+        settings.ShouldContain("/settings/api/v1/settings");
+
+        string gatewayDev = File.ReadAllText(Path.Combine(
+            repoRoot,
+            "src",
+            "Gateway",
+            "Gateway.Api",
+            "appsettings.Development.json"));
+        gatewayDev.ShouldContain("localhost:5173");
+
+        string appsCompose = File.ReadAllText(Path.Combine(
+            repoRoot,
+            "deploy",
+            "docker",
+            "docker-compose.apps.yml"));
+        appsCompose.ShouldContain("admin:");
+        appsCompose.ShouldContain("apps/admin/Dockerfile");
+        appsCompose.ShouldContain("settings:");
+    }
+
     private static bool IsApiAppsettings(string path) =>
         path.Contains($"{Path.DirectorySeparatorChar}Api{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
         || path.Contains($"{Path.DirectorySeparatorChar}Gateway.Api{Path.DirectorySeparatorChar}", StringComparison.Ordinal)

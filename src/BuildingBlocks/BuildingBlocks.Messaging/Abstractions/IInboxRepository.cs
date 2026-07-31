@@ -22,6 +22,18 @@ public interface IInboxRepository
     Task MarkFailedAsync(Guid messageId, string eventName, string error, CancellationToken cancellationToken = default);
 
     Task<int> DeleteProcessedOlderThanAsync(DateTimeOffset thresholdUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>Ops aggregate: successfully processed inbox rows.</summary>
+    Task<int> CountProcessedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Ops aggregate: not yet processed (open + in-flight + failed).</summary>
+    Task<int> CountOpenAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Ops aggregate: open rows currently under a fresh lease.</summary>
+    Task<int> CountInFlightAsync(DateTimeOffset utcNow, CancellationToken cancellationToken = default);
+
+    /// <summary>Ops aggregate: open rows with an error stamped (failed attempts).</summary>
+    Task<int> CountFailedAsync(CancellationToken cancellationToken = default);
 }
 
 public enum InboxReservationStatus

@@ -4,7 +4,8 @@ import { registerUser } from "@/api/users";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, FieldErrors, PageHeader } from "@/components/ui";
+import { PageFrame } from "@/components/control";
+import { ErrorAlert, FieldErrors } from "@/components/ui";
 
 export function RegisterUserPage() {
   return (
@@ -63,10 +64,8 @@ function RegisterUserInner() {
   }
 
   return (
-    <>
-      <PageHeader pretitle="Identity" title="Register user" />
-      <div className="page-body">
-        <div className="container-xl">
+    <PageFrame pretitle="Identity" title="Register user"
+    >
           <div className="card card-md">
             <div className="card-body">
               <ErrorAlert error={error} />
@@ -105,8 +104,7 @@ function RegisterUserInner() {
               </form>
             </div>
           </div>
-        </div>
-      </div>
-    </>
+    </PageFrame>
+
   );
 }

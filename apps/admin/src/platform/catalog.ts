@@ -20,7 +20,7 @@ export const PLATFORM_PACKAGES: PlatformPackage[] = [
     kind: "core",
     summary: "YARP reverse proxy, JWT edge, Swagger aggregation, health aggregate.",
     gatewayPrefix: "/",
-    adminPath: "/health",
+    adminPath: "/map",
     composeNote: "Always on (lite).",
     healthService: undefined,
   },

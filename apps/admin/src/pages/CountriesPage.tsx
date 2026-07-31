@@ -5,7 +5,8 @@ import type { Country } from "@/api/types";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
-import { ErrorAlert, PageHeader, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
+import { PageFrame, TableSkeleton } from "@/components/control";
+import { ErrorAlert, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
 
 export function CountriesPage() {
   return (
@@ -84,10 +85,10 @@ function CountriesInner() {
   }
 
   return (
-    <>
-      <PageHeader pretitle="Reference" title="Countries" />
-      <div className="page-body">
-        <div className="container-xl">
+    <PageFrame
+      pretitle="Reference Data"
+      title="Countries"
+    >
           {unavailable ? <ServiceUnavailableAlert service="Location" /> : null}
           <ErrorAlert error={error} />
           {(canCreate || editing) && (canCreate || canWrite) ? (
@@ -127,13 +128,7 @@ function CountriesInner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4} className="text-secondary">
-                        Loading…
-                      </td>
-                    </tr>
-                  ) : null}
+                  {loading ? <TableSkeleton rows={5} cols={4} /> : null}
                   {items.map((item) => (
                     <tr key={item.id}>
                       <td>
@@ -172,8 +167,6 @@ function CountriesInner() {
               onChange={setPage}
             />
           </div>
-        </div>
-      </div>
-    </>
+    </PageFrame>
   );
 }

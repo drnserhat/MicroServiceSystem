@@ -27,4 +27,28 @@ public sealed class RegisterUserSagaRepository(CoordinatorDbContext context)
             .Take(take)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<RegisterUserSaga>> ListForOpsAsync(
+        string? state,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        if (take <= 0)
+        {
+            return [];
+        }
+
+        IQueryable<RegisterUserSaga> query = Set.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(state)
+            && Enum.TryParse<RegisterUserSagaState>(state, ignoreCase: true, out RegisterUserSagaState parsed))
+        {
+            query = query.Where(saga => saga.State == parsed);
+        }
+
+        return await query
+            .OrderByDescending(saga => saga.CreatedAtUtc)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
 }

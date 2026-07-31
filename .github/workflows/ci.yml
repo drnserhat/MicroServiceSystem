@@ -116,6 +116,11 @@ jobs:
             -f deploy/docker/docker-compose.observability.yml \
             --profile obs \
             config
+          docker compose \
+            -f deploy/docker/docker-compose.yml \
+            -f deploy/docker/docker-compose.apps.yml \
+            -f deploy/docker/docker-compose.resources.yml \
+            config
 
   publish-images:
     runs-on: ubuntu-latest

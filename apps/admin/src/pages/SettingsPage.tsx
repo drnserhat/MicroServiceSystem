@@ -4,8 +4,9 @@ import { deleteSetting, listSettings, upsertSetting } from "@/api/settings";
 import type { SettingItem } from "@/api/types";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
+import { PageFrame, DataTableShell, TableSkeleton } from "@/components/control";
 import { useAuth } from "@/auth/AuthContext";
-import { ErrorAlert, FieldErrors, PageHeader, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
+import { ErrorAlert, FieldErrors, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
 
 export function SettingsPage() {
   return (
@@ -96,10 +97,8 @@ function SettingsPageInner() {
   }
 
   return (
-    <>
-      <PageHeader pretitle="Configuration" title="Settings" />
-      <div className="page-body">
-        <div className="container-xl">
+    <PageFrame pretitle="Configuration" title="Settings"
+    >
           {unavailable ? <ServiceUnavailableAlert service="Settings" /> : null}
           <ErrorAlert error={error} />
           <FieldErrors failures={failures} />
@@ -153,70 +152,62 @@ function SettingsPageInner() {
             </div>
           ) : null}
 
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title">Tenant settings</h3>
-            </div>
-            <div className="table-responsive">
-              <table className="table table-vcenter card-table">
-                <thead>
+          <DataTableShell
+            title="Tenant settings"
+            footer={
+              <PaginationBar
+                page={page}
+                totalPages={totalPages}
+                hasPrevious={hasPrevious}
+                hasNext={hasNext}
+                loading={loading}
+                onChange={setPage}
+              />
+            }
+          >
+            <table className="table table-vcenter card-table">
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                  <th className="w-1">Version</th>
+                  {canWrite ? <th className="w-1" /> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? <TableSkeleton rows={5} cols={4} /> : null}
+                {!loading && items.length === 0 ? (
                   <tr>
-                    <th>Key</th>
-                    <th>Value</th>
-                    <th className="w-1">Version</th>
-                    {canWrite ? <th className="w-1" /> : null}
+                    <td colSpan={4} className="text-secondary">
+                      No settings yet.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={4} className="text-secondary">
-                        Loading…
+                ) : null}
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <code>{item.key}</code>
+                    </td>
+                    <td className="text-secondary">{item.value}</td>
+                    <td>
+                      <span className="badge bg-azure-lt">{item.version}</span>
+                    </td>
+                    {canWrite ? (
+                      <td className="text-nowrap">
+                        <button type="button" className="btn btn-sm" onClick={() => startEdit(item)}>
+                          Edit
+                        </button>{" "}
+                        <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDelete(item)}>
+                          Delete
+                        </button>
                       </td>
-                    </tr>
-                  ) : null}
-                  {!loading && items.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="text-secondary">
-                        No settings yet.
-                      </td>
-                    </tr>
-                  ) : null}
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <code>{item.key}</code>
-                      </td>
-                      <td className="text-secondary">{item.value}</td>
-                      <td>
-                        <span className="badge bg-azure-lt">{item.version}</span>
-                      </td>
-                      {canWrite ? (
-                        <td className="text-nowrap">
-                          <button type="button" className="btn btn-sm" onClick={() => startEdit(item)}>
-                            Edit
-                          </button>{" "}
-                          <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDelete(item)}>
-                            Delete
-                          </button>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <PaginationBar
-              page={page}
-              totalPages={totalPages}
-              hasPrevious={hasPrevious}
-              hasNext={hasNext}
-              loading={loading}
-              onChange={setPage}
-            />
-          </div>
-        </div>
-      </div>
-    </>
+                    ) : null}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DataTableShell>
+    </PageFrame>
+
   );
 }

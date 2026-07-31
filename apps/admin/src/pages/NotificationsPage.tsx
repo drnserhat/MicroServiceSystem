@@ -4,8 +4,9 @@ import { createNotification } from "@/api/notifications";
 import type { IdentityUserItem } from "@/api/types";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
+import { PageFrame } from "@/components/control";
 import { UserPicker } from "@/components/UserPicker";
-import { ErrorAlert, PageHeader, ServiceUnavailableAlert } from "@/components/ui";
+import { ErrorAlert, ServiceUnavailableAlert } from "@/components/ui";
 
 export function NotificationsPage() {
   return (
@@ -47,10 +48,8 @@ function NotificationsInner() {
   }
 
   return (
-    <>
-      <PageHeader pretitle="Tools" title="Send notification" />
-      <div className="page-body">
-        <div className="container-xl">
+    <PageFrame pretitle="Tools" title="Send notification"
+    >
           {unavailable ? <ServiceUnavailableAlert service="Notification" /> : null}
           <ErrorAlert error={error} />
           {success ? <div className="alert alert-success">Notification accepted.</div> : null}
@@ -85,8 +84,7 @@ function NotificationsInner() {
               </div>
             </div>
           </form>
-        </div>
-      </div>
-    </>
+    </PageFrame>
+
   );
 }

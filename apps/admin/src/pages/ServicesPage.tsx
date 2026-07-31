@@ -1,24 +1,60 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ApiClientError } from "@/api/client";
-import { getHealthAggregate } from "@/api/ops";
-import type { ServiceHealthItem } from "@/api/types";
+import { getHealthAggregate, getOutboxSnapshot, OUTBOX_SERVICES, type OutboxService } from "@/api/ops";
+import type { OutboxSummary, ServiceHealthItem } from "@/api/types";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
+import { useAuth } from "@/auth/AuthContext";
 import {
   EmptyState,
   HealthIndicator,
+  PageFrame,
   PreviewBanner,
-  SectionHeader,
   ServiceCard,
   Skeleton,
   StatusBadge,
 } from "@/components/control";
-import { PLATFORM_PACKAGES, type PlatformPackage } from "@/platform/catalog";
+import { FilterBar, usePinnedServices } from "@/components/control/FilterBar";
+import { PLATFORM_PACKAGES, type PlatformPackage, type PlatformPackageKind } from "@/platform/catalog";
+import { ExternalToolLink } from "@/platform/tools";
+import { getTopologyNode, neighborsOf } from "@/platform/topology";
+
+type KindFilter = "all" | PlatformPackageKind | "pinned";
+type StatusFilter = "all" | "healthy" | "attention" | "unknown";
+
+const DETAIL_TABS = [
+  { id: "overview", label: "Overview" },
+  { id: "health", label: "Health" },
+  { id: "dependencies", label: "Dependencies" },
+  { id: "database", label: "Database" },
+  { id: "redis", label: "Redis" },
+  { id: "rabbitmq", label: "RabbitMQ" },
+  { id: "outbox", label: "Outbox" },
+  { id: "inbox", label: "Inbox" },
+  { id: "metrics", label: "Metrics" },
+  { id: "tracing", label: "Tracing" },
+  { id: "logs", label: "Logs" },
+  { id: "configuration", label: "Configuration" },
+  { id: "environment", label: "Environment" },
+  { id: "docker", label: "Docker" },
+  { id: "openapi", label: "OpenAPI" },
+  { id: "version", label: "Version" },
+  { id: "deployment", label: "Deployment" },
+  { id: "timeline", label: "Health Timeline" },
+] as const;
+
+type DetailTabId = (typeof DETAIL_TABS)[number]["id"];
 
 function healthFor(pkg: PlatformPackage, items: ServiceHealthItem[]) {
   if (!pkg.healthService) return undefined;
   return items.find((i) => i.service === pkg.healthService);
+}
+
+function isAttention(live?: ServiceHealthItem) {
+  if (!live) return false;
+  const s = live.status.toLowerCase();
+  return !live.reachable || (s !== "healthy" && s !== "ok");
 }
 
 export function ServicesPage() {
@@ -31,10 +67,21 @@ export function ServicesPage() {
 
 function ServicesInner() {
   const { serviceId } = useParams<{ serviceId?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const { pins, pinnedSet, togglePin } = usePinnedServices();
+
   const [health, setHealth] = useState<ServiceHealthItem[]>([]);
+  const [outboxByService, setOutboxByService] = useState<Partial<Record<OutboxService, OutboxSummary>>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const tabParam = (searchParams.get("tab") as DetailTabId | null) ?? "overview";
+  const activeTab: DetailTabId = DETAIL_TABS.some((t) => t.id === tabParam) ? tabParam : "overview";
 
   const services = useMemo(
     () => PLATFORM_PACKAGES.filter((p) => p.healthService || ["gateway", "admin"].includes(p.id)),
@@ -43,164 +90,549 @@ function ServicesInner() {
 
   useEffect(() => {
     let cancelled = false;
-    void getHealthAggregate()
-      .then((data) => {
-        if (!cancelled) setHealth(data.services);
-      })
-      .catch((err) => {
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const tasks: Promise<void>[] = [
+          getHealthAggregate().then((data) => {
+            if (!cancelled) setHealth(data.services);
+          }),
+        ];
+        if (can(FrameworkPermissions.OpsOutboxRead)) {
+          for (const service of OUTBOX_SERVICES) {
+            tasks.push(
+              getOutboxSnapshot(service, 5)
+                .then((data) => {
+                  if (!cancelled) {
+                    setOutboxByService((prev) => ({ ...prev, [service]: data.summary }));
+                  }
+                })
+                .catch(() => undefined),
+            );
+          }
+        }
+        await Promise.allSettled(tasks);
+      } catch (err) {
         if (!cancelled) setError(err instanceof ApiClientError ? err.message : "Health load failed.");
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    }
+    void load();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [can]);
 
-  const selected = serviceId ? PLATFORM_PACKAGES.find((p) => p.id === serviceId) : undefined;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return services
+      .filter((pkg) => {
+        if (kindFilter === "pinned") return pinnedSet.has(pkg.id);
+        if (kindFilter !== "all" && pkg.kind !== kindFilter) return false;
+        const live = healthFor(pkg, health);
+        if (statusFilter === "healthy") {
+          return live?.status.toLowerCase() === "healthy" || live?.status.toLowerCase() === "ok";
+        }
+        if (statusFilter === "attention") return isAttention(live);
+        if (statusFilter === "unknown") return !live && Boolean(pkg.healthService);
+        return true;
+      })
+      .filter((pkg) => {
+        if (!q) return true;
+        return `${pkg.name} ${pkg.id} ${pkg.summary} ${pkg.kind}`.toLowerCase().includes(q);
+      })
+      .sort((a, b) => {
+        const ap = pinnedSet.has(a.id) ? 0 : 1;
+        const bp = pinnedSet.has(b.id) ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return a.name.localeCompare(b.name);
+      });
+  }, [services, kindFilter, statusFilter, search, health, pinnedSet]);
+
+  const selected = serviceId ? services.find((p) => p.id === serviceId) : undefined;
   const selectedHealth = selected ? healthFor(selected, health) : undefined;
+  const topo = selected ? getTopologyNode(selected.id) : undefined;
+
+  function setTab(id: DetailTabId) {
+    setSearchParams(id === "overview" ? {} : { tab: id }, { replace: true });
+  }
 
   return (
-    <>
-      <SectionHeader
-        title="Service Center"
-        description="Microservice inventory with live readiness where gateway clusters expose probes."
-        actions={
+    <PageFrame
+      pretitle="Platform"
+      title={selected ? selected.name : "Service Center"}
+      description={
+        selected
+          ? selected.summary
+          : "Microservice inventory with live readiness, filters, pins, and a tabbed control-plane detail."
+      }
+      actions={
+        <div className="btn-list">
+          {selected ? (
+            <Link className="btn" to="/services">
+              All services
+            </Link>
+          ) : null}
+          <Link className="btn" to="/map">
+            Platform Map
+          </Link>
           <Link className="btn" to="/platform">
             Packages
           </Link>
-        }
-      />
+        </div>
+      }
+    >
       {error ? <div className="alert alert-danger">{error}</div> : null}
-      <PreviewBanner>
-        CPU, memory, secrets, restart, and health history controls are UI placeholders — no backend ops API.
-      </PreviewBanner>
 
-      {loading ? (
-        <div className="row row-cards">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div className="col-md-4" key={i}>
-              <Skeleton height={160} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="row row-cards">
-          {services.map((pkg) => {
-            const live = healthFor(pkg, health);
-            return (
-              <div className="col-md-4" key={pkg.id}>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(`/services/${pkg.id}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") navigate(`/services/${pkg.id}`);
-                  }}
-                >
-                  <ServiceCard
-                    name={pkg.name}
-                    summary={pkg.summary}
-                    status={live?.status ?? (pkg.kind === "core" ? "Infra" : "Optional")}
-                    reachable={live?.reachable}
-                    kind={pkg.kind}
-                    actions={
-                      <div className="btn-list">
-                        {pkg.adminPath ? (
-                          <Link
-                            className="btn btn-sm"
-                            to={pkg.adminPath}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Open
-                          </Link>
-                        ) : null}
-                        {pkg.gatewayPrefix && pkg.gatewayPrefix !== "/" ? (
-                          <a
-                            className="btn btn-sm"
-                            href={`/docs/${pkg.id}/swagger.json`}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            OpenAPI
-                          </a>
-                        ) : null}
-                      </div>
-                    }
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {!selected ? (
+        <>
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search services…"
+            chips={[
+              { id: "all", label: "All" },
+              { id: "pinned", label: `Pinned (${pins.length})` },
+              { id: "core", label: "Core" },
+              { id: "addon", label: "Add-on" },
+              { id: "observability", label: "Obs" },
+            ]}
+            activeChipId={kindFilter}
+            onChipChange={(id) => setKindFilter(id as KindFilter)}
+            trailing={
+              <select
+                className="form-select form-select-sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                aria-label="Status filter"
+              >
+                <option value="all">Any status</option>
+                <option value="healthy">Healthy</option>
+                <option value="attention">Attention</option>
+                <option value="unknown">No probe</option>
+              </select>
+            }
+          />
 
-      {selected ? (
-        <div className="card mt-3">
-          <div className="card-header">
-            <h3 className="card-title d-flex align-items-center gap-2">
-              <HealthIndicator status={selectedHealth?.status} reachable={selectedHealth?.reachable} />
-              {selected.name}
-            </h3>
-            <div className="card-actions">
-              <StatusBadge status={selectedHealth?.status ?? selected.kind} />
+          {loading ? (
+            <div className="row row-cards">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div className="col-md-4" key={i}>
+                  <Skeleton height={160} />
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="card-body">
-            <p className="text-secondary">{selected.summary}</p>
-            <div className="datagrid">
-              <div className="datagrid-item">
-                <div className="datagrid-title">Compose</div>
-                <div className="datagrid-content">{selected.composeNote}</div>
-              </div>
-              <div className="datagrid-item">
-                <div className="datagrid-title">Gateway prefix</div>
-                <div className="datagrid-content">
-                  <code>{selected.gatewayPrefix ?? "—"}</code>
-                </div>
-              </div>
-              <div className="datagrid-item">
-                <div className="datagrid-title">Dependencies</div>
-                <div className="datagrid-content text-secondary">
-                  Preview: PostgreSQL / Redis / RabbitMQ (service-specific wiring not exposed via API)
-                </div>
-              </div>
-              <div className="datagrid-item">
-                <div className="datagrid-title">CPU / Memory</div>
-                <div className="datagrid-content text-secondary">Preview — awaiting metrics API</div>
-              </div>
-              <div className="datagrid-item">
-                <div className="datagrid-title">Observability</div>
-                <div className="datagrid-content btn-list">
-                  <a className="btn btn-sm" href="http://localhost:5341" target="_blank" rel="noreferrer">
-                    Seq
-                  </a>
-                  <a className="btn btn-sm" href="http://localhost:16686" target="_blank" rel="noreferrer">
-                    Jaeger
-                  </a>
-                  <a className="btn btn-sm" href="http://localhost:3000" target="_blank" rel="noreferrer">
-                    Grafana
-                  </a>
-                </div>
-              </div>
-              <div className="datagrid-item">
-                <div className="datagrid-title">Actions</div>
-                <div className="datagrid-content">
-                  <button type="button" className="btn btn-sm" disabled title="No ops API">
-                    Restart
-                  </button>
-                </div>
-              </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState title="No services match" description="Adjust search or filters." />
+          ) : (
+            <div className="row row-cards">
+              {filtered.map((pkg) => {
+                const live = healthFor(pkg, health);
+                const pinned = pinnedSet.has(pkg.id);
+                return (
+                  <div className="col-md-4" key={pkg.id}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/services/${pkg.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") navigate(`/services/${pkg.id}`);
+                      }}
+                    >
+                      <ServiceCard
+                        name={pkg.name}
+                        summary={pkg.summary}
+                        status={live?.status ?? (pkg.kind === "core" ? "Infra" : "Optional")}
+                        reachable={live?.reachable}
+                        kind={pkg.kind}
+                        actions={
+                          <div className="btn-list">
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              title={pinned ? "Unpin" : "Pin"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePin(pkg.id);
+                              }}
+                            >
+                              {pinned ? "★" : "☆"}
+                            </button>
+                            {pkg.adminPath ? (
+                              <Link
+                                className="btn btn-sm"
+                                to={pkg.adminPath}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Open
+                              </Link>
+                            ) : null}
+                            {pkg.gatewayPrefix && pkg.gatewayPrefix !== "/" ? (
+                              <a
+                                className="btn btn-sm"
+                                href={`/docs/${pkg.id}/swagger.json`}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                OpenAPI
+                              </a>
+                            ) : null}
+                          </div>
+                        }
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        </div>
+          )}
+        </>
       ) : (
-        <div className="mt-3">
-          <EmptyState title="Select a service card" description="Detail drawer fields appear below the grid." />
-        </div>
+        <ServiceDetail
+          pkg={selected}
+          live={selectedHealth}
+          outbox={
+            (OUTBOX_SERVICES as readonly string[]).includes(selected.id)
+              ? (outboxByService[selected.id as OutboxService] ?? null)
+              : null
+          }
+          outboxService={
+            (OUTBOX_SERVICES as readonly string[]).includes(selected.id)
+              ? (selected.id as OutboxService)
+              : null
+          }
+          pinned={pinnedSet.has(selected.id)}
+          onTogglePin={() => togglePin(selected.id)}
+          activeTab={activeTab}
+          onTabChange={setTab}
+          dependsOn={topo?.dependsOn ?? neighborsOf(selected.id).upstream}
+          downstream={neighborsOf(selected.id).downstream}
+        />
       )}
+    </PageFrame>
+  );
+}
+
+function ServiceDetail({
+  pkg,
+  live,
+  outbox,
+  outboxService,
+  pinned,
+  onTogglePin,
+  activeTab,
+  onTabChange,
+  dependsOn,
+  downstream,
+}: {
+  pkg: PlatformPackage;
+  live?: ServiceHealthItem;
+  outbox: OutboxSummary | null;
+  outboxService: OutboxService | null;
+  pinned: boolean;
+  onTogglePin: () => void;
+  activeTab: DetailTabId;
+  onTabChange: (id: DetailTabId) => void;
+  dependsOn: string[];
+  downstream: string[];
+}) {
+  const openApi =
+    pkg.gatewayPrefix && pkg.gatewayPrefix !== "/"
+      ? `/docs/${pkg.id}/swagger.json`
+      : getTopologyNode(pkg.id)?.openApiPath;
+
+  return (
+    <>
+      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <HealthIndicator status={live?.status} reachable={live?.reachable} />
+        <StatusBadge status={live?.status ?? pkg.kind} reachable={live?.reachable} />
+        <span className="badge bg-secondary-lt text-uppercase">{pkg.kind}</span>
+        <button type="button" className="btn btn-sm" onClick={onTogglePin}>
+          {pinned ? "★ Pinned" : "☆ Pin"}
+        </button>
+        <button type="button" className="btn btn-sm" disabled title="No ops API">
+          Restart
+        </button>
+        {pkg.adminPath ? (
+          <Link className="btn btn-sm" to={pkg.adminPath}>
+            Open console surface
+          </Link>
+        ) : null}
+      </div>
+
+      <ul className="nav nav-tabs mb-3 flex-nowrap overflow-auto">
+        {DETAIL_TABS.map((tab) => (
+          <li className="nav-item" key={tab.id}>
+            <button
+              type="button"
+              className={`nav-link ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => onTabChange(tab.id)}
+            >
+              {tab.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <div className="card">
+        <div className="card-body">{renderTab(activeTab, { pkg, live, outbox, outboxService, openApi, dependsOn, downstream })}</div>
+      </div>
     </>
   );
+}
+
+function PreviewPanel({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <>
+      <PreviewBanner>{title} is UI architecture only until a dedicated ops API exists.</PreviewBanner>
+      {children}
+    </>
+  );
+}
+
+function renderTab(
+  tab: DetailTabId,
+  ctx: {
+    pkg: PlatformPackage;
+    live?: ServiceHealthItem;
+    outbox: OutboxSummary | null;
+    outboxService: OutboxService | null;
+    openApi?: string;
+    dependsOn: string[];
+    downstream: string[];
+  },
+) {
+  const { pkg, live, outbox, outboxService, openApi, dependsOn, downstream } = ctx;
+
+  switch (tab) {
+    case "overview":
+      return (
+        <div className="datagrid">
+          <div className="datagrid-item">
+            <div className="datagrid-title">Summary</div>
+            <div className="datagrid-content">{pkg.summary}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Compose</div>
+            <div className="datagrid-content">{pkg.composeNote}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Gateway prefix</div>
+            <div className="datagrid-content">
+              <code>{pkg.gatewayPrefix ?? "—"}</code>
+            </div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Health service id</div>
+            <div className="datagrid-content msf-mono">{pkg.healthService ?? "—"}</div>
+          </div>
+        </div>
+      );
+    case "health":
+      return (
+        <div className="datagrid">
+          <div className="datagrid-item">
+            <div className="datagrid-title">Status</div>
+            <div className="datagrid-content">
+              <StatusBadge status={live?.status ?? "Unknown"} reachable={live?.reachable} />
+            </div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Reachable</div>
+            <div className="datagrid-content">{live ? String(live.reachable) : "—"}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Duration</div>
+            <div className="datagrid-content">
+              {live?.durationMs != null ? `${live.durationMs} ms` : "—"}
+            </div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Description</div>
+            <div className="datagrid-content">{live?.description ?? "No probe in aggregate"}</div>
+          </div>
+        </div>
+      );
+    case "dependencies":
+      return (
+        <>
+          <p className="text-secondary">From Platform Map topology catalog (static + navigable).</p>
+          <div className="row">
+            <div className="col-md-6">
+              <h4>Upstream / depends on</h4>
+              <ul className="list-unstyled">
+                {dependsOn.length === 0 ? <li className="text-secondary">—</li> : null}
+                {dependsOn.map((id) => (
+                  <li key={id}>
+                    <Link to={`/services/${id}`}>{getTopologyNode(id)?.label ?? id}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="col-md-6">
+              <h4>Downstream</h4>
+              <ul className="list-unstyled">
+                {downstream.length === 0 ? <li className="text-secondary">—</li> : null}
+                {downstream.map((id) => (
+                  <li key={id}>
+                    <Link to={`/map`}>{getTopologyNode(id)?.label ?? id}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </>
+      );
+    case "database":
+      return (
+        <PreviewPanel title="Database ownership / connection pool">
+          <p className="mb-0 text-secondary">
+            Database-per-service. Expected store:{" "}
+            <strong>{pkg.id === "logging" ? "MongoDB" : "PostgreSQL"}</strong> (catalog heuristic).
+          </p>
+        </PreviewPanel>
+      );
+    case "redis":
+      return (
+        <PreviewPanel title="Redis usage">
+          <p className="mb-0 text-secondary">Cache / distributed primitives — no Redis ops API in admin yet.</p>
+        </PreviewPanel>
+      );
+    case "rabbitmq":
+      return (
+        <PreviewPanel title="RabbitMQ bindings">
+          <div className="btn-list">
+            <ExternalToolLink id="rabbitmq" className="btn" />
+            <Link className="btn" to="/messaging">
+              Messaging Center
+            </Link>
+          </div>
+        </PreviewPanel>
+      );
+    case "outbox":
+      return outboxService && outbox ? (
+        <div className="datagrid">
+          <div className="datagrid-item">
+            <div className="datagrid-title">Service</div>
+            <div className="datagrid-content">
+              <code>{outbox.service}</code>
+            </div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Pending</div>
+            <div className="datagrid-content">{outbox.pendingCount}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Dead letters</div>
+            <div className="datagrid-content">{outbox.deadLetterCount}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Actions</div>
+            <div className="datagrid-content">
+              <Link className="btn btn-sm" to={`/messaging/outbox?service=${outboxService}`}>
+                Open Messaging Center
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <PreviewPanel title="Per-service outbox">
+          <p className="mb-0 text-secondary">
+            This package has no outbox ops surface (or snapshot unavailable). Logging has no outbox store.
+          </p>
+        </PreviewPanel>
+      );
+    case "inbox":
+      return (
+        <PreviewPanel title="Inbox / idempotent consumers">
+          <p className="mb-0 text-secondary">Inbox metrics are not exposed via gateway yet.</p>
+        </PreviewPanel>
+      );
+    case "metrics":
+      return (
+        <PreviewPanel title="CPU / memory / custom metrics">
+          <div className="btn-list">
+            <ExternalToolLink id="prometheus" className="btn" />
+            <ExternalToolLink id="grafana" className="btn" />
+          </div>
+        </PreviewPanel>
+      );
+    case "tracing":
+      return (
+        <PreviewPanel title="Distributed traces">
+          <ExternalToolLink id="jaeger" className="btn" />
+        </PreviewPanel>
+      );
+    case "logs":
+      return (
+        <PreviewPanel title="Service-scoped logs">
+          <div className="btn-list">
+            <ExternalToolLink id="seq" className="btn" />
+            <Link className="btn" to="/logs">
+              System logs
+            </Link>
+          </div>
+        </PreviewPanel>
+      );
+    case "configuration":
+      return (
+        <PreviewPanel title="Config / secrets">
+          {pkg.id === "settings" ? (
+            <Link className="btn" to="/settings">
+              Tenant settings
+            </Link>
+          ) : (
+            <p className="mb-0 text-secondary">No config browser API for this service.</p>
+          )}
+        </PreviewPanel>
+      );
+    case "environment":
+      return (
+        <PreviewPanel title="Environment variables">
+          <p className="mb-0 text-secondary">Compose/env injection is managed outside this console.</p>
+        </PreviewPanel>
+      );
+    case "docker":
+      return (
+        <PreviewPanel title="Container / Docker">
+          <p className="mb-0 text-secondary">{pkg.composeNote}</p>
+        </PreviewPanel>
+      );
+    case "openapi":
+      return openApi ? (
+        <div>
+          <p className="text-secondary">Gateway-aggregated OpenAPI document.</p>
+          <a className="btn btn-primary" href={openApi} target="_blank" rel="noreferrer">
+            Open swagger.json
+          </a>
+        </div>
+      ) : (
+        <EmptyState title="No OpenAPI link" description="This package has no gateway API prefix." />
+      );
+    case "version":
+      return (
+        <PreviewPanel title="Build / image version">
+          <p className="mb-0 msf-mono text-secondary">
+            {getTopologyNode(pkg.id)?.versionLabel ?? pkg.kind} · awaiting version API
+          </p>
+        </PreviewPanel>
+      );
+    case "deployment":
+      return (
+        <PreviewPanel title="Deployment history">
+          <p className="mb-0 text-secondary">Compose/Helm rollout history is not wired.</p>
+        </PreviewPanel>
+      );
+    case "timeline":
+      return (
+        <PreviewPanel title="Health timeline">
+          <p className="mb-0 text-secondary">Historical probe series require a metrics/BFF store.</p>
+        </PreviewPanel>
+      );
+    default:
+      return null;
+  }
 }

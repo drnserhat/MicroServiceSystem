@@ -93,6 +93,10 @@ public sealed class LoginCommandHandler(
 
         user.RecordSuccessfulLogin();
 
+        // Keep role permission catalogs aligned with FrameworkPermissions defaults on each login.
+        await AccessTokenFactory.GetOrCreateMemberRoleAsync(roles, command.TenantId, cancellationToken);
+        await AccessTokenFactory.GetOrCreateAdminRoleAsync(roles, command.TenantId, cancellationToken);
+
         if (user.RoleIds.Count == 0)
         {
             Role memberRole = await AccessTokenFactory.GetOrCreateMemberRoleAsync(

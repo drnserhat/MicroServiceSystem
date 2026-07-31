@@ -25,12 +25,14 @@ src/
   Shared/SharedKernel        Domain primitives, Result pattern, specifications, pagination
   Shared/Contracts           Integration event contracts exchanged between services
   BuildingBlocks/            Cross cutting technical capabilities
-  Gateway/                   YARP edge
+  Gateway/                   YARP edge (+ /ops health aggregate)
   Coordinator/               Saga orchestration
   Services/                  Bounded contexts
+apps/admin                   React + Vite + Tabler admin SPA (gateway JWT client)
 templates/                   dotnet new templates for services and CRUD aggregates
 tests/Architecture/          Architecture rules enforced on every build
 deploy/                      Docker, Helm, migrate, secrets, observability
+docs/                        Operator docs (admin panel status, workflows, …)
 ```
 
 Each service follows the same shape:
@@ -84,6 +86,40 @@ docker compose -f deploy/docker/docker-compose.yml \
   --profile obs up -d --build
 ```
 
+### Admin panel (React + Tabler)
+
+[`apps/admin`](apps/admin) ships in the **default lite** Docker stack (nginx on **http://localhost:5173**).
+
+| | |
+|--|--|
+| Login | `admin@dev.local` / `DevAdmin!Pass1` |
+| Tenant | `11111111-1111-1111-1111-111111111111` |
+| Status & feature map | **[docs/admin-panel.md](docs/admin-panel.md)** |
+| App runbook | [apps/admin/README.md](apps/admin/README.md) |
+
+**Implemented today:** Tabler dark shell; Settings CRUD; Users (directory / register / profile without raw GUID entry); Tenants & Roles; Health aggregate; Identity outbox ops; **Services & packages** catalog (core vs add-on vs observability). Audit / Logs / Countries / Files / Notifications need Compose `--profile full`.
+
+```bash
+docker compose -f deploy/docker/docker-compose.yml \
+  -f deploy/docker/docker-compose.apps.yml \
+  -f deploy/docker/docker-compose.resources.yml \
+  up -d --build
+```
+
+Rebuild Identity at least once so tenant/admin migrations and seed run (`--build`). After permission updates, re-login so the JWT refreshes claims. If login still fails after an old volume, wipe postgres data or apply migrate.
+
+**Rebuild admin UI only:**
+
+```bash
+docker compose -p microsystem \
+  -f deploy/docker/docker-compose.yml \
+  -f deploy/docker/docker-compose.apps.yml \
+  -f deploy/docker/docker-compose.resources.yml \
+  up -d --build --force-recreate --no-deps admin
+```
+
+**Local Vite (hot reload):** `cd apps/admin && npm install && npm run dev` (API via Vite proxy to `:8080` or `VITE_API_BASE_URL`).
+
 With the observability overlay, apps export OTLP to Jaeger (`http://localhost:16686`). Prometheus scrapes `/metrics` on every service (`http://localhost:9090`); Grafana is at `http://localhost:3000` (admin/admin).
 
 On push to `main`/`master`/`develop`, CI publishes container images to GHCR as `ghcr.io/<owner>/msf-<service>:<sha|branch|latest>`.
@@ -131,7 +167,7 @@ Self-signup is closed: `POST /registration` requires a JWT with `registration.us
 
 | Prefix | Service |
 |--------|---------|
-| `/identity` | Identity |
+| `/identity` | Identity (auth; JWT admin: tenants, users directory, roles, outbox ops) |
 | `/user` | User |
 | `/coordinator` | Coordinator |
 | `/registration` | Coordinator RegisterUser saga |
@@ -141,6 +177,7 @@ Self-signup is closed: `POST /registration` requires a JWT with `registration.us
 | `/settings` | Settings (list / get / upsert / delete; ETag + If-Match on update/delete) |
 | `/location` | Location (countries CRUD + ETag/If-Match) |
 | `/logging` | Logging (ingest + filtered list + get-by-id) |
+| `/ops` | Gateway-local ops (e.g. `GET /ops/api/v1/health/services`) — not a YARP prefix to another cluster |
 
 Settings is the exemplar tenant CRUD: `GET /settings` is paged, `GET /settings/{key}` returns `ETag`, create via `PUT` without `If-Match`, update/delete require `If-Match` (428 if missing, 409 on conflict).
 
