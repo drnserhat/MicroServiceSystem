@@ -113,6 +113,8 @@ public sealed class IdentityUser : TenantAggregateRoot<Guid>
             _roleIds.Add(roleId);
         }
     }
+
+    public void RemoveRole(Guid roleId) => _roleIds.Remove(roleId);
 }
 
 public static class IdentityUserConstraints

@@ -5,6 +5,7 @@ using MicroServiceSystem.Contracts.Events.Identity;
 using MicroServiceSystem.Services.Identity.Application.Abstractions;
 using MicroServiceSystem.Services.Identity.Domain.Aggregates;
 using MicroServiceSystem.SharedKernel.Abstractions;
+using MicroServiceSystem.SharedKernel.Constants;
 using MicroServiceSystem.SharedKernel.Pagination;
 using MicroServiceSystem.SharedKernel.Results;
 using MicroServiceSystem.SharedKernel.Specifications;
@@ -27,6 +28,10 @@ public sealed record ListRolesQuery : IQuery<IReadOnlyList<RoleResponse>>;
 
 public sealed record AdminDisableUserCommand(Guid UserId, string Reason) : ICommand;
 
+public sealed record AdminAssignUserRoleCommand(Guid UserId, Guid RoleId) : ICommand;
+
+public sealed record AdminUnassignUserRoleCommand(Guid UserId, Guid RoleId) : ICommand;
+
 public sealed class ListIdentityUsersQueryValidator : AbstractValidator<ListIdentityUsersQuery>
 {
     public ListIdentityUsersQueryValidator()
@@ -42,6 +47,24 @@ public sealed class AdminDisableUserCommandValidator : AbstractValidator<AdminDi
     {
         RuleFor(command => command.UserId).NotEmpty();
         RuleFor(command => command.Reason).NotEmpty().MaximumLength(512);
+    }
+}
+
+public sealed class AdminAssignUserRoleCommandValidator : AbstractValidator<AdminAssignUserRoleCommand>
+{
+    public AdminAssignUserRoleCommandValidator()
+    {
+        RuleFor(command => command.UserId).NotEmpty();
+        RuleFor(command => command.RoleId).NotEmpty();
+    }
+}
+
+public sealed class AdminUnassignUserRoleCommandValidator : AbstractValidator<AdminUnassignUserRoleCommand>
+{
+    public AdminUnassignUserRoleCommandValidator()
+    {
+        RuleFor(command => command.UserId).NotEmpty();
+        RuleFor(command => command.RoleId).NotEmpty();
     }
 }
 
@@ -112,6 +135,64 @@ public sealed class AdminDisableUserCommandHandler(
             },
             cancellationToken);
 
+        return Result.Success();
+    }
+}
+
+public sealed class AdminAssignUserRoleCommandHandler(
+    IIdentityUserRepository users,
+    IRoleRepository roles) : ICommandHandler<AdminAssignUserRoleCommand>
+{
+    public async Task<Result> Handle(AdminAssignUserRoleCommand command, CancellationToken cancellationToken)
+    {
+        IdentityUser? user = await users.GetByIdAsync(command.UserId, cancellationToken);
+        if (user is null)
+        {
+            return Result.Failure(IdentityErrors.UserNotFound);
+        }
+
+        Role? role = await roles.GetByIdAsync(command.RoleId, cancellationToken);
+        if (role is null)
+        {
+            return Result.Failure(IdentityErrors.RoleNotFound);
+        }
+
+        user.AssignRole(role.Id);
+        users.Update(user);
+        return Result.Success();
+    }
+}
+
+public sealed class AdminUnassignUserRoleCommandHandler(
+    IIdentityUserRepository users,
+    IRoleRepository roles) : ICommandHandler<AdminUnassignUserRoleCommand>
+{
+    public async Task<Result> Handle(AdminUnassignUserRoleCommand command, CancellationToken cancellationToken)
+    {
+        IdentityUser? user = await users.GetByIdAsync(command.UserId, cancellationToken);
+        if (user is null)
+        {
+            return Result.Failure(IdentityErrors.UserNotFound);
+        }
+
+        Role? role = await roles.GetByIdAsync(command.RoleId, cancellationToken);
+        if (role is null)
+        {
+            return Result.Failure(IdentityErrors.RoleNotFound);
+        }
+
+        if (user.RoleIds.Contains(role.Id)
+            && role.NormalizedName == FrameworkPermissions.AdminRoleName.ToUpperInvariant())
+        {
+            int activeAdmins = await users.CountActiveUsersWithRoleAsync(role.Id, cancellationToken);
+            if (user.IsActive && activeAdmins <= 1)
+            {
+                return Result.Failure(IdentityErrors.LastAdminProtected);
+            }
+        }
+
+        user.RemoveRole(role.Id);
+        users.Update(user);
         return Result.Success();
     }
 }

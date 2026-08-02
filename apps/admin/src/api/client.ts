@@ -1,6 +1,20 @@
 import type { ApiResponse, AuthSession } from "./types";
 
 const SESSION_KEY = "msf.admin.session";
+const ACCESS_TOKEN_REFRESH_SKEW_MS = 60_000;
+
+function isSessionExpiringSoon(session: AuthSession | null): boolean {
+  if (!session?.accessTokenExpiresAtUtc) {
+    return true;
+  }
+
+  const expiresAt = Date.parse(session.accessTokenExpiresAtUtc);
+  if (!Number.isFinite(expiresAt)) {
+    return true;
+  }
+
+  return Date.now() >= expiresAt - ACCESS_TOKEN_REFRESH_SKEW_MS;
+}
 
 export function getApiBaseUrl(): string {
   const configured = import.meta.env.VITE_API_BASE_URL?.trim();
@@ -84,8 +98,19 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   const session = loadSession();
-  const token = options.token ?? (options.auth === false ? null : session?.accessToken);
+  let token = options.token ?? (options.auth === false ? null : session?.accessToken);
   const tenantId = options.tenantId ?? session?.tenantId;
+
+  // Refresh before the access token expires so the first request does not 401 in DevTools.
+  if (
+    options.auth !== false &&
+    options.token === undefined &&
+    refreshHandler &&
+    session?.accessToken &&
+    isSessionExpiringSoon(session)
+  ) {
+    token = (await refreshHandler()) ?? token;
+  }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;

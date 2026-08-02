@@ -291,6 +291,9 @@
       Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=location;Username=msf;Password=msf
       Persistence__Postgres__ApplyMigrationsOnStartup: "true"
       Cache__ConnectionString: redis:6379
+      Messaging__RabbitMq__Host: rabbitmq
+      Messaging__RabbitMq__UserName: msf
+      Messaging__RabbitMq__Password: msf
       Logging__Framework__SeqServerUrl: http://seq
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
@@ -302,6 +305,8 @@
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   logging:

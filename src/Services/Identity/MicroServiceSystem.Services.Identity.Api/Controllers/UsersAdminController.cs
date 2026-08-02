@@ -27,6 +27,22 @@ public sealed class UsersAdminController(ISender sender) : ApiControllerBase
         [FromBody] AdminDisableUserRequest request,
         CancellationToken cancellationToken) =>
         ToActionResult(await sender.Send(new AdminDisableUserCommand(userId, request.Reason), cancellationToken));
+
+    [HttpPost("{userId:guid}/roles/{roleId:guid}")]
+    [HasPermission(FrameworkPermissions.IdentityRolesAssign)]
+    public async Task<IActionResult> AssignRole(
+        Guid userId,
+        Guid roleId,
+        CancellationToken cancellationToken) =>
+        ToActionResult(await sender.Send(new AdminAssignUserRoleCommand(userId, roleId), cancellationToken));
+
+    [HttpDelete("{userId:guid}/roles/{roleId:guid}")]
+    [HasPermission(FrameworkPermissions.IdentityRolesAssign)]
+    public async Task<IActionResult> UnassignRole(
+        Guid userId,
+        Guid roleId,
+        CancellationToken cancellationToken) =>
+        ToActionResult(await sender.Send(new AdminUnassignUserRoleCommand(userId, roleId), cancellationToken));
 }
 
 public sealed record AdminDisableUserRequest(string Reason);

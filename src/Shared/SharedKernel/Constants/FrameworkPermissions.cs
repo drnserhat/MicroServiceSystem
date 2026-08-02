@@ -37,6 +37,7 @@ public static class FrameworkPermissions
     public const string IdentityUsersRead = "identity.users.read";
     public const string IdentityUsersDisable = "identity.users.disable";
     public const string IdentityRolesRead = "identity.roles.read";
+    public const string IdentityRolesAssign = "identity.roles.assign";
 
     public const string OpsHealthRead = "ops.health.read";
     public const string OpsOutboxRead = "ops.outbox.read";
@@ -80,6 +81,7 @@ public static class FrameworkPermissions
         IdentityUsersRead,
         IdentityUsersDisable,
         IdentityRolesRead,
+        IdentityRolesAssign,
         OpsHealthRead,
         OpsOutboxRead,
         OpsOutboxWrite,

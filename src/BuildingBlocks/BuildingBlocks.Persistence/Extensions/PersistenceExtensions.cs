@@ -11,6 +11,9 @@ using MicroServiceSystem.BuildingBlocks.Persistence.Interceptors;
 using MicroServiceSystem.BuildingBlocks.Persistence.Mongo;
 using MicroServiceSystem.BuildingBlocks.Persistence.Outbox;
 using MicroServiceSystem.SharedKernel.Abstractions;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 using ContextsCompat = MicroServiceSystem.BuildingBlocks.Persistence.Contexts;
@@ -132,6 +135,9 @@ public static class PersistenceExtensions
 
         MongoOptions mongoOptions = configuration.GetSection(MongoOptions.SectionName).Get<MongoOptions>()
             ?? throw new InvalidOperationException($"Configuration section '{MongoOptions.SectionName}' is missing.");
+
+        // MongoDB.Driver 3.x refuses Guid filters/documents when representation is Unspecified.
+        BsonSerializer.TryRegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
         services.AddSingleton<IMongoClient>(_ => new MongoClient(mongoOptions.ConnectionString));
         services.AddSingleton<IMongoContext, MongoContext>();

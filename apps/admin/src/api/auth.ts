@@ -5,8 +5,53 @@ const defaultTenantId =
   import.meta.env.VITE_DEFAULT_TENANT_ID?.trim() ||
   "11111111-1111-1111-1111-111111111111";
 
+/** Refresh this many ms before access-token expiry to avoid a console 401 + retry. */
+export const ACCESS_TOKEN_REFRESH_SKEW_MS = 60_000;
+
+type SessionListener = (session: AuthSession | null) => void;
+const sessionListeners = new Set<SessionListener>();
+
+export function subscribeSession(listener: SessionListener): () => void {
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+}
+
+function publishSession(session: AuthSession | null): void {
+  for (const listener of sessionListeners) {
+    listener(session);
+  }
+}
+
+function persistSession(session: AuthSession): void {
+  saveSession(session);
+  publishSession(session);
+}
+
+function dropSession(): void {
+  clearSession();
+  publishSession(null);
+}
+
 export function getDefaultTenantId(): string {
   return defaultTenantId;
+}
+
+export function isAccessTokenExpiringSoon(
+  session: AuthSession | null | undefined,
+  skewMs = ACCESS_TOKEN_REFRESH_SKEW_MS,
+): boolean {
+  if (!session?.accessTokenExpiresAtUtc) {
+    return true;
+  }
+
+  const expiresAt = Date.parse(session.accessTokenExpiresAtUtc);
+  if (!Number.isFinite(expiresAt)) {
+    return true;
+  }
+
+  return Date.now() >= expiresAt - skewMs;
 }
 
 export async function login(email: string, password: string, tenantId: string): Promise<AuthSession> {
@@ -27,7 +72,7 @@ export async function login(email: string, password: string, tenantId: string): 
     refreshTokenExpiresAtUtc: data.refreshTokenExpiresAtUtc,
   };
 
-  saveSession(session);
+  persistSession(session);
   return session;
 }
 
@@ -42,7 +87,7 @@ export async function refreshSession(): Promise<string | null> {
   refreshInFlight = (async () => {
     const current = loadSession();
     if (!current?.refreshToken) {
-      clearSession();
+      dropSession();
       return null;
     }
 
@@ -65,10 +110,10 @@ export async function refreshSession(): Promise<string | null> {
         refreshTokenExpiresAtUtc: data.refreshTokenExpiresAtUtc,
       };
 
-      saveSession(next);
+      persistSession(next);
       return next.accessToken;
     } catch {
-      clearSession();
+      dropSession();
       return null;
     }
   })();
@@ -81,7 +126,7 @@ export async function refreshSession(): Promise<string | null> {
 }
 
 export function logout(): void {
-  clearSession();
+  dropSession();
 }
 
 export function bootstrapAuthRefresh(): void {

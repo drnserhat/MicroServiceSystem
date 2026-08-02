@@ -13,6 +13,11 @@ public sealed class IdentityUserRepository(IdentityDbContext context)
 
     public Task<IdentityUser?> FindByUserNameAsync(string userName, CancellationToken cancellationToken = default) =>
         Set.FirstOrDefaultAsync(user => user.UserName == userName.Trim(), cancellationToken);
+
+    public Task<int> CountActiveUsersWithRoleAsync(Guid roleId, CancellationToken cancellationToken = default) =>
+        Set.CountAsync(
+            user => user.IsActive && EF.Property<List<Guid>>(user, "_roleIds").Contains(roleId),
+            cancellationToken);
 }
 
 public sealed class RefreshTokenRepository(IdentityDbContext context)

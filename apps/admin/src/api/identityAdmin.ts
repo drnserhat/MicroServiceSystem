@@ -53,3 +53,15 @@ export function disableIdentityUser(userId: string, reason: string): Promise<nul
 export function listRoles(): Promise<RoleItem[]> {
   return apiRequest<RoleItem[]>("/identity/api/v1/roles");
 }
+
+export function assignUserRole(userId: string, roleId: string): Promise<null> {
+  return apiRequest<null>(`/identity/api/v1/users/${userId}/roles/${roleId}`, {
+    method: "POST",
+  });
+}
+
+export function unassignUserRole(userId: string, roleId: string): Promise<null> {
+  return apiRequest<null>(`/identity/api/v1/users/${userId}/roles/${roleId}`, {
+    method: "DELETE",
+  });
+}

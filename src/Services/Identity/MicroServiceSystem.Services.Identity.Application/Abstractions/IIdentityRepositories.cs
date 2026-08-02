@@ -8,6 +8,9 @@ public interface IIdentityUserRepository : IRepository<IdentityUser, Guid>
     Task<IdentityUser?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
 
     Task<IdentityUser?> FindByUserNameAsync(string userName, CancellationToken cancellationToken = default);
+
+    /// <summary>Active users that currently hold <paramref name="roleId"/> (tenant-filtered).</summary>
+    Task<int> CountActiveUsersWithRoleAsync(Guid roleId, CancellationToken cancellationToken = default);
 }
 
 public interface IRefreshTokenRepository : IRepository<RefreshToken, Guid>

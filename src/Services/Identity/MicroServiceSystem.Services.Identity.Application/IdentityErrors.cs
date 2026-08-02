@@ -41,4 +41,12 @@ public static class IdentityErrors
 
     public static readonly Error TenantAlreadyExists =
         Error.Conflict("identity.tenant_already_exists", "A tenant with this id already exists.");
+
+    public static readonly Error RoleNotFound =
+        Error.NotFound("identity.role_not_found", "Role was not found in this tenant.");
+
+    public static readonly Error LastAdminProtected =
+        Error.Conflict(
+            "identity.last_admin_protected",
+            "Cannot remove the Admin role from the last active administrator in this tenant.");
 }

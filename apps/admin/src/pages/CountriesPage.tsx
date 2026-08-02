@@ -143,9 +143,18 @@ function CountriesInner() {
                 {canWrite ? <th /> : null}
               </tr>
             </thead>
-            <tbody>
-              {loading ? <TableSkeleton rows={5} cols={4} /> : null}
-              {items.map((item) => (
+                <tbody>
+                  {loading ? <TableSkeleton rows={5} cols={4} /> : null}
+                  {!loading && items.length === 0 ? (
+                    <tr>
+                      <td colSpan={canWrite ? 4 : 3} className="text-secondary">
+                        No countries yet. In Development the Location service seeds ISO 3166-1 codes for the
+                        demo tenant on startup — restart <code>location</code> if the list stays empty, or
+                        create one below (e.g. <code>TR</code> / Turkey).
+                      </td>
+                    </tr>
+                  ) : null}
+                  {items.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <code>{item.code}</code>

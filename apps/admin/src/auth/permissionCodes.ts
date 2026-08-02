@@ -18,6 +18,7 @@ export const FrameworkPermissions = {
   IdentityUsersRead: "identity.users.read",
   IdentityUsersDisable: "identity.users.disable",
   IdentityRolesRead: "identity.roles.read",
+  IdentityRolesAssign: "identity.roles.assign",
   OpsHealthRead: "ops.health.read",
   OpsOutboxRead: "ops.outbox.read",
   OpsOutboxWrite: "ops.outbox.write",

@@ -2,15 +2,20 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import {
+  ACCESS_TOKEN_REFRESH_SKEW_MS,
   bootstrapAuthRefresh,
   getDefaultTenantId,
+  isAccessTokenExpiringSoon,
   login as loginRequest,
   logout as logoutRequest,
+  refreshSession,
+  subscribeSession,
 } from "@/api/auth";
 import { loadSession } from "@/api/client";
 import type { AuthSession } from "@/api/types";
@@ -34,6 +39,28 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(() => loadSession());
+
+  useEffect(() => subscribeSession(setSession), []);
+
+  useEffect(() => {
+    if (!session?.accessTokenExpiresAtUtc) {
+      return;
+    }
+
+    const expiresAt = Date.parse(session.accessTokenExpiresAtUtc);
+    if (!Number.isFinite(expiresAt)) {
+      return;
+    }
+
+    const delay = Math.max(5_000, expiresAt - Date.now() - ACCESS_TOKEN_REFRESH_SKEW_MS);
+    const timer = window.setTimeout(() => {
+      if (isAccessTokenExpiringSoon(loadSession())) {
+        void refreshSession();
+      }
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [session?.accessTokenExpiresAtUtc, session?.accessToken]);
 
   const login = useCallback(async (email: string, password: string, tenantId: string) => {
     const next = await loginRequest(email, password, tenantId);

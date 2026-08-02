@@ -38,7 +38,7 @@ After Identity permission changes, **log out and log in again** so the JWT picks
 | Messaging Center | Done | Live per-service outbox/DLQ + inbox counts; topology **UI preview** |
 | Service Center | Done | Catalog + live health; CPU/secrets/restart = preview |
 | Workflow / Architecture / BuildingBlocks / Developer | Done | Live saga ops; Architecture/Blocks/Dev remain design-time |
-| User/role assignment UI | Not started | Roles are read-only in admin today |
+| User/role assignment UI | Done | `identity.roles.assign`; last-Admin protected; Roles page remains catalog |
 | Outbox ops for every service | Done (P0) | Thin per-Api controllers; Gateway catch-all |
 | Helm/K8s operator surface | Not started | Compose-oriented today |
 
@@ -119,15 +119,15 @@ docker compose -f deploy/docker/docker-compose.yml \
 | Register user | `POST /registration` |
 | Profile | `/user/api/v1/users/profiles/{id}` |
 | Tenants (JWT admin) | `GET /identity/api/v1/tenants`, `POST .../tenants/admin`, `POST .../activation` |
-| Users directory | `GET /identity/api/v1/users`, `POST .../users/{id}/disable` |
-| Roles | `GET /identity/api/v1/roles` |
+| Users directory | `GET /identity/api/v1/users`, `POST .../users/{id}/disable`, `POST\|DELETE .../users/{id}/roles/{roleId}` |
+| Roles | `GET /identity/api/v1/roles` (catalog; assign/unassign is on Users) |
 | Health aggregate | `GET /ops/api/v1/health/services` |
 | Outbox snapshot / requeue | `/{service}/api/v1/ops/outbox` (identity, user, settings, coordinator, audit, notification, file, location) |
 
 Phase 11: [phase-11-ops-api-epic.md](phase-11-ops-api-epic.md) — **Architect DECIDED**; P0 outbox + P1 saga/inbox shipped; C5/C6 rejected.
 
 New Admin JWT permissions (in `FrameworkPermissions.AdminDefaults`):  
-`identity.tenants.read|write`, `identity.users.read|disable`, `identity.roles.read`, `ops.health.read`, `ops.outbox.read|write`.
+`identity.tenants.read|write`, `identity.users.read|disable`, `identity.roles.read|assign`, `ops.health.read`, `ops.outbox.read|write`.
 
 ---
 
