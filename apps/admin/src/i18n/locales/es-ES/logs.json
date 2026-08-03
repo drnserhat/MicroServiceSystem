@@ -1,0 +1,14 @@
+{
+  "pretitle": "Observabilidad",
+  "title": "Registros del sistema",
+  "levelPlaceholder": "Nivel",
+  "sourcePlaceholder": "Origen",
+  "correlationPlaceholder": "Correlation ID",
+  "filter": "Filtrar",
+  "empty": "Sin entradas de registro.",
+  "loadFailed": "Error al cargar registros.",
+  "viewerTitle": "Entradas de registro",
+  "colTime": "Hora",
+  "colLevel": "Nivel",
+  "colMessage": "Mensaje"
+}

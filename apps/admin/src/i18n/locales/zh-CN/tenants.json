@@ -1,0 +1,21 @@
+{
+  "pretitle": "Identity",
+  "title": "Tenant",
+  "searchPlaceholder": "搜索名称或 slug",
+  "colName": "名称",
+  "colSlug": "Slug",
+  "colId": "ID",
+  "colStatus": "状态",
+  "activate": "激活",
+  "deactivate": "停用",
+  "activateTitle": "激活 Tenant",
+  "deactivateTitle": "停用 Tenant",
+  "activateMessage": "激活 Tenant \"{{name}}\" ({{slug}})？",
+  "deactivateMessage": "停用 Tenant \"{{name}}\" ({{slug}})？此 Tenant 中的用户可能失去访问权限。",
+  "activateSuccess": "Tenant \"{{name}}\" 已激活。",
+  "deactivateSuccess": "Tenant \"{{name}}\" 已停用。",
+  "createSuccess": "Tenant \"{{name}}\" 已创建。",
+  "loadFailed": "加载 Tenant 失败。",
+  "createFailed": "创建失败。",
+  "updateFailed": "更新失败。"
+}

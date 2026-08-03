@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type FilterChip = {
   id: string;
@@ -8,7 +9,7 @@ export type FilterChip = {
 export function FilterBar({
   search,
   onSearchChange,
-  searchPlaceholder = "Search…",
+  searchPlaceholder,
   chips,
   activeChipId,
   onChipChange,
@@ -22,6 +23,9 @@ export function FilterBar({
   onChipChange?: (id: string) => void;
   trailing?: React.ReactNode;
 }) {
+  const { t } = useTranslation("common");
+  const placeholder = searchPlaceholder ?? `${t("search")}…`;
+
   return (
     <div className="card mb-3">
       <div className="card-body py-3">
@@ -31,8 +35,8 @@ export function FilterBar({
               className="form-control"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label="Search"
+              placeholder={placeholder}
+              aria-label={t("search")}
             />
           </div>
           {chips && chips.length > 0 ? (

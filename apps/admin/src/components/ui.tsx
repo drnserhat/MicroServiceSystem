@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { PageFrame } from "@/components/control";
 
 /** @deprecated Prefer PageFrame — thin adapter for remaining callers */
@@ -49,6 +50,8 @@ export function PaginationBar({
   loading?: boolean;
   onChange: (page: number) => void;
 }) {
+  const { t } = useTranslation("common");
+
   if (totalPages <= 1) {
     return null;
   }
@@ -61,10 +64,10 @@ export function PaginationBar({
         disabled={!hasPrevious || loading}
         onClick={() => onChange(Math.max(1, page - 1))}
       >
-        Previous
+        {t("previous")}
       </button>
       <span className="text-secondary">
-        Page {page}/{totalPages}
+        {t("page")} {page}/{totalPages}
       </span>
       <button
         type="button"
@@ -72,7 +75,7 @@ export function PaginationBar({
         disabled={!hasNext || loading}
         onClick={() => onChange(page + 1)}
       >
-        Next
+        {t("next")}
       </button>
     </div>
   );

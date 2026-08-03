@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { listAuditEntries } from "@/api/audit";
 import type { AuditEntry } from "@/api/types";
@@ -8,9 +9,10 @@ import { PageFrame, DataTableShell, TableSkeleton } from "@/components/control";
 import { ErrorAlert, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
 
 export function AuditPage() {
+  const { t } = useTranslation("audit");
   return (
     <RequirePermission permission={FrameworkPermissions.AuditEntriesRead}>
-      <PageFrame pretitle="Observability" title="Audit">
+      <PageFrame pretitle={t("pretitle")} title={t("title")}>
         <AuditBrowser />
       </PageFrame>
     </RequirePermission>
@@ -19,6 +21,7 @@ export function AuditPage() {
 
 /** Shared browser for standalone `/audit` and Observability hub embed */
 export function AuditBrowser() {
+  const { t } = useTranslation("audit");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<AuditEntry[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -44,7 +47,7 @@ export function AuditBrowser() {
       } catch (err) {
         if (cancelled) return;
         if (isServiceUnavailable(err)) setUnavailable(true);
-        else setError(err instanceof ApiClientError ? err.message : "Failed to load audit.");
+        else setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
         setItems([]);
       } finally {
         if (!cancelled) setLoading(false);
@@ -54,14 +57,14 @@ export function AuditBrowser() {
     return () => {
       cancelled = true;
     };
-  }, [page]);
+  }, [page, t]);
 
   return (
     <>
       {unavailable ? <ServiceUnavailableAlert service="Audit" /> : null}
       <ErrorAlert error={error} />
       <DataTableShell
-        title="Audit entries"
+        title={t("tableTitle")}
         footer={
           <PaginationBar
             page={page}
@@ -76,10 +79,10 @@ export function AuditBrowser() {
         <table className="table table-vcenter card-table">
           <thead>
             <tr>
-              <th>Action</th>
-              <th>Resource</th>
-              <th>Actor</th>
-              <th>Details</th>
+              <th>{t("colAction")}</th>
+              <th>{t("colResource")}</th>
+              <th>{t("colActor")}</th>
+              <th>{t("colDetails")}</th>
             </tr>
           </thead>
           <tbody>
@@ -87,7 +90,7 @@ export function AuditBrowser() {
             {!loading && items.length === 0 ? (
               <tr>
                 <td colSpan={4} className="text-secondary">
-                  No audit entries.
+                  {t("empty")}
                 </td>
               </tr>
             ) : null}

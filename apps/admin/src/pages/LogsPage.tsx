@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { listLogs } from "@/api/logging";
 import type { SystemLog } from "@/api/types";
@@ -9,9 +10,10 @@ import { LogViewer, PageFrame, TableSkeleton } from "@/components/control";
 import { ErrorAlert, PaginationBar, ServiceUnavailableAlert } from "@/components/ui";
 
 export function LogsPage() {
+  const { t } = useTranslation("logs");
   return (
     <RequirePermission permission={FrameworkPermissions.LoggingLogsRead}>
-      <PageFrame pretitle="Observability" title="System logs">
+      <PageFrame pretitle={t("pretitle")} title={t("title")}>
         <LogsBrowser />
       </PageFrame>
     </RequirePermission>
@@ -20,6 +22,7 @@ export function LogsPage() {
 
 /** Shared browser for standalone `/logs` and Observability hub embed */
 export function LogsBrowser() {
+  const { t } = useTranslation(["logs", "common"]);
   const [params, setParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [level, setLevel] = useState("");
@@ -51,7 +54,7 @@ export function LogsBrowser() {
       setHasNext(data.hasNextPage);
     } catch (err) {
       if (isServiceUnavailable(err)) setUnavailable(true);
-      else setError(err instanceof ApiClientError ? err.message : "Failed to load logs.");
+      else setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
       setItems([]);
     } finally {
       setLoading(false);
@@ -89,7 +92,7 @@ export function LogsBrowser() {
           <div className="col-md-3">
             <input
               className="form-control"
-              placeholder="Level"
+              placeholder={t("levelPlaceholder")}
               value={level}
               onChange={(e) => setLevel(e.target.value)}
             />
@@ -97,7 +100,7 @@ export function LogsBrowser() {
           <div className="col-md-3">
             <input
               className="form-control"
-              placeholder="Source"
+              placeholder={t("sourcePlaceholder")}
               value={source}
               onChange={(e) => setSource(e.target.value)}
             />
@@ -105,14 +108,14 @@ export function LogsBrowser() {
           <div className="col-md-4">
             <input
               className="form-control"
-              placeholder="Correlation id"
+              placeholder={t("correlationPlaceholder")}
               value={correlationId}
               onChange={(e) => setCorrelationId(e.target.value)}
             />
           </div>
           <div className="col-md-2">
             <button type="submit" className="btn btn-primary w-100">
-              Filter
+              {t("filter")}
             </button>
           </div>
         </div>
@@ -134,10 +137,10 @@ export function LogsBrowser() {
         <table className="table table-vcenter card-table">
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Level</th>
-              <th>Source</th>
-              <th>Message</th>
+              <th>{t("colTime")}</th>
+              <th>{t("colLevel")}</th>
+              <th>{t("common:source")}</th>
+              <th>{t("colMessage")}</th>
             </tr>
           </thead>
           <tbody>
@@ -145,7 +148,7 @@ export function LogsBrowser() {
             {!loading && items.length === 0 ? (
               <tr>
                 <td colSpan={4} className="text-secondary">
-                  No logs.
+                  {t("empty")}
                 </td>
               </tr>
             ) : null}

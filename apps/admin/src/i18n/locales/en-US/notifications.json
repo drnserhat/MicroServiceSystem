@@ -1,0 +1,15 @@
+{
+  "pretitle": "Tools",
+  "title": "Send notification",
+  "recipient": "Recipient",
+  "channel": "Channel",
+  "channelEmail": "email",
+  "channelSms": "sms",
+  "channelPush": "push",
+  "willNotify": "Will notify {{email}} ({{username}})",
+  "send": "Send",
+  "sending": "Sending…",
+  "accepted": "Notification accepted.",
+  "queued": "Notification queued for {{email}}.",
+  "sendFailed": "Failed to send."
+}

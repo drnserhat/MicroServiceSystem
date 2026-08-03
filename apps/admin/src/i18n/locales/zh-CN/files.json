@@ -1,0 +1,11 @@
+{
+  "pretitle": "工具",
+  "title": "文件上传",
+  "containerLabel": "容器",
+  "fileLabel": "文件",
+  "upload": "上传",
+  "uploading": "上传中…",
+  "uploadSuccess": "已上传 {{fileName}}。",
+  "uploadFailed": "上传失败。",
+  "resultBytes": "{{bytes}} 字节"
+}

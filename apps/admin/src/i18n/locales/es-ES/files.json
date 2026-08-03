@@ -1,0 +1,11 @@
+{
+  "pretitle": "Herramientas",
+  "title": "Subida de archivos",
+  "containerLabel": "Contenedor",
+  "fileLabel": "Archivo",
+  "upload": "Subir",
+  "uploading": "Subiendo…",
+  "uploadSuccess": "Subido {{fileName}}.",
+  "uploadFailed": "Error al subir.",
+  "resultBytes": "{{bytes}} bytes"
+}

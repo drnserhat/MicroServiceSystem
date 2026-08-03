@@ -1,0 +1,15 @@
+{
+  "pretitle": "उपकरण",
+  "title": "सूचना भेजें",
+  "recipient": "प्राप्तकर्ता",
+  "channel": "चैनल",
+  "channelEmail": "email",
+  "channelSms": "sms",
+  "channelPush": "push",
+  "willNotify": "{{email}} ({{username}}) को सूचित किया जाएगा",
+  "send": "भेजें",
+  "sending": "भेजा जा रहा है…",
+  "accepted": "सूचना स्वीकार की गई।",
+  "queued": "{{email}} के लिए सूचना कतार में है।",
+  "sendFailed": "भेजने में विफल।"
+}

@@ -10,6 +10,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 export type ConfirmTone = "danger" | "primary" | "warning";
 
@@ -53,6 +54,7 @@ const toneBtn: Record<ConfirmTone, string> = {
 };
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation("common");
   const [dialog, setDialog] = useState<DialogState>(null);
   const [promptValue, setPromptValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,12 +68,12 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         mode: "confirm",
         resolve,
         tone: "danger",
-        confirmLabel: "Confirm",
-        cancelLabel: "Cancel",
         ...options,
+        confirmLabel: options.confirmLabel ?? t("confirm"),
+        cancelLabel: options.cancelLabel ?? t("cancel"),
       });
     });
-  }, []);
+  }, [t]);
 
   const prompt = useCallback((options: PromptOptions) => {
     return new Promise<string | null>((resolve) => {
@@ -80,13 +82,13 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         mode: "prompt",
         resolve,
         tone: "danger",
-        confirmLabel: "Confirm",
-        cancelLabel: "Cancel",
         required: true,
         ...options,
+        confirmLabel: options.confirmLabel ?? t("confirm"),
+        cancelLabel: options.cancelLabel ?? t("cancel"),
       });
     });
-  }, []);
+  }, [t]);
 
   const api = useMemo<ConfirmApi>(() => ({ confirm, prompt }), [confirm, prompt]);
 
@@ -153,7 +155,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                 <h3 className="modal-title" id={titleId}>
                   {dialog.title}
                 </h3>
-                <button type="button" className="btn-close" aria-label="Close" onClick={cancel} />
+                <button type="button" className="btn-close" aria-label={t("close")} onClick={cancel} />
               </div>
               <div className="modal-body">
                 <p className="mb-0 text-secondary">{dialog.message}</p>
@@ -173,10 +175,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn" onClick={cancel}>
-                  {dialog.cancelLabel ?? "Cancel"}
+                  {dialog.cancelLabel ?? t("cancel")}
                 </button>
                 <button type="submit" className={`btn ${toneBtn[dialog.tone ?? "danger"]}`}>
-                  {dialog.confirmLabel ?? "Confirm"}
+                  {dialog.confirmLabel ?? t("confirm")}
                 </button>
               </div>
             </form>

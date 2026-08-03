@@ -1,10 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 import { useToast } from "@/ui/toast/ToastContext";
 
 export function LoginPage() {
+  const { t } = useTranslation(["auth", "common"]);
   const toast = useToast();
   const { isAuthenticated, login, defaultTenantId } = useAuth();
   const navigate = useNavigate();
@@ -28,10 +31,10 @@ export function LoginPage() {
 
     try {
       await login(email.trim(), password, tenantId.trim());
-      toast.success("Signed in.");
+      toast.success(t("signedIn"));
       navigate(from, { replace: true });
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Login failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("loginFailed");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -42,15 +45,18 @@ export function LoginPage() {
   return (
     <div className="page page-center">
       <div className="container container-tight py-4">
+        <div className="d-flex justify-content-end mb-2">
+          <LanguageSwitcher />
+        </div>
         <div className="text-center mb-4">
           <a href="." className="navbar-brand navbar-brand-autodark fw-bold fs-2">
-            MSF Admin
+            {t("common:appName")}
           </a>
-          <div className="text-secondary">Sign in to MicroServiceSystem Admin</div>
+          <div className="text-secondary">{t("subtitle")}</div>
         </div>
         <div className="card card-md">
           <div className="card-body">
-            <h2 className="h2 text-center mb-4">Login to your account</h2>
+            <h2 className="h2 text-center mb-4">{t("title")}</h2>
             {error ? (
               <div className="alert alert-danger" role="alert">
                 {error}
@@ -59,13 +65,13 @@ export function LoginPage() {
             <form onSubmit={onSubmit} autoComplete="on">
               <div className="mb-3">
                 <label className="form-label" htmlFor="email">
-                  Email address
+                  {t("email")}
                 </label>
                 <input
                   id="email"
                   type="email"
                   className="form-control"
-                  placeholder="you@company.com"
+                  placeholder={t("emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -73,7 +79,7 @@ export function LoginPage() {
               </div>
               <div className="mb-3">
                 <label className="form-label" htmlFor="password">
-                  Password
+                  {t("password")}
                 </label>
                 <input
                   id="password"
@@ -86,7 +92,7 @@ export function LoginPage() {
               </div>
               <div className="mb-3">
                 <label className="form-label" htmlFor="tenantId">
-                  Tenant ID
+                  {t("tenantId")}
                 </label>
                 <input
                   id="tenantId"
@@ -99,7 +105,7 @@ export function LoginPage() {
               </div>
               <div className="form-footer">
                 <button type="submit" className="btn btn-primary w-100" disabled={busy}>
-                  {busy ? "Signing in…" : "Sign in"}
+                  {busy ? t("signingIn") : t("signIn")}
                 </button>
               </div>
             </form>

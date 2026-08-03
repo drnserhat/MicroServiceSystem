@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { registerUser } from "@/api/users";
 import { useAuth } from "@/auth/AuthContext";
@@ -17,6 +18,7 @@ export function RegisterUserPage() {
 }
 
 function RegisterUserInner() {
+  const { t } = useTranslation(["users", "common"]);
   const toast = useToast();
   const { session } = useAuth();
   const [email, setEmail] = useState("");
@@ -46,9 +48,13 @@ function RegisterUserInner() {
         displayName: displayName.trim() || undefined,
         tenantId: session!.tenantId,
       });
-      const msg = `Registered ${result.email} (user ${result.userId}, saga ${result.sagaId})`;
+      const msg = t("registerSuccess", {
+        email: result.email,
+        userId: result.userId,
+        sagaId: result.sagaId,
+      });
       setSuccess(msg);
-      toast.success(msg, "User registered");
+      toast.success(msg, t("userRegisteredToast"));
       setEmail("");
       setUserName("");
       setPassword("");
@@ -61,8 +67,8 @@ function RegisterUserInner() {
         setFailures(err.failures);
         toast.error(err.message);
       } else {
-        setError("Registration failed.");
-        toast.error("Registration failed.");
+        setError(t("registerFailed"));
+        toast.error(t("registerFailed"));
       }
     } finally {
       setBusy(false);
@@ -70,47 +76,45 @@ function RegisterUserInner() {
   }
 
   return (
-    <PageFrame pretitle="Identity" title="Register user"
-    >
-          <div className="card card-md">
-            <div className="card-body">
-              <ErrorAlert error={error} />
-              <FieldErrors failures={failures} />
-              {success ? <div className="alert alert-success">{success}</div> : null}
-              <form onSubmit={onSubmit} className="row g-3">
-                <div className="col-md-6">
-                  <label className="form-label">Email</label>
-                  <input className="form-control" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Username</label>
-                  <input className="form-control" value={userName} onChange={(e) => setUserName(e.target.value)} required />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Password</label>
-                  <input className="form-control" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Display name</label>
-                  <input className="form-control" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">First name</label>
-                  <input className="form-control" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Last name</label>
-                  <input className="form-control" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-                </div>
-                <div className="col-12">
-                  <button type="submit" className="btn btn-primary" disabled={busy}>
-                    {busy ? "Registering…" : "Start registration saga"}
-                  </button>
-                </div>
-              </form>
+    <PageFrame pretitle={t("pretitle")} title={t("registerUser")}>
+      <div className="card card-md">
+        <div className="card-body">
+          <ErrorAlert error={error} />
+          <FieldErrors failures={failures} />
+          {success ? <div className="alert alert-success">{success}</div> : null}
+          <form onSubmit={onSubmit} className="row g-3">
+            <div className="col-md-6">
+              <label className="form-label">{t("colEmail")}</label>
+              <input className="form-control" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-          </div>
+            <div className="col-md-6">
+              <label className="form-label">{t("colUsername")}</label>
+              <input className="form-control" value={userName} onChange={(e) => setUserName(e.target.value)} required />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">{t("common:password")}</label>
+              <input className="form-control" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">{t("displayName")}</label>
+              <input className="form-control" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">{t("firstName")}</label>
+              <input className="form-control" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">{t("lastName")}</label>
+              <input className="form-control" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+            </div>
+            <div className="col-12">
+              <button type="submit" className="btn btn-primary" disabled={busy}>
+                {busy ? t("registering") : t("startRegistrationSaga")}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </PageFrame>
-
   );
 }

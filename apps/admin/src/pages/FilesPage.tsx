@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { uploadFile } from "@/api/files";
 import type { FileAsset } from "@/api/types";
@@ -17,6 +18,7 @@ export function FilesPage() {
 }
 
 function FilesInner() {
+  const { t } = useTranslation(["files", "common"]);
   const toast = useToast();
   const [container, setContainer] = useState("admin");
   const [file, setFile] = useState<File | null>(null);
@@ -35,11 +37,11 @@ function FilesInner() {
     try {
       const uploaded = await uploadFile(file, container.trim() || "admin");
       setResult(uploaded);
-      toast.success(`Uploaded ${uploaded.fileName ?? file.name}.`);
+      toast.success(t("uploadSuccess", { fileName: uploaded.fileName ?? file.name }));
     } catch (err) {
       if (isServiceUnavailable(err)) setUnavailable(true);
       else {
-        const msg = err instanceof ApiClientError ? err.message : "Upload failed.";
+        const msg = err instanceof ApiClientError ? err.message : t("uploadFailed");
         setError(msg);
         toast.error(msg);
       }
@@ -49,43 +51,41 @@ function FilesInner() {
   }
 
   return (
-    <PageFrame pretitle="Tools" title="File upload"
-    >
-          {unavailable ? <ServiceUnavailableAlert service="File" /> : null}
-          <ErrorAlert error={error} />
-          <form className="card card-md" onSubmit={onSubmit}>
-            <div className="card-body">
-              <div className="mb-3">
-                <label className="form-label">Container</label>
-                <input className="form-control" value={container} onChange={(e) => setContainer(e.target.value)} required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">File</label>
-                <input
-                  className="form-control"
-                  type="file"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  required
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={busy || !file}>
-                {busy ? "Uploading…" : "Upload"}
-              </button>
+    <PageFrame pretitle={t("pretitle")} title={t("title")}>
+      {unavailable ? <ServiceUnavailableAlert service="File" /> : null}
+      <ErrorAlert error={error} />
+      <form className="card card-md" onSubmit={onSubmit}>
+        <div className="card-body">
+          <div className="mb-3">
+            <label className="form-label">{t("containerLabel")}</label>
+            <input className="form-control" value={container} onChange={(e) => setContainer(e.target.value)} required />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">{t("fileLabel")}</label>
+            <input
+              className="form-control"
+              type="file"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={busy || !file}>
+            {busy ? t("uploading") : t("upload")}
+          </button>
+        </div>
+      </form>
+      {result ? (
+        <div className="card mt-3">
+          <div className="card-body">
+            <div>
+              <strong>{result.fileName}</strong> → <code>{result.path}</code>
             </div>
-          </form>
-          {result ? (
-            <div className="card mt-3">
-              <div className="card-body">
-                <div>
-                  <strong>{result.fileName}</strong> → <code>{result.path}</code>
-                </div>
-                <div className="text-secondary">
-                  {result.sizeInBytes} bytes · {result.storageProvider} · {result.container}
-                </div>
-              </div>
+            <div className="text-secondary">
+              {t("resultBytes", { bytes: result.sizeInBytes })} · {result.storageProvider} · {result.container}
             </div>
-          ) : null}
+          </div>
+        </div>
+      ) : null}
     </PageFrame>
-
   );
 }

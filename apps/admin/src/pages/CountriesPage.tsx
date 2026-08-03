@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { createCountry, deleteCountry, listCountries, updateCountry } from "@/api/location";
 import type { Country } from "@/api/types";
@@ -19,6 +20,7 @@ export function CountriesPage() {
 }
 
 function CountriesInner() {
+  const { t } = useTranslation(["countries", "common"]);
   const toast = useToast();
   const { confirm } = useConfirm();
   const { can } = useAuth();
@@ -48,7 +50,7 @@ function CountriesInner() {
       setHasNext(data.hasNextPage);
     } catch (err) {
       if (isServiceUnavailable(err)) setUnavailable(true);
-      else setError(err instanceof ApiClientError ? err.message : "Failed to load countries.");
+      else setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
       setItems([]);
     } finally {
       setLoading(false);
@@ -66,18 +68,18 @@ function CountriesInner() {
     try {
       if (editing) {
         await updateCountry(editing.code, name.trim(), editing.version);
-        toast.success(`Country ${editing.code} updated.`);
+        toast.success(t("updateSuccess", { code: editing.code }));
       } else {
         const nextCode = code.trim().toUpperCase();
         await createCountry(nextCode, name.trim());
-        toast.success(`Country ${nextCode} created.`);
+        toast.success(t("createSuccess", { code: nextCode }));
       }
       setCode("");
       setName("");
       setEditing(null);
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Save failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("common:saveFailed");
       setError(msg);
       toast.error(msg);
     }
@@ -86,32 +88,32 @@ function CountriesInner() {
   async function onDelete(item: Country) {
     if (!canWrite) return;
     const ok = await confirm({
-      title: "Delete country",
-      message: `Delete country ${item.code} (${item.name})? This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("deleteTitle"),
+      message: t("deleteMessage", { code: item.code, name: item.name }),
+      confirmLabel: t("common:delete"),
       tone: "danger",
     });
     if (!ok) return;
     try {
       await deleteCountry(item.code, item.version);
-      toast.success(`Country ${item.code} deleted.`);
+      toast.success(t("deleteSuccess", { code: item.code }));
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Delete failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("common:deleteFailed");
       setError(msg);
       toast.error(msg);
     }
   }
 
   return (
-    <PageFrame pretitle="Reference Data" title="Countries">
+    <PageFrame pretitle={t("pretitle")} title={t("title")}>
       {unavailable ? <ServiceUnavailableAlert service="Location" /> : null}
       <ErrorAlert error={error} />
       {(canCreate || editing) && (canCreate || canWrite) ? (
         <form className="card mb-3" onSubmit={onSubmit}>
           <div className="card-body row g-3">
             <div className="col-md-3">
-              <label className="form-label">Code</label>
+              <label className="form-label">{t("colCode")}</label>
               <input
                 className="form-control"
                 value={editing ? editing.code : code}
@@ -121,12 +123,12 @@ function CountriesInner() {
               />
             </div>
             <div className="col-md-6">
-              <label className="form-label">Name</label>
+              <label className="form-label">{t("colName")}</label>
               <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="col-md-3 d-flex align-items-end">
               <button type="submit" className="btn btn-primary w-100">
-                {editing ? "Update" : "Create"}
+                {editing ? t("common:save") : t("common:create")}
               </button>
             </div>
           </div>
@@ -137,24 +139,22 @@ function CountriesInner() {
           <table className="table table-vcenter card-table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Version</th>
+                <th>{t("colCode")}</th>
+                <th>{t("colName")}</th>
+                <th>{t("common:version")}</th>
                 {canWrite ? <th /> : null}
               </tr>
             </thead>
-                <tbody>
-                  {loading ? <TableSkeleton rows={5} cols={4} /> : null}
-                  {!loading && items.length === 0 ? (
-                    <tr>
-                      <td colSpan={canWrite ? 4 : 3} className="text-secondary">
-                        No countries yet. In Development the Location service seeds ISO 3166-1 codes for the
-                        demo tenant on startup — restart <code>location</code> if the list stays empty, or
-                        create one below (e.g. <code>TR</code> / Turkey).
-                      </td>
-                    </tr>
-                  ) : null}
-                  {items.map((item) => (
+            <tbody>
+              {loading ? <TableSkeleton rows={5} cols={4} /> : null}
+              {!loading && items.length === 0 ? (
+                <tr>
+                  <td colSpan={canWrite ? 4 : 3} className="text-secondary">
+                    {t("emptyHint")}
+                  </td>
+                </tr>
+              ) : null}
+              {items.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <code>{item.code}</code>
@@ -171,10 +171,10 @@ function CountriesInner() {
                           setName(item.name);
                         }}
                       >
-                        Edit
+                        {t("common:edit")}
                       </button>{" "}
                       <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDelete(item)}>
-                        Delete
+                        {t("common:delete")}
                       </button>
                     </td>
                   ) : null}

@@ -1,0 +1,21 @@
+{
+  "pretitle": "Kimlik",
+  "title": "Tenant'lar",
+  "searchPlaceholder": "Ad veya slug ara",
+  "colName": "Ad",
+  "colSlug": "Slug",
+  "colId": "Kimlik",
+  "colStatus": "Durum",
+  "activate": "Etkinleştir",
+  "deactivate": "Devre dışı bırak",
+  "activateTitle": "Tenant'ı etkinleştir",
+  "deactivateTitle": "Tenant'ı devre dışı bırak",
+  "activateMessage": "\"{{name}}\" ({{slug}}) tenant'ı etkinleştirilsin mi?",
+  "deactivateMessage": "\"{{name}}\" ({{slug}}) tenant'ı devre dışı bırakılsın mı? Bu tenant'taki kullanıcılar erişimini kaybedebilir.",
+  "activateSuccess": "\"{{name}}\" tenant'ı etkinleştirildi.",
+  "deactivateSuccess": "\"{{name}}\" tenant'ı devre dışı bırakıldı.",
+  "createSuccess": "\"{{name}}\" tenant'ı oluşturuldu.",
+  "loadFailed": "Tenant'lar yüklenemedi.",
+  "createFailed": "Oluşturma başarısız.",
+  "updateFailed": "Güncelleme başarısız."
+}

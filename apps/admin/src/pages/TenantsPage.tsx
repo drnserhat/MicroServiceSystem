@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { createTenant, listTenants, setTenantActive } from "@/api/identityAdmin";
 import type { TenantItem } from "@/api/types";
@@ -19,6 +20,7 @@ export function TenantsPage() {
 }
 
 function TenantsInner() {
+  const { t } = useTranslation(["tenants", "common"]);
   const toast = useToast();
   const { confirm } = useConfirm();
   const { can } = useAuth();
@@ -44,7 +46,7 @@ function TenantsInner() {
       setHasPrevious(data.hasPreviousPage);
       setHasNext(data.hasNextPage);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Failed to load tenants.");
+      setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
       setItems([]);
     } finally {
       setLoading(false);
@@ -61,12 +63,12 @@ function TenantsInner() {
     if (!canWrite) return;
     try {
       await createTenant({ name: name.trim(), slug: slug.trim() });
-      toast.success(`Tenant "${name.trim()}" created.`);
+      toast.success(t("createSuccess", { name: name.trim() }));
       setName("");
       setSlug("");
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Create failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("createFailed");
       setError(msg);
       toast.error(msg);
     }
@@ -76,122 +78,120 @@ function TenantsInner() {
     if (!canWrite) return;
     const next = !item.isActive;
     const ok = await confirm({
-      title: next ? "Activate tenant" : "Deactivate tenant",
+      title: next ? t("activateTitle") : t("deactivateTitle"),
       message: next
-        ? `Activate tenant "${item.name}" (${item.slug})?`
-        : `Deactivate tenant "${item.name}" (${item.slug})? Users in this tenant may lose access.`,
-      confirmLabel: next ? "Activate" : "Deactivate",
+        ? t("activateMessage", { name: item.name, slug: item.slug })
+        : t("deactivateMessage", { name: item.name, slug: item.slug }),
+      confirmLabel: next ? t("activate") : t("deactivate"),
       tone: next ? "primary" : "warning",
     });
     if (!ok) return;
     try {
       await setTenantActive(item.id, next);
-      toast.success(`Tenant "${item.name}" ${next ? "activated" : "deactivated"}.`);
+      toast.success(next ? t("activateSuccess", { name: item.name }) : t("deactivateSuccess", { name: item.name }));
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Update failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("updateFailed");
       setError(msg);
       toast.error(msg);
     }
   }
 
   return (
-    <PageFrame pretitle="Identity" title="Tenants"
-    >
-          <ErrorAlert error={error} />
-          <form
-            className="card mb-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (page === 1) void load(1);
-              else setPage(1);
-            }}
-          >
-            <div className="card-body row g-2">
-              <div className="col-md-8">
-                <input
-                  className="form-control"
-                  placeholder="Search name or slug"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <div className="col-md-4">
-                <button type="submit" className="btn btn-primary w-100">
-                  Search
-                </button>
-              </div>
-            </div>
-          </form>
-          {canWrite ? (
-            <form className="card mb-3" onSubmit={onCreate}>
-              <div className="card-body row g-3">
-                <div className="col-md-5">
-                  <label className="form-label">Name</label>
-                  <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
-                </div>
-                <div className="col-md-5">
-                  <label className="form-label">Slug</label>
-                  <input className="form-control" value={slug} onChange={(e) => setSlug(e.target.value)} required />
-                </div>
-                <div className="col-md-2 d-flex align-items-end">
-                  <button type="submit" className="btn btn-primary w-100">
-                    Create
-                  </button>
-                </div>
-              </div>
-            </form>
-          ) : null}
-          <div className="card">
-            <div className="table-responsive">
-              <table className="table table-vcenter card-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Slug</th>
-                    <th>Id</th>
-                    <th>Status</th>
-                    {canWrite ? <th /> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? <TableSkeleton rows={5} cols={5} /> : null}
-                  {items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.name}</td>
-                      <td>
-                        <code>{item.slug}</code>
-                      </td>
-                      <td className="text-secondary">
-                        <code>{item.id}</code>
-                      </td>
-                      <td>
-                        <span className={item.isActive ? "badge bg-green-lt" : "badge bg-red-lt"}>
-                          {item.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      {canWrite ? (
-                        <td>
-                          <button type="button" className="btn btn-sm" onClick={() => void toggle(item)}>
-                            {item.isActive ? "Deactivate" : "Activate"}
-                          </button>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <PaginationBar
-              page={page}
-              totalPages={totalPages}
-              hasPrevious={hasPrevious}
-              hasNext={hasNext}
-              loading={loading}
-              onChange={setPage}
+    <PageFrame pretitle={t("pretitle")} title={t("title")}>
+      <ErrorAlert error={error} />
+      <form
+        className="card mb-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (page === 1) void load(1);
+          else setPage(1);
+        }}
+      >
+        <div className="card-body row g-2">
+          <div className="col-md-8">
+            <input
+              className="form-control"
+              placeholder={t("searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <div className="col-md-4">
+            <button type="submit" className="btn btn-primary w-100">
+              {t("common:search")}
+            </button>
+          </div>
+        </div>
+      </form>
+      {canWrite ? (
+        <form className="card mb-3" onSubmit={onCreate}>
+          <div className="card-body row g-3">
+            <div className="col-md-5">
+              <label className="form-label">{t("colName")}</label>
+              <input className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="col-md-5">
+              <label className="form-label">{t("colSlug")}</label>
+              <input className="form-control" value={slug} onChange={(e) => setSlug(e.target.value)} required />
+            </div>
+            <div className="col-md-2 d-flex align-items-end">
+              <button type="submit" className="btn btn-primary w-100">
+                {t("common:create")}
+              </button>
+            </div>
+          </div>
+        </form>
+      ) : null}
+      <div className="card">
+        <div className="table-responsive">
+          <table className="table table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>{t("colName")}</th>
+                <th>{t("colSlug")}</th>
+                <th>{t("colId")}</th>
+                <th>{t("colStatus")}</th>
+                {canWrite ? <th /> : null}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? <TableSkeleton rows={5} cols={5} /> : null}
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.name}</td>
+                  <td>
+                    <code>{item.slug}</code>
+                  </td>
+                  <td className="text-secondary">
+                    <code>{item.id}</code>
+                  </td>
+                  <td>
+                    <span className={item.isActive ? "badge bg-green-lt" : "badge bg-red-lt"}>
+                      {item.isActive ? t("common:active") : t("common:inactive")}
+                    </span>
+                  </td>
+                  {canWrite ? (
+                    <td>
+                      <button type="button" className="btn btn-sm" onClick={() => void toggle(item)}>
+                        {item.isActive ? t("deactivate") : t("activate")}
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          hasPrevious={hasPrevious}
+          hasNext={hasNext}
+          loading={loading}
+          onChange={setPage}
+        />
+      </div>
     </PageFrame>
-
   );
 }

@@ -13,4 +13,8 @@
     <ProjectReference Include="..\..\Shared\SharedKernel\MicroServiceSystem.SharedKernel.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Errors\errors.*.json" />
+  </ItemGroup>
+
 </Project>

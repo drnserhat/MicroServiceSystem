@@ -1,0 +1,16 @@
+{
+  "pretitle": "संदर्भ डेटा",
+  "title": "देश",
+  "colCode": "कोड",
+  "colName": "नाम",
+  "createCountry": "देश बनाएँ",
+  "editCountry": "देश संपादित करें",
+  "deleteTitle": "देश हटाएँ",
+  "deleteMessage": "देश {{code}} ({{name}}) हटाएँ? यह पूर्ववत नहीं किया जा सकता।",
+  "deleteSuccess": "देश {{code}} हटाया गया।",
+  "createSuccess": "देश {{code}} बनाया गया।",
+  "updateSuccess": "देश {{code}} अपडेट किया गया।",
+  "loadFailed": "देश लोड करने में विफल।",
+  "empty": "कोई देश नहीं मिला।",
+  "emptyHint": "अभी कोई देश नहीं। सूची खाली रहे तो location पुनः प्रारंभ करें।"
+}

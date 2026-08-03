@@ -1,0 +1,11 @@
+{
+  "pretitle": "Tools",
+  "title": "File upload",
+  "containerLabel": "Container",
+  "fileLabel": "File",
+  "upload": "Upload",
+  "uploading": "Uploading…",
+  "uploadSuccess": "Uploaded {{fileName}}.",
+  "uploadFailed": "Upload failed.",
+  "resultBytes": "{{bytes}} bytes"
+}

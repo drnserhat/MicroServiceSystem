@@ -1,0 +1,11 @@
+{
+  "pretitle": "अवलोकन",
+  "title": "ऑडिट",
+  "tableTitle": "ऑडिट प्रविष्टियाँ",
+  "colAction": "क्रिया",
+  "colResource": "संसाधन",
+  "colActor": "अभिनेता",
+  "colDetails": "विवरण",
+  "empty": "कोई ऑडिट प्रविष्टि नहीं।",
+  "loadFailed": "ऑडिट लोड करने में विफल।"
+}

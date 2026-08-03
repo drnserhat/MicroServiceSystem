@@ -1,0 +1,14 @@
+{
+  "pretitle": "可观测性",
+  "title": "系统日志",
+  "levelPlaceholder": "级别",
+  "sourcePlaceholder": "来源",
+  "correlationPlaceholder": "Correlation ID",
+  "filter": "筛选",
+  "empty": "无日志条目。",
+  "loadFailed": "加载日志失败。",
+  "viewerTitle": "日志条目",
+  "colTime": "时间",
+  "colLevel": "级别",
+  "colMessage": "消息"
+}

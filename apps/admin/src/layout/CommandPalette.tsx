@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { flattenNav, type NavEntry } from "./navConfig";
 
 export function CommandPalette({
@@ -11,6 +12,7 @@ export function CommandPalette({
   onClose: () => void;
   can: (permission: string | string[]) => boolean;
 }) {
+  const { t } = useTranslation(["nav", "common"]);
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
@@ -19,10 +21,11 @@ export function CommandPalette({
     const q = query.trim().toLowerCase();
     if (!q) return all;
     return all.filter((item) => {
-      const hay = `${item.label} ${item.to} ${(item.keywords ?? []).join(" ")}`.toLowerCase();
+      const label = t(item.labelKey).toLowerCase();
+      const hay = `${label} ${item.to} ${(item.keywords ?? []).join(" ")}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [can, query]);
+  }, [can, query, t]);
 
   useEffect(() => {
     if (!open) setQuery("");
@@ -56,18 +59,18 @@ export function CommandPalette({
             <input
               autoFocus
               className="form-control form-control-lg border-0 shadow-none"
-              placeholder="Jump to… (Ctrl+K)"
+              placeholder={`${t("common:search")}… (Ctrl+K)`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && entries[0]) go(entries[0]);
               }}
             />
-            <button type="button" className="btn-close" aria-label="Close" onClick={onClose} />
+            <button type="button" className="btn-close" aria-label={t("common:close")} onClick={onClose} />
           </div>
           <div className="list-group list-group-flush" style={{ maxHeight: 360, overflow: "auto" }}>
             {entries.length === 0 ? (
-              <div className="list-group-item text-secondary">No matches</div>
+              <div className="list-group-item text-secondary">{t("common:noResults")}</div>
             ) : (
               entries.map((item) => (
                 <button
@@ -77,8 +80,8 @@ export function CommandPalette({
                   onClick={() => go(item)}
                 >
                   <span className="text-secondary">{item.icon}</span>
-                  <span className="fw-medium">{item.label}</span>
-                  <code className="ms-auto text-secondary small">{item.to}</code>
+                  <span className="fw-medium">{t(item.labelKey)}</span>
+                  <span className="ms-auto small text-secondary">{item.to}</span>
                 </button>
               ))
             )}

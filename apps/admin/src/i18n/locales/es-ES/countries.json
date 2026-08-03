@@ -1,0 +1,16 @@
+{
+  "pretitle": "Datos de referencia",
+  "title": "Países",
+  "colCode": "Código",
+  "colName": "Nombre",
+  "createCountry": "Crear país",
+  "editCountry": "Editar país",
+  "deleteTitle": "Eliminar país",
+  "deleteMessage": "¿Eliminar país {{code}} ({{name}})? Esta acción no se puede deshacer.",
+  "deleteSuccess": "País {{code}} eliminado.",
+  "createSuccess": "País {{code}} creado.",
+  "updateSuccess": "País {{code}} actualizado.",
+  "loadFailed": "Error al cargar países.",
+  "empty": "No se encontraron países.",
+  "emptyHint": "Aún no hay países. Reinicie location si la lista sigue vacía."
+}

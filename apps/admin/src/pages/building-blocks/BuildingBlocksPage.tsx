@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { PageFrame, PreviewBanner, StatusBadge } from "@/components/control";
 import { BUILDING_BLOCKS, findBlock } from "./catalog";
 
 export function BuildingBlocksPage() {
+  const { t } = useTranslation(["architecture", "platform"]);
   const { blockId } = useParams<{ blockId?: string }>();
   const fallbackId = BUILDING_BLOCKS[0]!.id;
   const [selectedId, setSelectedId] = useState(
@@ -21,21 +23,21 @@ export function BuildingBlocksPage() {
 
   return (
     <PageFrame
-      pretitle="Architecture"
-      title="BuildingBlocks Explorer"
-      description="Cross-cutting technical capabilities — static catalog mirroring the repository."
+      pretitle={t("hubPretitle")}
+      title={t("buildingBlocksTitle")}
+      description={t("buildingBlocksDescription")}
       actions={
         <div className="btn-list">
           <Link className="btn" to="/architecture">
-            Architecture
+            {t("hubTitle")}
           </Link>
           <Link className="btn" to="/developer/building-block">
-            Wizard
+            {t("wizard")}
           </Link>
         </div>
       }
     >
-      <PreviewBanner>No versioned package registry API; metadata is maintained in the admin SPA.</PreviewBanner>
+      <PreviewBanner>{t("buildingBlocksBanner")}</PreviewBanner>
 
       <div className="row">
         <div className="col-md-4">

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { getHealthAggregate } from "@/api/ops";
 import type { ServiceHealthItem } from "@/api/types";
@@ -24,14 +25,14 @@ export function PlatformPage() {
   );
 }
 
-function kindLabel(kind: PlatformPackageKind): string {
+function kindLabel(kind: PlatformPackageKind, t: (key: string) => string): string {
   switch (kind) {
     case "core":
-      return "Core (lite)";
+      return t("kindCore");
     case "addon":
-      return "Add-on (full)";
+      return t("kindAddon");
     case "observability":
-      return "Observability";
+      return t("kindObservability");
   }
 }
 
@@ -49,6 +50,7 @@ const TOOL_BY_PACKAGE: Record<string, string> = {
 };
 
 function PlatformInner() {
+  const { t } = useTranslation(["platform", "common", "ops"]);
   const [health, setHealth] = useState<ServiceHealthItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ function PlatformInner() {
       const data = await getHealthAggregate();
       setHealth(data.services);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Failed to load live health.");
+      setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -98,19 +100,19 @@ function PlatformInner() {
 
   return (
     <PageFrame
-      pretitle="Platform"
-      title="Packages"
-      description="Compose package inventory with live health where probed. Runtime ops live on Platform Map and Service Center."
+      pretitle={t("pretitle")}
+      title={t("titlePackages")}
+      description={t("descriptionPackages")}
       actions={
         <div className="btn-list">
           <Link className="btn" to="/map">
-            Platform Map
+            {t("platformMap")}
           </Link>
           <Link className="btn" to="/services">
-            Service Center
+            {t("serviceCenter")}
           </Link>
           <button type="button" className="btn" onClick={() => void load()} disabled={loading}>
-            Refresh health
+            {t("refreshHealth")}
           </button>
         </div>
       }
@@ -118,14 +120,14 @@ function PlatformInner() {
       <ErrorAlert error={error} />
       <div className="row row-cards mb-3">
         <div className="col-sm-6 col-lg-3">
-          <MetricCard label="Core healthy" value={`${coreHealthy}/${coreTotal}`} tone="healthy" hint="Lite stack" />
+          <MetricCard label={t("coreHealthy")} value={`${coreHealthy}/${coreTotal}`} tone="healthy" hint={t("liteStack")} />
         </div>
         <div className="col-sm-6 col-lg-3">
           <MetricCard
-            label="Add-ons reachable"
+            label={t("addonsReachable")}
             value={`${addonReachable}/${addonTotal}`}
             tone={addonReachable > 0 ? "info" : "degraded"}
-            hint="Need profile full"
+            hint={t("needProfileFull")}
           />
         </div>
         <div className="col-sm-12 col-lg-6">
@@ -147,12 +149,12 @@ function PlatformInner() {
       <FilterBar
         search={query}
         onSearchChange={setQuery}
-        searchPlaceholder="Filter packages…"
+        searchPlaceholder={t("filterPackagesPlaceholder")}
         chips={[
-          { id: "all", label: "All" },
-          { id: "core", label: "Core" },
-          { id: "addon", label: "Add-on" },
-          { id: "observability", label: "Observability" },
+          { id: "all", label: t("filterAll") },
+          { id: "core", label: t("filterCore") },
+          { id: "addon", label: t("filterAddon") },
+          { id: "observability", label: t("filterObservability") },
         ]}
         activeChipId={filter}
         onChipChange={(id) => setFilter(id as "all" | PlatformPackageKind)}
@@ -167,7 +169,7 @@ function PlatformInner() {
               <ServiceCard
                 name={pkg.name}
                 summary={pkg.summary}
-                kind={kindLabel(pkg.kind)}
+                kind={kindLabel(pkg.kind, t)}
                 status={live?.status}
                 reachable={live?.reachable}
                 actions={
@@ -181,18 +183,18 @@ function PlatformInner() {
                     <div className="small text-secondary mb-2">{pkg.composeNote}</div>
                     {!live && (pkg.kind === "addon" || pkg.kind === "observability") ? (
                       <div className="mb-2">
-                        <StatusBadge tone="infra">Optional</StatusBadge>
+                        <StatusBadge tone="infra">{t("ops:optional")}</StatusBadge>
                       </div>
                     ) : null}
                     <div className="btn-list">
                       {pkg.adminPath ? (
                         <Link className="btn btn-sm" to={pkg.adminPath}>
-                          Open in admin
+                          {t("openInAdmin")}
                         </Link>
                       ) : null}
                       {pkg.healthService ? (
                         <Link className="btn btn-sm" to={`/services/${pkg.healthService}`}>
-                          Service
+                          {t("service")}
                         </Link>
                       ) : null}
                       {toolId ? <ExternalToolLink id={toolId} className="btn btn-sm" /> : null}

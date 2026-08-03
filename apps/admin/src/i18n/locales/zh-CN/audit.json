@@ -1,0 +1,11 @@
+{
+  "pretitle": "可观测性",
+  "title": "审计",
+  "tableTitle": "审计条目",
+  "colAction": "操作",
+  "colResource": "资源",
+  "colActor": "操作者",
+  "colDetails": "详情",
+  "empty": "无审计条目。",
+  "loadFailed": "加载审计失败。"
+}

@@ -1,0 +1,14 @@
+{
+  "pretitle": "Gözlemlenebilirlik",
+  "title": "Sistem günlükleri",
+  "levelPlaceholder": "Seviye",
+  "sourcePlaceholder": "Kaynak",
+  "correlationPlaceholder": "Korelasyon ID",
+  "filter": "Filtrele",
+  "empty": "Günlük kaydı yok.",
+  "loadFailed": "Günlükler yüklenemedi.",
+  "viewerTitle": "Günlük kayıtları",
+  "colTime": "Zaman",
+  "colLevel": "Seviye",
+  "colMessage": "Mesaj"
+}

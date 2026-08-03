@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { getHealthAggregate, getOutboxSnapshot, OUTBOX_SERVICES, type OutboxService } from "@/api/ops";
 import type { OutboxSummary, ServiceHealthItem } from "@/api/types";
@@ -66,6 +67,7 @@ export function ServicesPage() {
 }
 
 function ServicesInner() {
+  const { t } = useTranslation(["platform", "common"]);
   const { serviceId } = useParams<{ serviceId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -114,7 +116,7 @@ function ServicesInner() {
         }
         await Promise.allSettled(tasks);
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : "Health load failed.");
+        if (!cancelled) setError(err instanceof ApiClientError ? err.message : t("healthLoadFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -161,8 +163,8 @@ function ServicesInner() {
 
   return (
     <PageFrame
-      pretitle="Platform"
-      title={selected ? selected.name : "Service Center"}
+      pretitle={t("pretitle")}
+      title={selected ? selected.name : t("titleServiceCenter")}
       description={
         selected
           ? selected.summary
@@ -172,14 +174,14 @@ function ServicesInner() {
         <div className="btn-list">
           {selected ? (
             <Link className="btn" to="/services">
-              All services
+              {t("allServices")}
             </Link>
           ) : null}
           <Link className="btn" to="/map">
-            Platform Map
+            {t("platformMap")}
           </Link>
           <Link className="btn" to="/platform">
-            Packages
+            {t("packages")}
           </Link>
         </div>
       }

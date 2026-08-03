@@ -39,5 +39,10 @@ public sealed record Error
     public static Error Validation(string code, string description, IReadOnlyDictionary<string, string[]> failures) =>
         new(code, description, ErrorType.Validation, failures);
 
+    /// <summary>
+    /// Returns a copy with a culture-specific description while preserving code, type, and failures.
+    /// </summary>
+    public Error WithDescription(string description) => new(Code, description, Type, Failures);
+
     public override string ToString() => string.IsNullOrEmpty(Code) ? Description : $"{Code}: {Description}";
 }

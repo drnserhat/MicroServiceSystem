@@ -1,0 +1,15 @@
+{
+  "pretitle": "工具",
+  "title": "发送通知",
+  "recipient": "收件人",
+  "channel": "渠道",
+  "channelEmail": "email",
+  "channelSms": "sms",
+  "channelPush": "push",
+  "willNotify": "将通知 {{email}} ({{username}})",
+  "send": "发送",
+  "sending": "发送中…",
+  "accepted": "通知已接受。",
+  "queued": "通知已加入 {{email}} 的队列。",
+  "sendFailed": "发送失败。"
+}

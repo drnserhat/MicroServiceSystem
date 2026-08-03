@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 export type ToastTone = "success" | "danger" | "warning" | "info";
 
@@ -38,6 +39,7 @@ const ToastContext = createContext<ToastApi | null>(null);
 const DEFAULT_MS = 4200;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation("common");
   const [items, setItems] = useState<ToastItem[]>([]);
   const timers = useRef<Map<string, number>>(new Map());
 
@@ -47,7 +49,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(timer);
       timers.current.delete(id);
     }
-    setItems((prev) => prev.filter((t) => t.id !== id));
+    setItems((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
   const push = useCallback(
@@ -72,12 +74,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     () => ({
       push,
       dismiss,
-      success: (message, title = "Success") => push({ message, title, tone: "success" }),
-      error: (message, title = "Error") => push({ message, title, tone: "danger" }),
+      success: (message, title) => push({ message, title: title ?? t("success"), tone: "success" }),
+      error: (message, title) => push({ message, title: title ?? t("error"), tone: "danger" }),
       info: (message, title) => push({ message, title, tone: "info" }),
-      warning: (message, title = "Warning") => push({ message, title, tone: "warning" }),
+      warning: (message, title) => push({ message, title: title ?? t("warning"), tone: "warning" }),
     }),
-    [push, dismiss],
+    [push, dismiss, t],
   );
 
   return (
@@ -95,7 +97,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="btn-close"
-              aria-label="Dismiss"
+              aria-label={t("dismiss")}
               onClick={() => dismiss(item.id)}
             />
           </div>

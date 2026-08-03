@@ -1,34 +1,40 @@
+import { useMemo } from "react";
 import { Link, Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { HubTabs, PageFrame } from "@/components/control";
 
-const TABS = [
-  { to: "/architecture", label: "Overview", end: true },
-  { to: "/architecture/contexts", label: "Bounded contexts" },
-  { to: "/architecture/dependencies", label: "Dependencies" },
-  { to: "/architecture/events", label: "Events" },
-  { to: "/architecture/event-flow", label: "Event flow" },
-  { to: "/architecture/databases", label: "Databases" },
-  { to: "/architecture/contracts", label: "Contracts" },
-] as const;
-
 export function ArchitectureLayout() {
+  const { t } = useTranslation(["architecture", "platform"]);
+  const tabs = useMemo(
+    () => [
+      { to: "/architecture", label: t("overview"), end: true as const },
+      { to: "/architecture/contexts", label: t("boundedContexts") },
+      { to: "/architecture/dependencies", label: t("dependencies") },
+      { to: "/architecture/events", label: t("events") },
+      { to: "/architecture/event-flow", label: t("eventFlow") },
+      { to: "/architecture/databases", label: t("databases") },
+      { to: "/architecture/contracts", label: t("contracts") },
+    ],
+    [t],
+  );
+
   return (
     <PageFrame
-      pretitle="Architecture"
-      title="Architecture Explorer"
-      description="Design-time topology — bounded contexts, contracts, and data ownership. Runtime health lives on Platform Map."
+      pretitle={t("hubPretitle")}
+      title={t("hubTitle")}
+      description={t("hubDescription")}
       actions={
         <div className="btn-list">
           <Link className="btn" to="/map">
-            Platform Map
+            {t("platform:platformMap")}
           </Link>
           <Link className="btn" to="/building-blocks">
-            BuildingBlocks
+            {t("buildingBlocks")}
           </Link>
         </div>
       }
     >
-      <HubTabs tabs={TABS} label="Architecture sections" />
+      <HubTabs tabs={tabs} label={t("hubTitle")} />
       <Outlet />
     </PageFrame>
   );

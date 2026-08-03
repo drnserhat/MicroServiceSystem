@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { getHealthAggregate } from "@/api/ops";
 import type { ServiceHealthItem } from "@/api/types";
@@ -27,6 +28,7 @@ export function PlatformMapPage() {
 }
 
 function PlatformMapInner() {
+  const { t } = useTranslation(["platform", "common"]);
   const [items, setItems] = useState<ServiceHealthItem[]>([]);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ function PlatformMapInner() {
       setItems(data.services);
       setCheckedAt(data.checkedAtUtc);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Failed to load health.");
+      setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,14 +88,18 @@ function PlatformMapInner() {
 
   return (
     <PageFrame
-      pretitle="Platform"
-      title="Platform Map"
-      description="Interactive runtime topology — click a node to inspect health, dependencies, and deep links."
+      pretitle={t("pretitle")}
+      title={t("titleMap")}
+      description={t("descriptionMap")}
       actions={
         <div className="btn-list align-items-center">
           {checkedAt ? (
             <span className="text-secondary small d-none d-lg-inline">
-              {healthy}/{items.length || "—"} healthy · {new Date(checkedAt).toLocaleTimeString()}
+              {t("healthyCount", {
+                healthy,
+                total: items.length || "—",
+                time: new Date(checkedAt).toLocaleTimeString(),
+              })}
             </span>
           ) : null}
           <button
@@ -102,21 +108,18 @@ function PlatformMapInner() {
             disabled={loading || refreshing}
             onClick={() => void load("refresh")}
           >
-            {refreshing ? "Refreshing…" : "Refresh"}
+            {refreshing ? t("common:refreshing") : t("common:refresh")}
           </button>
           <Link className="btn" to="/services">
-            Services
+            {t("services")}
           </Link>
           <Link className="btn" to="/architecture">
-            Design-time
+            {t("designTime")}
           </Link>
         </div>
       }
     >
-      <PreviewBanner>
-        Topology and edges are a static catalog. Live health overlays gateway probes where they exist. Metrics and
-        restart remain awaiting API.
-      </PreviewBanner>
+      <PreviewBanner>{t("mapPreviewBanner")}</PreviewBanner>
 
       <ErrorAlert error={error} />
 
@@ -124,7 +127,7 @@ function PlatformMapInner() {
         <div className="msf-split__main">
           <div className="card h-100">
             <div className="card-header">
-              <h3 className="card-title">Runtime graph</h3>
+              <h3 className="card-title">{t("runtimeGraph")}</h3>
               <div className="card-actions text-secondary small">
                 {TOPOLOGY_NODES.length} nodes · {probed} probe-backed · drag handle to resize
               </div>
@@ -163,7 +166,7 @@ function PlatformMapInner() {
         <div className="col-12">
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">Runtime graph</h3>
+              <h3 className="card-title">{t("runtimeGraph")}</h3>
             </div>
             <div className="card-body p-2">
               {loading ? (

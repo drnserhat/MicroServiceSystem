@@ -1,0 +1,16 @@
+{
+  "pretitle": "Reference Data",
+  "title": "Countries",
+  "colCode": "Code",
+  "colName": "Name",
+  "createCountry": "Create country",
+  "editCountry": "Edit country",
+  "deleteTitle": "Delete country",
+  "deleteMessage": "Delete country {{code}} ({{name}})? This cannot be undone.",
+  "deleteSuccess": "Country {{code}} deleted.",
+  "createSuccess": "Country {{code}} created.",
+  "updateSuccess": "Country {{code}} updated.",
+  "loadFailed": "Failed to load countries.",
+  "empty": "No countries found.",
+  "emptyHint": "No countries yet. In Development the Location service seeds ISO 3166-1 codes for the demo tenant on startup — restart location if the list stays empty, or create one below (e.g. TR / Turkey)."
+}

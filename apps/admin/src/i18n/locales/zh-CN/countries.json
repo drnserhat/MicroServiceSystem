@@ -1,0 +1,16 @@
+{
+  "pretitle": "参考数据",
+  "title": "国家",
+  "colCode": "代码",
+  "colName": "名称",
+  "createCountry": "创建国家",
+  "editCountry": "编辑国家",
+  "deleteTitle": "删除国家",
+  "deleteMessage": "删除国家 {{code}} ({{name}})？此操作无法撤销。",
+  "deleteSuccess": "国家 {{code}} 已删除。",
+  "createSuccess": "国家 {{code}} 已创建。",
+  "updateSuccess": "国家 {{code}} 已更新。",
+  "loadFailed": "加载国家失败。",
+  "empty": "未找到国家。",
+  "emptyHint": "尚无国家。开发环境中 Location 服务会在启动时为演示租户种子 ISO 3166-1 代码。"
+}

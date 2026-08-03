@@ -1,0 +1,21 @@
+{
+  "pretitle": "Yapılandırma",
+  "title": "Ayarlar",
+  "colKey": "Anahtar",
+  "colValue": "Değer",
+  "colVersion": "Sürüm",
+  "upsertTitle": "Ayar ekle/güncelle",
+  "editSetting": "Ayarı düzenle",
+  "deleteTitle": "Ayarı sil",
+  "deleteMessage": "\"{{key}}\" ayarı silinsin mi? Bu işlem geri alınamaz.",
+  "deleteSuccess": "\"{{key}}\" ayarı silindi.",
+  "saveSuccess": "\"{{key}}\" ayarı kaydedildi.",
+  "updateSuccess": "\"{{key}}\" ayarı güncellendi.",
+  "loadFailed": "Ayarlar yüklenemedi.",
+  "empty": "Ayar bulunamadı.",
+  "createSetting": "Ayar oluştur",
+  "updateSetting": "Ayar güncelle",
+  "cancelEdit": "Düzenlemeyi iptal et",
+  "tenantSettings": "Kiracı ayarları",
+  "noSettingsYet": "Henüz ayar yok."
+}

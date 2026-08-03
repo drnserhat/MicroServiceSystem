@@ -1,0 +1,11 @@
+{
+  "pretitle": "Gözlemlenebilirlik",
+  "title": "Denetim",
+  "tableTitle": "Denetim kayıtları",
+  "colAction": "Eylem",
+  "colResource": "Kaynak",
+  "colActor": "Aktör",
+  "colDetails": "Ayrıntılar",
+  "empty": "Denetim kaydı yok.",
+  "loadFailed": "Denetim yüklenemedi."
+}

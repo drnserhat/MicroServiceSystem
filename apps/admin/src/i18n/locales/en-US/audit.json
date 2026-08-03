@@ -1,0 +1,11 @@
+{
+  "pretitle": "Observability",
+  "title": "Audit",
+  "tableTitle": "Audit entries",
+  "colAction": "Action",
+  "colResource": "Resource",
+  "colActor": "Actor",
+  "colDetails": "Details",
+  "empty": "No audit entries.",
+  "loadFailed": "Failed to load audit."
+}

@@ -1,0 +1,18 @@
+{
+  "healthy": "健康",
+  "warning": "警告",
+  "critical": "严重",
+  "unreachable": "不可达",
+  "degraded": "降级",
+  "infra": "基础设施",
+  "optional": "可选",
+  "gateway": "Gateway",
+  "identity": "Identity",
+  "user": "User",
+  "coordinator": "Coordinator",
+  "settings": "Settings",
+  "rabbitmq": "RabbitMQ",
+  "redis": "Redis",
+  "postgres": "PostgreSQL",
+  "mongo": "MongoDB"
+}

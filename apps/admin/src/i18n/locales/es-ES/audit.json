@@ -1,0 +1,11 @@
+{
+  "pretitle": "Observabilidad",
+  "title": "Auditoría",
+  "tableTitle": "Entradas de auditoría",
+  "colAction": "Acción",
+  "colResource": "Recurso",
+  "colActor": "Actor",
+  "colDetails": "Detalles",
+  "empty": "Sin entradas de auditoría.",
+  "loadFailed": "Error al cargar auditoría."
+}

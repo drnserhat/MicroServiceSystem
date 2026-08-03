@@ -1,0 +1,18 @@
+{
+  "healthy": "स्वस्थ",
+  "warning": "चेतावनी",
+  "critical": "गंभीर",
+  "unreachable": "पहुँच से बाहर",
+  "degraded": "क्षीण",
+  "infra": "इंफ्रा",
+  "optional": "वैकल्पिक",
+  "gateway": "Gateway",
+  "identity": "Identity",
+  "user": "User",
+  "coordinator": "Coordinator",
+  "settings": "Settings",
+  "rabbitmq": "RabbitMQ",
+  "redis": "Redis",
+  "postgres": "PostgreSQL",
+  "mongo": "MongoDB"
+}

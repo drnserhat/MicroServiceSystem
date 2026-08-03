@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MicroServiceSystem.BuildingBlocks.Localization.Abstractions;
 using MicroServiceSystem.BuildingBlocks.Localization.Configuration;
 
 namespace MicroServiceSystem.BuildingBlocks.Localization.Extensions;
@@ -22,6 +23,7 @@ public static class LocalizationExtensions
             .Get<FrameworkLocalizationOptions>() ?? new FrameworkLocalizationOptions();
 
         services.AddLocalization(options => options.ResourcesPath = localizationOptions.ResourcesPath);
+        services.AddSingleton<IErrorLocalizer, JsonErrorLocalizer>();
 
         services.Configure<RequestLocalizationOptions>(options =>
         {

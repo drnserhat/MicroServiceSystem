@@ -1,0 +1,11 @@
+{
+  "pretitle": "उपकरण",
+  "title": "फ़ाइल अपलोड",
+  "containerLabel": "कंटेनर",
+  "fileLabel": "फ़ाइल",
+  "upload": "अपलोड करें",
+  "uploading": "अपलोड हो रहा है…",
+  "uploadSuccess": "{{fileName}} अपलोड किया गया।",
+  "uploadFailed": "अपलोड विफल।",
+  "resultBytes": "{{bytes}} bytes"
+}

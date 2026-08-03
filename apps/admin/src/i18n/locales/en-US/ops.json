@@ -1,0 +1,18 @@
+{
+  "healthy": "Healthy",
+  "warning": "Warning",
+  "critical": "Critical",
+  "unreachable": "Unreachable",
+  "degraded": "Degraded",
+  "infra": "Infra",
+  "optional": "Optional",
+  "gateway": "Gateway",
+  "identity": "Identity",
+  "user": "User",
+  "coordinator": "Coordinator",
+  "settings": "Settings",
+  "rabbitmq": "RabbitMQ",
+  "redis": "Redis",
+  "postgres": "PostgreSQL",
+  "mongo": "MongoDB"
+}

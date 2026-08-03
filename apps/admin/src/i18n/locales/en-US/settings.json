@@ -1,0 +1,21 @@
+{
+  "pretitle": "Configuration",
+  "title": "Settings",
+  "colKey": "Key",
+  "colValue": "Value",
+  "colVersion": "Version",
+  "upsertTitle": "Upsert setting",
+  "editSetting": "Edit setting",
+  "deleteTitle": "Delete setting",
+  "deleteMessage": "Delete setting \"{{key}}\"? This cannot be undone.",
+  "deleteSuccess": "Setting \"{{key}}\" deleted.",
+  "saveSuccess": "Setting \"{{key}}\" saved.",
+  "updateSuccess": "Setting \"{{key}}\" updated.",
+  "loadFailed": "Failed to load settings.",
+  "empty": "No settings found.",
+  "createSetting": "Create setting",
+  "updateSetting": "Update setting",
+  "cancelEdit": "Cancel edit",
+  "tenantSettings": "Tenant settings",
+  "noSettingsYet": "No settings yet."
+}

@@ -1,36 +1,38 @@
 import { Link, Outlet, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { CopyCommandBlock, HubTabs, PageFrame, PreviewBanner } from "@/components/control";
 import { WIZARDS, findWizard } from "./catalog";
 
-const TABS = [
-  { to: "/developer", label: "Overview", end: true },
-  ...WIZARDS.map((w) => ({ to: `/developer/${w.id}`, label: w.title })),
-];
-
 export function DeveloperLayout() {
+  const { t } = useTranslation(["developer", "architecture"]);
+  const tabs = [
+    { to: "/developer", label: t("overview"), end: true as const },
+    ...WIZARDS.map((w) => ({ to: `/developer/${w.id}`, label: w.title })),
+  ];
+
   return (
     <PageFrame
-      pretitle="Developer"
-      title="Developer Center"
-      description="Framework developer tools — CLI templates only (no codegen backend)."
+      pretitle={t("hubPretitle")}
+      title={t("hubTitle")}
+      description={t("hubDescription")}
       actions={
         <Link className="btn" to="/building-blocks">
-          BuildingBlocks
+          {t("architecture:buildingBlocks")}
         </Link>
       }
     >
-      <HubTabs tabs={TABS} label="Developer wizards" />
+      <HubTabs tabs={tabs} label={t("hubTitle")} />
       <Outlet />
     </PageFrame>
   );
 }
 
 export function DeveloperOverviewPage() {
+  const { t } = useTranslation("developer");
+
   return (
     <>
-      <PreviewBanner>
-        Buttons do not execute generators remotely. Copy commands and run them in the repo.
-      </PreviewBanner>
+      <PreviewBanner>{t("previewBannerOverview")}</PreviewBanner>
       <div className="row row-cards">
         {WIZARDS.map((wizard) => (
           <div className="col-md-6 col-xl-4" key={wizard.id}>
@@ -39,7 +41,7 @@ export function DeveloperOverviewPage() {
                 <h3 className="card-title">{wizard.title}</h3>
                 <p className="text-secondary">{wizard.description}</p>
                 <Link className="btn btn-sm" to={`/developer/${wizard.id}`}>
-                  Open wizard
+                  {t("openWizard")}
                 </Link>
               </div>
             </div>
@@ -51,6 +53,7 @@ export function DeveloperOverviewPage() {
 }
 
 export function DeveloperWizardPage() {
+  const { t } = useTranslation("developer");
   const { wizardId } = useParams<{ wizardId: string }>();
   const wizard = wizardId ? findWizard(wizardId) : undefined;
 
@@ -59,10 +62,10 @@ export function DeveloperWizardPage() {
       <div className="card">
         <div className="card-body">
           <p className="text-secondary mb-2">
-            Unknown wizard <code>{wizardId}</code>.
+            {t("unknownWizard")} <code>{wizardId}</code>.
           </p>
           <Link className="btn" to="/developer">
-            Back
+            {t("back")}
           </Link>
         </div>
       </div>
@@ -71,7 +74,7 @@ export function DeveloperWizardPage() {
 
   return (
     <>
-      <PreviewBanner>Copy-only UX — no remote scaffold execution.</PreviewBanner>
+      <PreviewBanner>{t("previewBannerWizard")}</PreviewBanner>
       <div className="card">
         <div className="card-body">
           <h3 className="card-title">{wizard.title}</h3>

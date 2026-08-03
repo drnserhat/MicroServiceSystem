@@ -1,26 +1,32 @@
+import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { HubTabs, PageFrame } from "@/components/control";
 import { ExternalToolLink } from "@/platform/tools";
 
-const TABS = [
-  { to: "/observability", label: "Overview", end: true },
-  { to: "/observability/metrics", label: "Metrics" },
-  { to: "/observability/tracing", label: "Tracing" },
-  { to: "/observability/logs", label: "Logs" },
-  { to: "/observability/audit", label: "Audit" },
-  { to: "/observability/errors", label: "Errors" },
-  { to: "/observability/performance", label: "Performance" },
-  { to: "/observability/otel", label: "OTel" },
-  { to: "/observability/prometheus", label: "Prometheus" },
-  { to: "/observability/correlation", label: "Correlation" },
-] as const;
-
 export function ObservabilityLayout() {
+  const { t } = useTranslation("observability");
+  const tabs = useMemo(
+    () => [
+      { to: "/observability", label: t("overview"), end: true as const },
+      { to: "/observability/metrics", label: t("metrics") },
+      { to: "/observability/tracing", label: t("tracing") },
+      { to: "/observability/logs", label: t("logs") },
+      { to: "/observability/audit", label: t("audit") },
+      { to: "/observability/errors", label: t("errors") },
+      { to: "/observability/performance", label: t("performance") },
+      { to: "/observability/otel", label: t("openTelemetry") },
+      { to: "/observability/prometheus", label: t("prometheus") },
+      { to: "/observability/correlation", label: t("correlation") },
+    ],
+    [t],
+  );
+
   return (
     <PageFrame
-      pretitle="Observability"
-      title="Observability Center"
-      description="In-product audit/logs plus deep links to Seq, Jaeger, Grafana, and Prometheus — not a replacement."
+      pretitle={t("hubPretitle")}
+      title={t("hubTitle")}
+      description={t("hubDescription")}
       actions={
         <div className="btn-list">
           <ExternalToolLink id="seq" className="btn" />
@@ -29,7 +35,7 @@ export function ObservabilityLayout() {
         </div>
       }
     >
-      <HubTabs tabs={TABS} label="Observability sections" />
+      <HubTabs tabs={tabs} label={t("hubTitle")} />
       <Outlet />
     </PageFrame>
   );

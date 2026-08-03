@@ -1,0 +1,21 @@
+{
+  "pretitle": "Identity",
+  "title": "Tenants",
+  "searchPlaceholder": "नाम या slug खोजें",
+  "colName": "नाम",
+  "colSlug": "Slug",
+  "colId": "Id",
+  "colStatus": "स्थिति",
+  "activate": "सक्रिय करें",
+  "deactivate": "निष्क्रिय करें",
+  "activateTitle": "Tenant सक्रिय करें",
+  "deactivateTitle": "Tenant निष्क्रिय करें",
+  "activateMessage": "Tenant \"{{name}}\" ({{slug}}) सक्रिय करें?",
+  "deactivateMessage": "Tenant \"{{name}}\" ({{slug}}) निष्क्रिय करें? इस Tenant के उपयोगकर्ता पहुँच खो सकते हैं।",
+  "activateSuccess": "Tenant \"{{name}}\" सक्रिय किया गया।",
+  "deactivateSuccess": "Tenant \"{{name}}\" निष्क्रिय किया गया।",
+  "createSuccess": "Tenant \"{{name}}\" बनाया गया।",
+  "loadFailed": "Tenants लोड करने में विफल।",
+  "createFailed": "बनाने में विफल।",
+  "updateFailed": "अपडेट करने में विफल।"
+}

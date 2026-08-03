@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   IconBrandGithub,
   IconLayoutSidebar,
@@ -10,6 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 import { useTheme } from "@/theme/ThemeContext";
 import { displayNameFromEmail, initialsFromName } from "./displayName";
 import { CommandPalette } from "./CommandPalette";
@@ -29,6 +31,7 @@ function loadList(key: string): string[] {
 }
 
 export function AppLayout() {
+  const { t } = useTranslation(["common", "nav"]);
   const { session, logout, can } = useAuth();
   const { colorMode, setColorMode, toggleColorMode } = useTheme();
   const location = useLocation();
@@ -74,7 +77,10 @@ export function AppLayout() {
     });
   }, [location.pathname]);
 
-  const crumbs = useMemo(() => resolveBreadcrumbs(location.pathname), [location.pathname]);
+  const crumbs = useMemo(
+    () => resolveBreadcrumbs(location.pathname, t),
+    [location.pathname, t],
+  );
 
   function toggleFavorite(path: string) {
     setFavorites((prev) => {
@@ -92,24 +98,26 @@ export function AppLayout() {
     .filter(Boolean)
     .join(" ");
 
+  const roleLabel = can(FrameworkPermissions.RegistrationUsersCreate) ? t("admin") : t("member");
+
   return (
     <div className={shellClass}>
       <aside className="msf-cc-sidebar">
         <div className="msf-cc-sidebar-brand d-flex align-items-center gap-2">
           <Link to="/" className="text-reset text-decoration-none">
-            MSF Control
+            {t("brandShort")}
           </Link>
         </div>
         <div className="msf-cc-sidebar-meta px-3 pb-2 small text-secondary">
-          Tenant {tenantShort}… · {can(FrameworkPermissions.RegistrationUsersCreate) ? "Admin" : "Member"}
+          {t("tenant")} {tenantShort}… · {roleLabel}
         </div>
         <nav className="msf-cc-sidebar-nav">
           {favorites.length > 0 ? (
             <div className="msf-cc-nav-section">
-              <div className="msf-cc-nav-section-label">Favorites</div>
+              <div className="msf-cc-nav-section-label">{t("favorites")}</div>
               {favorites.map((fav) => (
                 <NavLink key={fav} to={fav} className={({ isActive }) => (isActive ? "msf-cc-nav-link active" : "msf-cc-nav-link")} title={fav}>
-                  <span className="msf-cc-nav-label">{resolvePathLabel(fav)}</span>
+                  <span className="msf-cc-nav-label">{resolvePathLabel(fav, t)}</span>
                 </NavLink>
               ))}
             </div>
@@ -119,19 +127,22 @@ export function AppLayout() {
             if (items.length === 0) return null;
             return (
               <div className="msf-cc-nav-section" key={section.id}>
-                <div className="msf-cc-nav-section-label">{section.label}</div>
-                {items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.end}
-                    title={item.label}
-                    className={({ isActive }) => (isActive ? "msf-cc-nav-link active" : "msf-cc-nav-link")}
-                  >
-                    <span className="text-secondary">{item.icon}</span>
-                    <span className="msf-cc-nav-label">{item.label}</span>
-                  </NavLink>
-                ))}
+                <div className="msf-cc-nav-section-label">{t(`nav:${section.labelKey}`)}</div>
+                {items.map((item) => {
+                  const label = t(`nav:${item.labelKey}`);
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      title={label}
+                      className={({ isActive }) => (isActive ? "msf-cc-nav-link active" : "msf-cc-nav-link")}
+                    >
+                      <span className="text-secondary">{item.icon}</span>
+                      <span className="msf-cc-nav-label">{label}</span>
+                    </NavLink>
+                  );
+                })}
               </div>
             );
           })}
@@ -143,7 +154,7 @@ export function AppLayout() {
           <button
             type="button"
             className="btn btn-ghost-secondary btn-icon"
-            title="Toggle sidebar"
+            title={t("toggleSidebar")}
             onClick={() => {
               if (window.innerWidth < 992) setMobileOpen((v) => !v);
               else setCollapsed((v) => !v);
@@ -155,10 +166,10 @@ export function AppLayout() {
             type="button"
             className="btn btn-ghost-secondary"
             onClick={() => setPaletteOpen(true)}
-            title="Command palette (Ctrl+K)"
+            title={`${t("shortcutPalette")} (Ctrl+K)`}
           >
             <IconSearch size={16} stroke={1.5} className="me-1" />
-            Search
+            {t("search")}
             <kbd className="ms-2 small">Ctrl K</kbd>
           </button>
           <div className="msf-cc-breadcrumb d-none d-md-flex align-items-center gap-1">
@@ -172,11 +183,12 @@ export function AppLayout() {
             ))}
           </div>
           <div className="ms-auto d-flex align-items-center gap-2">
+            <LanguageSwitcher />
             <button
               type="button"
               className="btn btn-ghost-secondary btn-sm"
               onClick={() => setShortcutsOpen(true)}
-              title="Keyboard shortcuts (?)"
+              title={t("shortcutHelp")}
             >
               ?
             </button>
@@ -184,7 +196,7 @@ export function AppLayout() {
               type="button"
               className="btn btn-ghost-secondary btn-sm"
               onClick={() => toggleFavorite(location.pathname)}
-              title="Toggle favorite"
+              title={t("toggleFavorite")}
             >
               {favorites.includes(location.pathname) ? "★" : "☆"}
             </button>
@@ -193,14 +205,14 @@ export function AppLayout() {
               className="btn btn-ghost-secondary btn-icon"
               target="_blank"
               rel="noreferrer"
-              title="Source"
+              title={t("source")}
             >
               <IconBrandGithub size={18} stroke={1.5} />
             </a>
             <button
               type="button"
               className="btn btn-ghost-secondary btn-icon"
-              title="Toggle theme"
+              title={t("toggleTheme")}
               onClick={() => (colorMode === "dark" ? setColorMode("light") : setColorMode("dark"))}
             >
               {colorMode === "dark" ? <IconSun size={18} stroke={1.5} /> : <IconMoon size={18} stroke={1.5} />}
@@ -210,23 +222,23 @@ export function AppLayout() {
                 <span className="avatar avatar-sm bg-primary-lt">{initials}</span>
                 <div className="d-none d-xl-block ps-2">
                   <div>{displayName}</div>
-                  <div className="mt-1 small text-secondary">Control Center</div>
+                  <div className="mt-1 small text-secondary">{t("controlCenter")}</div>
                 </div>
               </a>
               <div className="dropdown-menu dropdown-menu-end">
-                <div className="dropdown-item-text small text-secondary">Recent</div>
+                <div className="dropdown-item-text small text-secondary">{t("recent")}</div>
                 {recent.slice(0, 5).map((path) => (
                   <Link key={path} className="dropdown-item" to={path} title={path}>
-                    {resolvePathLabel(path)}
+                    {resolvePathLabel(path, t)}
                   </Link>
                 ))}
                 <div className="dropdown-divider" />
                 <button type="button" className="dropdown-item" onClick={toggleColorMode}>
-                  Theme: {colorMode}
+                  {t("theme")}: {colorMode === "dark" ? t("themeDark") : t("themeLight")}
                 </button>
                 <button type="button" className="dropdown-item" onClick={logout}>
                   <IconLogout size={16} stroke={1.5} className="me-2" />
-                  Logout
+                  {t("logout")}
                 </button>
               </div>
             </div>
@@ -249,25 +261,25 @@ export function AppLayout() {
           <div className="modal-dialog modal-dialog-centered" role="document" onClick={(e) => e.stopPropagation()}>
             <div className="modal-content">
               <div className="modal-header">
-                <h3 className="modal-title">Keyboard shortcuts</h3>
+                <h3 className="modal-title">{t("shortcutsTitle")}</h3>
                 <button type="button" className="btn-close" onClick={() => setShortcutsOpen(false)} />
               </div>
               <div className="modal-body">
                 <div className="datagrid">
                   <div className="datagrid-item">
-                    <div className="datagrid-title">Command palette</div>
+                    <div className="datagrid-title">{t("shortcutPalette")}</div>
                     <div className="datagrid-content">
                       <kbd>Ctrl</kbd> + <kbd>K</kbd>
                     </div>
                   </div>
                   <div className="datagrid-item">
-                    <div className="datagrid-title">Shortcuts help</div>
+                    <div className="datagrid-title">{t("shortcutHelp")}</div>
                     <div className="datagrid-content">
                       <kbd>?</kbd>
                     </div>
                   </div>
                   <div className="datagrid-item">
-                    <div className="datagrid-title">Close modal</div>
+                    <div className="datagrid-title">{t("shortcutClose")}</div>
                     <div className="datagrid-content">
                       <kbd>Esc</kbd>
                     </div>

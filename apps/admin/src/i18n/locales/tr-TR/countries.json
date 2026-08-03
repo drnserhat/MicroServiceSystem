@@ -1,0 +1,16 @@
+{
+  "pretitle": "Referans Veri",
+  "title": "Ülkeler",
+  "colCode": "Kod",
+  "colName": "Ad",
+  "createCountry": "Ülke oluştur",
+  "editCountry": "Ülkeyi düzenle",
+  "deleteTitle": "Ülkeyi sil",
+  "deleteMessage": "{{code}} ({{name}}) ülkesi silinsin mi? Bu işlem geri alınamaz.",
+  "deleteSuccess": "{{code}} ülkesi silindi.",
+  "createSuccess": "{{code}} ülkesi oluşturuldu.",
+  "updateSuccess": "{{code}} ülkesi güncellendi.",
+  "loadFailed": "Ülkeler yüklenemedi.",
+  "empty": "Ülke bulunamadı.",
+  "emptyHint": "Henüz ülke yok. Geliştirmede Location servisi demo kiracı için ISO 3166-1 kodlarını başlangıçta yükler — liste boş kalırsa location'ı yeniden başlatın veya aşağıdan oluşturun (ör. TR / Türkiye)."
+}

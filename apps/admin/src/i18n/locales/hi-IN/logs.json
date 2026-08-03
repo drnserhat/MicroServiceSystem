@@ -1,0 +1,14 @@
+{
+  "pretitle": "अवलोकन",
+  "title": "सिस्टम लॉग",
+  "levelPlaceholder": "स्तर",
+  "sourcePlaceholder": "स्रोत",
+  "correlationPlaceholder": "Correlation ID",
+  "filter": "फ़िल्टर",
+  "empty": "कोई लॉग प्रविष्टि नहीं।",
+  "loadFailed": "लॉग लोड करने में विफल।",
+  "viewerTitle": "लॉग प्रविष्टियाँ",
+  "colTime": "समय",
+  "colLevel": "स्तर",
+  "colMessage": "संदेश"
+}

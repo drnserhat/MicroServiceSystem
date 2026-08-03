@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { deleteSetting, listSettings, upsertSetting } from "@/api/settings";
 import type { SettingItem } from "@/api/types";
@@ -19,6 +20,7 @@ export function SettingsPage() {
 }
 
 function SettingsPageInner() {
+  const { t } = useTranslation(["settings", "common"]);
   const toast = useToast();
   const { confirm } = useConfirm();
   const { can } = useAuth();
@@ -50,7 +52,7 @@ function SettingsPageInner() {
       if (isServiceUnavailable(err)) {
         setUnavailable(true);
       } else {
-        setError(err instanceof ApiClientError ? err.message : "Failed to load settings.");
+        setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
       }
       setItems([]);
     } finally {
@@ -70,7 +72,9 @@ function SettingsPageInner() {
     setFailures(undefined);
     try {
       await upsertSetting(key.trim(), value, editing?.version ?? null);
-      toast.success(editing ? `Setting "${key.trim()}" updated.` : `Setting "${key.trim()}" saved.`);
+      toast.success(
+        editing ? t("updateSuccess", { key: key.trim() }) : t("saveSuccess", { key: key.trim() }),
+      );
       setKey("");
       setValue("");
       setEditing(null);
@@ -81,8 +85,8 @@ function SettingsPageInner() {
         setFailures(err.failures);
         toast.error(err.message);
       } else {
-        setError("Save failed.");
-        toast.error("Save failed.");
+        setError(t("common:saveFailed"));
+        toast.error(t("common:saveFailed"));
       }
     }
   }
@@ -90,18 +94,18 @@ function SettingsPageInner() {
   async function onDelete(item: SettingItem) {
     if (!canWrite) return;
     const ok = await confirm({
-      title: "Delete setting",
-      message: `Delete setting "${item.key}"? This cannot be undone.`,
-      confirmLabel: "Delete",
+      title: t("deleteTitle"),
+      message: t("deleteMessage", { key: item.key }),
+      confirmLabel: t("common:delete"),
       tone: "danger",
     });
     if (!ok) return;
     try {
       await deleteSetting(item.key, item.version);
-      toast.success(`Setting "${item.key}" deleted.`);
+      toast.success(t("deleteSuccess", { key: item.key }));
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Delete failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("common:deleteFailed");
       setError(msg);
       toast.error(msg);
     }
@@ -114,117 +118,115 @@ function SettingsPageInner() {
   }
 
   return (
-    <PageFrame pretitle="Configuration" title="Settings"
-    >
-          {unavailable ? <ServiceUnavailableAlert service="Settings" /> : null}
-          <ErrorAlert error={error} />
-          <FieldErrors failures={failures} />
+    <PageFrame pretitle={t("pretitle")} title={t("title")}>
+      {unavailable ? <ServiceUnavailableAlert service="Settings" /> : null}
+      <ErrorAlert error={error} />
+      <FieldErrors failures={failures} />
 
-          {canWrite ? (
-            <div className="card mb-3">
-              <div className="card-header">
-                <h3 className="card-title">{editing ? "Update setting" : "Create setting"}</h3>
+      {canWrite ? (
+        <div className="card mb-3">
+          <div className="card-header">
+            <h3 className="card-title">{editing ? t("updateSetting") : t("createSetting")}</h3>
+          </div>
+          <form className="card-body" onSubmit={onSubmit}>
+            <div className="row g-3">
+              <div className="col-md-4">
+                <label className="form-label">{t("colKey")}</label>
+                <input
+                  className="form-control"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  required
+                  disabled={Boolean(editing)}
+                />
               </div>
-              <form className="card-body" onSubmit={onSubmit}>
-                <div className="row g-3">
-                  <div className="col-md-4">
-                    <label className="form-label">Key</label>
-                    <input
-                      className="form-control"
-                      value={key}
-                      onChange={(e) => setKey(e.target.value)}
-                      required
-                      disabled={Boolean(editing)}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Value</label>
-                    <input
-                      className="form-control"
-                      value={value}
-                      onChange={(e) => setValue(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" className="btn btn-primary w-100">
-                      {editing ? "Update" : "Create"}
-                    </button>
-                  </div>
-                </div>
-                {editing ? (
-                  <button
-                    type="button"
-                    className="btn btn-link px-0 mt-2"
-                    onClick={() => {
-                      setEditing(null);
-                      setKey("");
-                      setValue("");
-                    }}
-                  >
-                    Cancel edit
-                  </button>
-                ) : null}
-              </form>
+              <div className="col-md-6">
+                <label className="form-label">{t("colValue")}</label>
+                <input
+                  className="form-control"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" className="btn btn-primary w-100">
+                  {editing ? t("common:save") : t("common:create")}
+                </button>
+              </div>
             </div>
-          ) : null}
+            {editing ? (
+              <button
+                type="button"
+                className="btn btn-link px-0 mt-2"
+                onClick={() => {
+                  setEditing(null);
+                  setKey("");
+                  setValue("");
+                }}
+              >
+                {t("cancelEdit")}
+              </button>
+            ) : null}
+          </form>
+        </div>
+      ) : null}
 
-          <DataTableShell
-            title="Tenant settings"
-            footer={
-              <PaginationBar
-                page={page}
-                totalPages={totalPages}
-                hasPrevious={hasPrevious}
-                hasNext={hasNext}
-                loading={loading}
-                onChange={setPage}
-              />
-            }
-          >
-            <table className="table table-vcenter card-table">
-              <thead>
-                <tr>
-                  <th>Key</th>
-                  <th>Value</th>
-                  <th className="w-1">Version</th>
-                  {canWrite ? <th className="w-1" /> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? <TableSkeleton rows={5} cols={4} /> : null}
-                {!loading && items.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-secondary">
-                      No settings yet.
-                    </td>
-                  </tr>
+      <DataTableShell
+        title={t("tenantSettings")}
+        footer={
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            hasPrevious={hasPrevious}
+            hasNext={hasNext}
+            loading={loading}
+            onChange={setPage}
+          />
+        }
+      >
+        <table className="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>{t("colKey")}</th>
+              <th>{t("colValue")}</th>
+              <th className="w-1">{t("colVersion")}</th>
+              {canWrite ? <th className="w-1" /> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? <TableSkeleton rows={5} cols={4} /> : null}
+            {!loading && items.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="text-secondary">
+                  {t("noSettingsYet")}
+                </td>
+              </tr>
+            ) : null}
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>
+                  <code>{item.key}</code>
+                </td>
+                <td className="text-secondary">{item.value}</td>
+                <td>
+                  <span className="badge bg-azure-lt">{item.version}</span>
+                </td>
+                {canWrite ? (
+                  <td className="text-nowrap">
+                    <button type="button" className="btn btn-sm" onClick={() => startEdit(item)}>
+                      {t("common:edit")}
+                    </button>{" "}
+                    <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDelete(item)}>
+                      {t("common:delete")}
+                    </button>
+                  </td>
                 ) : null}
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <code>{item.key}</code>
-                    </td>
-                    <td className="text-secondary">{item.value}</td>
-                    <td>
-                      <span className="badge bg-azure-lt">{item.version}</span>
-                    </td>
-                    {canWrite ? (
-                      <td className="text-nowrap">
-                        <button type="button" className="btn btn-sm" onClick={() => startEdit(item)}>
-                          Edit
-                        </button>{" "}
-                        <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDelete(item)}>
-                          Delete
-                        </button>
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </DataTableShell>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </DataTableShell>
     </PageFrame>
-
   );
 }

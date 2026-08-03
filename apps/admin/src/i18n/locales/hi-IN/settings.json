@@ -1,0 +1,21 @@
+{
+  "pretitle": "कॉन्फ़िगरेशन",
+  "title": "सेटिंग्स",
+  "colKey": "कुंजी",
+  "colValue": "मान",
+  "colVersion": "संस्करण",
+  "upsertTitle": "सेटिंग जोड़ें/अपडेट करें",
+  "editSetting": "सेटिंग संपादित करें",
+  "deleteTitle": "सेटिंग हटाएँ",
+  "deleteMessage": "सेटिंग \"{{key}}\" हटाएँ? यह पूर्ववत नहीं किया जा सकता।",
+  "deleteSuccess": "सेटिंग \"{{key}}\" हटाई गई।",
+  "saveSuccess": "सेटिंग \"{{key}}\" सहेजी गई।",
+  "updateSuccess": "सेटिंग \"{{key}}\" अपडेट की गई।",
+  "loadFailed": "सेटिंग्स लोड करने में विफल।",
+  "empty": "कोई सेटिंग नहीं मिली।",
+  "createSetting": "सेटिंग बनाएँ",
+  "updateSetting": "सेटिंग अपडेट",
+  "cancelEdit": "संपादन रद्द",
+  "tenantSettings": "टेनेंट सेटिंग",
+  "noSettingsYet": "अभी कोई सेटिंग नहीं।"
+}

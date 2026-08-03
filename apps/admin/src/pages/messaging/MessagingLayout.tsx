@@ -1,40 +1,46 @@
+import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
 import { HubTabs, PageFrame } from "@/components/control";
 import { ExternalToolLink } from "@/platform/tools";
 
-const TABS = [
-  { to: "/messaging", label: "Overview", end: true },
-  { to: "/messaging/queues", label: "Queues" },
-  { to: "/messaging/exchanges", label: "Exchanges" },
-  { to: "/messaging/bindings", label: "Bindings" },
-  { to: "/messaging/publishers", label: "Publishers" },
-  { to: "/messaging/consumers", label: "Consumers" },
-  { to: "/messaging/dead-letters", label: "Dead letters" },
-  { to: "/messaging/outbox", label: "Outbox" },
-  { to: "/messaging/inbox", label: "Inbox" },
-  { to: "/messaging/event-flow", label: "Event flow" },
-  { to: "/messaging/retries", label: "Retries" },
-  { to: "/messaging/replay", label: "Replay" },
-  { to: "/messaging/inspect", label: "Inspect" },
-  { to: "/messaging/timeline", label: "Timeline" },
-] as const;
-
 export function MessagingLayout() {
+  const { t } = useTranslation("messaging");
+  const tabs = useMemo(
+    () => [
+      { to: "/messaging", label: t("overview"), end: true as const },
+      { to: "/messaging/queues", label: t("queuesTitle") },
+      { to: "/messaging/exchanges", label: t("exchangesTitle") },
+      { to: "/messaging/bindings", label: t("bindingsTitle") },
+      { to: "/messaging/publishers", label: t("publishersTitle") },
+      { to: "/messaging/consumers", label: t("consumersTitle") },
+      { to: "/messaging/dead-letters", label: t("deadLettersTitle") },
+      { to: "/messaging/outbox", label: t("outboxTitle") },
+      { to: "/messaging/inbox", label: t("inboxTitle") },
+      { to: "/messaging/event-flow", label: t("eventFlowTitle") },
+      { to: "/messaging/retries", label: t("retriesTitle") },
+      { to: "/messaging/replay", label: t("replayTitle") },
+      { to: "/messaging/inspect", label: t("inspectTitle") },
+      { to: "/messaging/timeline", label: t("timelineTitle") },
+    ],
+    [t],
+  );
+
   return (
     <RequirePermission permission={FrameworkPermissions.OpsOutboxRead}>
       <PageFrame
-        pretitle="Operations"
-        title="Messaging Center"
-        description="Rabbit-inspired control plane — live per-service outbox/DLQ and inbox counts; topology remains preview."
+        pretitle={t("hubPretitle")}
+        title={t("hubTitle")}
+        description={t("hubDescription")}
         actions={
           <div className="btn-list">
             <ExternalToolLink id="rabbitmq" className="btn" />
           </div>
         }
       >
-        <HubTabs tabs={TABS} label="Messaging sections" />
+        <HubTabs tabs={tabs} label={t("hubTitle")} />
         <Outlet />
       </PageFrame>
     </RequirePermission>

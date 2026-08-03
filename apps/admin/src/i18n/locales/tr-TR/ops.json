@@ -1,0 +1,18 @@
+{
+  "healthy": "Sağlıklı",
+  "warning": "Uyarı",
+  "critical": "Kritik",
+  "unreachable": "Erişilemez",
+  "degraded": "Bozulmuş",
+  "infra": "Altyapı",
+  "optional": "İsteğe bağlı",
+  "gateway": "Gateway",
+  "identity": "Identity",
+  "user": "User",
+  "coordinator": "Coordinator",
+  "settings": "Settings",
+  "rabbitmq": "RabbitMQ",
+  "redis": "Redis",
+  "postgres": "PostgreSQL",
+  "mongo": "MongoDB"
+}

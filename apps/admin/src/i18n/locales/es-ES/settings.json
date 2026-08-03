@@ -1,0 +1,21 @@
+{
+  "pretitle": "Configuración",
+  "title": "Ajustes",
+  "colKey": "Clave",
+  "colValue": "Valor",
+  "colVersion": "Versión",
+  "upsertTitle": "Crear o actualizar ajuste",
+  "editSetting": "Editar ajuste",
+  "deleteTitle": "Eliminar ajuste",
+  "deleteMessage": "¿Eliminar ajuste \"{{key}}\"? Esta acción no se puede deshacer.",
+  "deleteSuccess": "Ajuste \"{{key}}\" eliminado.",
+  "saveSuccess": "Ajuste \"{{key}}\" guardado.",
+  "updateSuccess": "Ajuste \"{{key}}\" actualizado.",
+  "loadFailed": "Error al cargar ajustes.",
+  "empty": "No se encontraron ajustes.",
+  "createSetting": "Crear ajuste",
+  "updateSetting": "Actualizar ajuste",
+  "cancelEdit": "Cancelar edición",
+  "tenantSettings": "Ajustes del inquilino",
+  "noSettingsYet": "Aún no hay ajustes."
+}

@@ -1,0 +1,7 @@
+{
+  "pretitle": "Identity",
+  "title": "角色与权限",
+  "loadFailed": "加载角色失败。",
+  "empty": "未找到角色。",
+  "permissionsLabel": "权限"
+}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import {
   assignUserRole,
@@ -26,6 +27,7 @@ export function UsersDirectoryPage() {
 }
 
 function UsersInner() {
+  const { t } = useTranslation(["users", "common"]);
   const toast = useToast();
   const { confirm, prompt } = useConfirm();
   const { can } = useAuth();
@@ -60,7 +62,7 @@ function UsersInner() {
       setHasPrevious(usersData.hasPreviousPage);
       setHasNext(usersData.hasNextPage);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : "Failed to load users.");
+      setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
       setItems([]);
     } finally {
       setLoading(false);
@@ -75,21 +77,21 @@ function UsersInner() {
   async function onDisable(item: IdentityUserItem) {
     if (!canDisable) return;
     const reason = await prompt({
-      title: "Disable user",
-      message: `Disable ${item.email}? They will no longer be able to sign in.`,
-      promptLabel: "Reason",
-      defaultValue: "Disabled by admin",
-      confirmLabel: "Disable",
+      title: t("disableTitle"),
+      message: t("disableMessage", { email: item.email }),
+      promptLabel: t("disableReasonLabel"),
+      defaultValue: t("disableReasonDefault"),
+      confirmLabel: t("disable"),
       tone: "danger",
       required: true,
     });
     if (reason === null) return;
     try {
-      await disableIdentityUser(item.id, reason.trim() || "Disabled by admin");
-      toast.success(`User ${item.email} disabled.`);
+      await disableIdentityUser(item.id, reason.trim() || t("disableReasonDefault"));
+      toast.success(t("disableSuccess", { email: item.email }));
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Disable failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("disableFailed");
       setError(msg);
       toast.error(msg);
     }
@@ -103,11 +105,11 @@ function UsersInner() {
     setBusyKey(`${item.id}:assign`);
     try {
       await assignUserRole(item.id, roleId);
-      toast.success(`Assigned ${role?.name ?? "role"} to ${item.email}.`);
+      toast.success(t("assignSuccess", { role: role?.name ?? "role", email: item.email }));
       setAssignDraft((prev) => ({ ...prev, [item.id]: "" }));
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Assign failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("assignFailed");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -118,19 +120,19 @@ function UsersInner() {
   async function onUnassign(item: IdentityUserItem, role: RoleItem) {
     if (!canAssign) return;
     const ok = await confirm({
-      title: "Remove role",
-      message: `Remove role "${role.name}" from ${item.email}?`,
-      confirmLabel: "Remove",
+      title: t("removeRoleTitle"),
+      message: t("removeRoleMessage", { role: role.name, email: item.email }),
+      confirmLabel: t("common:remove"),
       tone: "warning",
     });
     if (!ok) return;
     setBusyKey(`${item.id}:${role.id}`);
     try {
       await unassignUserRole(item.id, role.id);
-      toast.success(`Removed ${role.name} from ${item.email}.`);
+      toast.success(t("removeRoleSuccess", { role: role.name, email: item.email }));
       await load(page);
     } catch (err) {
-      const msg = err instanceof ApiClientError ? err.message : "Unassign failed.";
+      const msg = err instanceof ApiClientError ? err.message : t("unassignFailed");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -142,12 +144,12 @@ function UsersInner() {
 
   return (
     <PageFrame
-      pretitle="Identity"
-      title="Users"
+      pretitle={t("pretitle")}
+      title={t("title")}
       actions={
         can(FrameworkPermissions.RegistrationUsersCreate) ? (
           <Link className="btn btn-primary" to="/users/register">
-            Register user
+            {t("registerUser")}
           </Link>
         ) : null
       }
@@ -156,7 +158,7 @@ function UsersInner() {
       <FilterBar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search email or username"
+        searchPlaceholder={t("searchPlaceholder")}
         trailing={
           <button
             type="button"
@@ -166,13 +168,13 @@ function UsersInner() {
               else setPage(1);
             }}
           >
-            Search
+            {t("common:search")}
           </button>
         }
       />
 
       <DataTableShell
-        title="Directory"
+        title={t("directory")}
         footer={
           <PaginationBar
             page={page}
@@ -187,10 +189,10 @@ function UsersInner() {
         <table className="table table-vcenter card-table">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Username</th>
-              <th>Roles</th>
-              <th>Status</th>
+              <th>{t("colEmail")}</th>
+              <th>{t("colUsername")}</th>
+              <th>{t("colRoles")}</th>
+              <th>{t("colStatus")}</th>
               <th />
             </tr>
           </thead>
@@ -199,7 +201,7 @@ function UsersInner() {
             {!loading && items.length === 0 ? (
               <tr>
                 <td colSpan={colCount} className="text-secondary">
-                  No users found.
+                  {t("empty")}
                 </td>
               </tr>
             ) : null}
@@ -217,8 +219,8 @@ function UsersInner() {
                       {assigned.length === 0 ? (
                         <span className="text-secondary">
                           {item.roleIds.length > 0 && !canReadRoles && !canAssign
-                            ? `${item.roleIds.length} role(s)`
-                            : "None"}
+                            ? t("rolesCount", { count: item.roleIds.length })
+                            : t("rolesNone")}
                         </span>
                       ) : (
                         assigned.map((role) => (
@@ -228,7 +230,7 @@ function UsersInner() {
                               <button
                                 type="button"
                                 className="btn-close btn-close-sm"
-                                aria-label={`Remove ${role.name}`}
+                                aria-label={t("removeRoleAria", { role: role.name })}
                                 disabled={busyKey === `${item.id}:${role.id}`}
                                 onClick={() => void onUnassign(item, role)}
                               />
@@ -246,7 +248,7 @@ function UsersInner() {
                             setAssignDraft((prev) => ({ ...prev, [item.id]: e.target.value }))
                           }
                         >
-                          <option value="">Assign role…</option>
+                          <option value="">{t("assignRole")}</option>
                           {available.map((role) => (
                             <option key={role.id} value={role.id}>
                               {role.name}
@@ -259,23 +261,23 @@ function UsersInner() {
                           disabled={!assignDraft[item.id] || busyKey === `${item.id}:assign`}
                           onClick={() => void onAssign(item)}
                         >
-                          Add
+                          {t("common:add")}
                         </button>
                       </div>
                     ) : null}
                   </td>
                   <td>
                     <span className={item.isActive ? "badge bg-green-lt" : "badge bg-red-lt"}>
-                      {item.isActive ? "Active" : "Disabled"}
+                      {item.isActive ? t("common:active") : t("common:disabled")}
                     </span>
                   </td>
                   <td className="text-nowrap">
                     <Link className="btn btn-sm" to={`/users/${item.id}`}>
-                      Open profile
+                      {t("openProfile")}
                     </Link>{" "}
                     {canDisable && item.isActive ? (
                       <button type="button" className="btn btn-sm btn-danger" onClick={() => void onDisable(item)}>
-                        Disable
+                        {t("disable")}
                       </button>
                     ) : null}
                   </td>

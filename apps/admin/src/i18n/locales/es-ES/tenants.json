@@ -1,0 +1,21 @@
+{
+  "pretitle": "Identity",
+  "title": "Tenants",
+  "searchPlaceholder": "Buscar nombre o slug",
+  "colName": "Nombre",
+  "colSlug": "Slug",
+  "colId": "Id",
+  "colStatus": "Estado",
+  "activate": "Activar",
+  "deactivate": "Desactivar",
+  "activateTitle": "Activar Tenant",
+  "deactivateTitle": "Desactivar Tenant",
+  "activateMessage": "¿Activar Tenant \"{{name}}\" ({{slug}})?",
+  "deactivateMessage": "¿Desactivar Tenant \"{{name}}\" ({{slug}})? Los usuarios de este Tenant pueden perder el acceso.",
+  "activateSuccess": "Tenant \"{{name}}\" activado.",
+  "deactivateSuccess": "Tenant \"{{name}}\" desactivado.",
+  "createSuccess": "Tenant \"{{name}}\" creado.",
+  "loadFailed": "Error al cargar Tenants.",
+  "createFailed": "Error al crear.",
+  "updateFailed": "Error al actualizar."
+}

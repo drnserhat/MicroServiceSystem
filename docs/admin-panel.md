@@ -39,6 +39,8 @@ After Identity permission changes, **log out and log in again** so the JWT picks
 | Service Center | Done | Catalog + live health; CPU/secrets/restart = preview |
 | Workflow / Architecture / BuildingBlocks / Developer | Done | Live saga ops; Architecture/Blocks/Dev remain design-time |
 | User/role assignment UI | Done | `identity.roles.assign`; last-Admin protected; Roles page remains catalog |
+| Multi-language i18n | Done | en-US, tr-TR, zh-CN, es-ES, hi-IN; LanguageSwitcher; Accept-Language + API Error.Code localization |
+| Multi-language i18n | Done | `en-US`, `tr-TR`, `zh-CN`, `es-ES`, `hi-IN`; header LanguageSwitcher; `Accept-Language` on API |
 | Outbox ops for every service | Done (P0) | Thin per-Api controllers; Gateway catch-all |
 | Helm/K8s operator surface | Not started | Compose-oriented today |
 
@@ -145,12 +147,25 @@ Hard-refresh the browser (`Ctrl+F5`). For Identity API / permission changes, als
 
 ---
 
+## Languages (i18n)
+
+Admin UI supports **en-US** (default), **tr-TR**, **zh-CN**, **es-ES**, **hi-IN**.
+
+- Switcher: header (and login page). Preference stored in `localStorage` (`msf.admin.locale`).
+- Catalogs: `apps/admin/src/i18n/locales/<locale>/*.json`.
+- API calls send `Accept-Language`; services localize `Error.Code` descriptions via `IErrorLocalizer` (fallback English).
+- Key parity check: `npm run check:i18n` in `apps/admin` (fails if a locale is missing an `en-US` key).
+- To add a language: extend `SUPPORTED_LOCALES`, copy `en-US` catalogs, translate, add `errors.<culture>.json` under Localization building block, and include the culture in `Localization:SupportedCultures`.
+
+---
+
 ## Source layout
 
 ```
 apps/admin/
   src/api/           Gateway clients (auth, settings, identityAdmin, ops, …)
   src/auth/          Session, JWT permission decode, RequirePermission
+  src/i18n/          i18next bootstrap, LanguageSwitcher, locale JSON
   src/layout/        Control Center shell, navConfig, CommandPalette
   src/components/control/  StatusBadge, MetricCard, skeletons, …
   src/pages/         Feature screens + hubs (services, workflows, …)

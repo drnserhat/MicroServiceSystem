@@ -1,0 +1,15 @@
+{
+  "pretitle": "Herramientas",
+  "title": "Enviar notificación",
+  "recipient": "Destinatario",
+  "channel": "Canal",
+  "channelEmail": "email",
+  "channelSms": "sms",
+  "channelPush": "push",
+  "willNotify": "Se notificará a {{email}} ({{username}})",
+  "send": "Enviar",
+  "sending": "Enviando…",
+  "accepted": "Notificación aceptada.",
+  "queued": "Notificación en cola para {{email}}.",
+  "sendFailed": "Error al enviar."
+}

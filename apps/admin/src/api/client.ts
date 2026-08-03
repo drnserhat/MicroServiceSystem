@@ -89,6 +89,17 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     Accept: "application/json",
   };
 
+  try {
+    const locale = localStorage.getItem("msf.admin.locale");
+    if (locale) {
+      headers["Accept-Language"] = locale;
+    } else if (typeof navigator !== "undefined" && navigator.language) {
+      headers["Accept-Language"] = navigator.language;
+    }
+  } catch {
+    /* ignore */
+  }
+
   if (options.formData === undefined && options.body !== undefined) {
     headers["Content-Type"] = "application/json";
   }

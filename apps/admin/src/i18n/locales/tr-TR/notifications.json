@@ -1,0 +1,15 @@
+{
+  "pretitle": "Araçlar",
+  "title": "Bildirim gönder",
+  "recipient": "Alıcı",
+  "channel": "Kanal",
+  "channelEmail": "e-posta",
+  "channelSms": "sms",
+  "channelPush": "push",
+  "willNotify": "{{email}} ({{username}}) bilgilendirilecek",
+  "send": "Gönder",
+  "sending": "Gönderiliyor…",
+  "accepted": "Bildirim kabul edildi.",
+  "queued": "{{email}} için bildirim kuyruğa alındı.",
+  "sendFailed": "Gönderilemedi."
+}

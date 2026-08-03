@@ -1,0 +1,11 @@
+{
+  "pretitle": "Araçlar",
+  "title": "Dosya yükleme",
+  "containerLabel": "Konteyner",
+  "fileLabel": "Dosya",
+  "upload": "Yükle",
+  "uploading": "Yükleniyor…",
+  "uploadSuccess": "{{fileName}} yüklendi.",
+  "uploadFailed": "Yükleme başarısız.",
+  "resultBytes": "{{bytes}} bayt"
+}

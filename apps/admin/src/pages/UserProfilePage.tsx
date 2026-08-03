@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { getUserProfile, updateUserProfile } from "@/api/users";
 import type { UserProfile } from "@/api/types";
@@ -19,6 +20,7 @@ export function UserProfilePage() {
 }
 
 function UserProfileInner() {
+  const { t } = useTranslation(["users", "common"]);
   const toast = useToast();
   const { userId } = useParams<{ userId: string }>();
   const { can } = useAuth();
@@ -47,7 +49,7 @@ function UserProfileInner() {
       } catch (err) {
         if (cancelled) return;
         setProfile(null);
-        setError(err instanceof ApiClientError ? err.message : "Load failed.");
+        setError(err instanceof ApiClientError ? err.message : t("profileLoadFailed"));
       } finally {
         if (!cancelled) setBusy(false);
       }
@@ -56,7 +58,7 @@ function UserProfileInner() {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, t]);
 
   if (!userId) {
     return <Navigate to="/users" replace />;
@@ -78,15 +80,15 @@ function UserProfileInner() {
       setFirstName(data.firstName);
       setLastName(data.lastName);
       setDisplayName(data.displayName);
-      toast.success("Profile updated.");
+      toast.success(t("profileUpdated"));
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(err.message);
         setFailures(err.failures);
         toast.error(err.message);
       } else {
-        setError("Update failed.");
-        toast.error("Update failed.");
+        setError(t("common:updateFailed"));
+        toast.error(t("common:updateFailed"));
       }
     } finally {
       setBusy(false);
@@ -95,67 +97,66 @@ function UserProfileInner() {
 
   return (
     <PageFrame
-        pretitle="Identity"
-        title="User profile"
-        actions={
-          <Link className="btn" to="/users">
-            Back to users
-          </Link>
-        }
+      pretitle={t("profilePretitle")}
+      title={t("profileTitle")}
+      actions={
+        <Link className="btn" to="/users">
+          {t("backToUsers")}
+        </Link>
+      }
     >
-          <ErrorAlert error={error} />
-          <FieldErrors failures={failures} />
-          {busy && !profile ? <div className="text-secondary">Loading profile…</div> : null}
-          {profile ? (
-            <div className="card">
-              <div className="card-header">
-                <h3 className="card-title">
-                  {profile.displayName}{" "}
-                  <span className="badge bg-azure-lt ms-2">v{profile.version}</span>
-                  {!profile.isActive ? <span className="badge bg-red-lt ms-2">Inactive</span> : null}
-                </h3>
-              </div>
-              <form className="card-body row g-3" onSubmit={onSave}>
-                <div className="col-md-4">
-                  <label className="form-label">First name</label>
-                  <input
-                    className="form-control"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    disabled={!canWrite}
-                    required
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Last name</label>
-                  <input
-                    className="form-control"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    disabled={!canWrite}
-                    required
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label className="form-label">Display name</label>
-                  <input
-                    className="form-control"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    disabled={!canWrite}
-                  />
-                </div>
-                {canWrite ? (
-                  <div className="col-12">
-                    <button type="submit" className="btn btn-primary" disabled={busy}>
-                      Save
-                    </button>
-                  </div>
-                ) : null}
-              </form>
+      <ErrorAlert error={error} />
+      <FieldErrors failures={failures} />
+      {busy && !profile ? <div className="text-secondary">{t("loadingProfile")}</div> : null}
+      {profile ? (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">
+              {profile.displayName}{" "}
+              <span className="badge bg-azure-lt ms-2">v{profile.version}</span>
+              {!profile.isActive ? <span className="badge bg-red-lt ms-2">{t("common:inactive")}</span> : null}
+            </h3>
+          </div>
+          <form className="card-body row g-3" onSubmit={onSave}>
+            <div className="col-md-4">
+              <label className="form-label">{t("firstName")}</label>
+              <input
+                className="form-control"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                disabled={!canWrite}
+                required
+              />
             </div>
-          ) : null}
+            <div className="col-md-4">
+              <label className="form-label">{t("lastName")}</label>
+              <input
+                className="form-control"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                disabled={!canWrite}
+                required
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">{t("displayName")}</label>
+              <input
+                className="form-control"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                disabled={!canWrite}
+              />
+            </div>
+            {canWrite ? (
+              <div className="col-12">
+                <button type="submit" className="btn btn-primary" disabled={busy}>
+                  {t("common:save")}
+                </button>
+              </div>
+            ) : null}
+          </form>
+        </div>
+      ) : null}
     </PageFrame>
-
   );
 }

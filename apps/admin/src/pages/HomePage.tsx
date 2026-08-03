@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { listAuditEntries } from "@/api/audit";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { listLogs } from "@/api/logging";
@@ -40,6 +41,7 @@ function classifyHealth(items: ServiceHealthItem[]) {
 }
 
 export function HomePage() {
+  const { t } = useTranslation(["home", "common", "ops"]);
   const { can } = useAuth();
   const [health, setHealth] = useState<ServiceHealthItem[]>([]);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
@@ -99,7 +101,7 @@ export function HomePage() {
         await Promise.allSettled(tasks);
         setUpdatedAt(new Date());
       } catch (err) {
-        setError(err instanceof ApiClientError ? err.message : "Failed to load overview.");
+        setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -133,15 +135,15 @@ export function HomePage() {
   const infraItems: HealthSummaryItem[] = [
     {
       id: "gateway",
-      label: "Gateway",
-      status: health.length ? "Healthy" : undefined,
+      label: t("ops:gateway"),
+      status: health.length ? t("healthy") : undefined,
       reachable: health.length > 0,
       hint: health.length ? "YARP · /ops aggregate" : "Awaiting ops.health.read",
       to: "/map",
     },
     {
       id: "identity",
-      label: "Identity",
+      label: t("ops:identity"),
       status: identity?.status,
       reachable: identity?.reachable,
       hint: identity?.description ?? undefined,
@@ -149,7 +151,7 @@ export function HomePage() {
     },
     {
       id: "user",
-      label: "User",
+      label: t("ops:user"),
       status: user?.status,
       reachable: user?.reachable,
       hint: user?.description ?? undefined,
@@ -157,7 +159,7 @@ export function HomePage() {
     },
     {
       id: "coordinator",
-      label: "Coordinator",
+      label: t("ops:coordinator"),
       status: coordinator?.status,
       reachable: coordinator?.reachable,
       hint: coordinator?.description ?? undefined,
@@ -165,7 +167,7 @@ export function HomePage() {
     },
     {
       id: "settings",
-      label: "Settings",
+      label: t("ops:settings"),
       status: settings?.status,
       reachable: settings?.reachable,
       hint: settings?.description ?? undefined,
@@ -173,27 +175,27 @@ export function HomePage() {
     },
     {
       id: "rabbitmq",
-      label: "RabbitMQ",
-      status: "Infra",
+      label: t("ops:rabbitmq"),
+      status: t("ops:infra"),
       hint: "Compose lite · :15672",
       to: "/messaging",
     },
     {
       id: "redis",
-      label: "Redis",
-      status: "Infra",
+      label: t("ops:redis"),
+      status: t("ops:infra"),
       hint: "Compose lite always-on",
     },
     {
       id: "postgres",
-      label: "PostgreSQL",
-      status: "Infra",
+      label: t("ops:postgres"),
+      status: t("ops:infra"),
       hint: "Compose lite always-on",
     },
     {
       id: "mongo",
-      label: "MongoDB",
-      status: "Optional",
+      label: t("ops:mongo"),
+      status: t("ops:optional"),
       hint: "Profile full",
     },
   ];
@@ -228,16 +230,16 @@ export function HomePage() {
   }, [audits, logs]);
 
   const lastUpdatedLabel = updatedAt
-    ? `Updated ${updatedAt.toLocaleTimeString()}`
+    ? t("updated", { time: updatedAt.toLocaleTimeString() })
     : checkedAt
-      ? `Health ${new Date(checkedAt).toLocaleTimeString()}`
-      : "Not refreshed yet";
+      ? t("healthChecked", { time: new Date(checkedAt).toLocaleTimeString() })
+      : t("notRefreshed");
 
   return (
     <PageFrame
-      pretitle="Platform"
-      title="Platform Overview"
-      description="Pulse of the MicroServiceSystem control plane — live probes where APIs exist."
+      pretitle={t("pretitle")}
+      title={t("title")}
+      description={t("description")}
       actions={
         <div className="btn-list align-items-center">
           <span className="text-secondary small d-none d-md-inline">{lastUpdatedLabel}</span>
@@ -247,10 +249,10 @@ export function HomePage() {
             disabled={loading || refreshing}
             onClick={() => void load("refresh")}
           >
-            {refreshing ? "Refreshing…" : "Refresh"}
+            {refreshing ? t("common:refreshing") : t("common:refresh")}
           </button>
           <Link className="btn btn-primary" to="/map">
-            Platform Map
+            {t("openPlatformMap")}
           </Link>
         </div>
       }
@@ -270,52 +272,52 @@ export function HomePage() {
         <div className="row row-cards mb-3">
           <div className="col-6 col-xl-2">
             <MetricCard
-              label="Healthy"
+              label={t("healthy")}
               value={health.length ? counts.healthy : "—"}
-              hint={health.length ? `of ${health.length} probes` : "No health data"}
+              hint={health.length ? t("ofProbes", { count: health.length }) : t("noHealthData")}
               tone="healthy"
             />
           </div>
           <div className="col-6 col-xl-2">
             <MetricCard
-              label="Warning"
+              label={t("warning")}
               value={health.length ? counts.warning : "—"}
-              hint="Degraded probes"
+              hint={t("degradedProbes")}
               tone={counts.warning > 0 ? "degraded" : "healthy"}
             />
           </div>
           <div className="col-6 col-xl-2">
             <MetricCard
-              label="Critical"
+              label={t("critical")}
               value={health.length ? counts.critical : "—"}
-              hint="Unreachable / unhealthy"
+              hint={t("unreachableProbes")}
               tone={counts.critical > 0 ? "critical" : "healthy"}
             />
           </div>
           <div className="col-6 col-xl-2">
             <MetricCard
-              label="Outbox pending"
+              label={t("outboxPending")}
               value={outbox?.pendingCount ?? "—"}
-              hint={outbox ? `${outbox.service} outbox` : "Needs ops.outbox.read"}
+              hint={outbox ? `${outbox.service} outbox` : t("needsOutboxRead")}
               tone="messaging"
             />
           </div>
           <div className="col-6 col-xl-2">
             <MetricCard
-              label="Dead letters"
+              label={t("deadLetters")}
               value={outbox?.deadLetterCount ?? "—"}
-              hint="Identity DLQ"
+              hint={t("identityDlq")}
               tone={(outbox?.deadLetterCount ?? 0) > 0 ? "critical" : "messaging"}
               action={
                 <Link className="btn btn-sm" to="/messaging">
-                  Open
+                  {t("common:open")}
                 </Link>
               }
             />
           </div>
           <div className="col-6 col-xl-2">
             <MetricCard
-              label="Environment"
+              label={t("environment")}
               value={profile}
               hint={`Admin ${ADMIN_VERSION}`}
               tone="info"
@@ -327,9 +329,9 @@ export function HomePage() {
       {/* 2. Infra status row */}
       <div className="mb-3">
         <div className="d-flex align-items-center mb-2">
-          <h3 className="mb-0">Infrastructure</h3>
+          <h3 className="mb-0">{t("infrastructure")}</h3>
           <Link className="ms-auto small" to="/map">
-            Open map
+            {t("openMap")}
           </Link>
         </div>
         {loading ? <Skeleton height={88} /> : <HealthSummaryStrip items={infraItems} />}
@@ -340,54 +342,52 @@ export function HomePage() {
         <div className="col-lg-6">
           <div className="card h-100">
             <div className="card-header">
-              <h3 className="card-title">Messaging snapshot</h3>
+              <h3 className="card-title">{t("messagingSnapshot")}</h3>
               <div className="card-actions">
-                <Link to="/messaging">Messaging Center</Link>
+                <Link to="/messaging">{t("messagingCenter")}</Link>
               </div>
             </div>
             <div className="card-body">
               <div className="datagrid">
                 <div className="datagrid-item">
-                  <div className="datagrid-title">Pending</div>
+                  <div className="datagrid-title">{t("outboxPending")}</div>
                   <div className="datagrid-content">{outbox?.pendingCount ?? "—"}</div>
                 </div>
                 <div className="datagrid-item">
-                  <div className="datagrid-title">Dead letters</div>
+                  <div className="datagrid-title">{t("deadLetters")}</div>
                   <div className="datagrid-content">{outbox?.deadLetterCount ?? "—"}</div>
                 </div>
                 <div className="datagrid-item">
-                  <div className="datagrid-title">Broker</div>
+                  <div className="datagrid-title">{t("ops:rabbitmq")}</div>
                   <div className="datagrid-content">
                     <ExternalToolLink id="rabbitmq" className="btn btn-sm" />
                   </div>
                 </div>
               </div>
-              <p className="text-secondary small mb-0 mt-3">
-                Live Identity outbox today. Multi-service outbox / inbox remain UI preview in Messaging Center.
-              </p>
+              <p className="text-secondary small mb-0 mt-3">{t("messagingNote")}</p>
             </div>
           </div>
         </div>
         <div className="col-lg-6">
           <div className="card h-100">
             <div className="card-header">
-              <h3 className="card-title">Workflow snapshot</h3>
+              <h3 className="card-title">{t("workflowSnapshot")}</h3>
               <div className="card-actions">
-                <Link to="/workflows">Workflow Center</Link>
+                <Link to="/workflows">{t("workflowCenter")}</Link>
               </div>
             </div>
             <div className="card-body">
               <div className="datagrid">
                 <div className="datagrid-item">
-                  <div className="datagrid-title">Coordinator</div>
+                  <div className="datagrid-title">{t("coordinator")}</div>
                   <div className="datagrid-content">{coordinator?.status ?? "—"}</div>
                 </div>
                 <div className="datagrid-item">
-                  <div className="datagrid-title">Running sagas</div>
-                  <div className="datagrid-content text-secondary">Preview — awaiting API</div>
+                  <div className="datagrid-title">{t("runningSagas")}</div>
+                  <div className="datagrid-content text-secondary">{t("runningSagasPreview")}</div>
                 </div>
                 <div className="datagrid-item">
-                  <div className="datagrid-title">Reference flow</div>
+                  <div className="datagrid-title">{t("referenceFlow")}</div>
                   <div className="datagrid-content">
                     <span className="msf-mono">RegisterUser</span>
                   </div>
@@ -395,7 +395,7 @@ export function HomePage() {
               </div>
               <div className="mt-3">
                 <Link className="btn btn-sm" to="/users/register">
-                  Start registration
+                  {t("startRegistration")}
                 </Link>
               </div>
             </div>
@@ -410,13 +410,13 @@ export function HomePage() {
             <Skeleton height={280} />
           ) : (
             <ActivityFeed
-              title="Recent activity"
+              title={t("recentActivity")}
               items={activityItems}
-              empty="No audit/log activity (needs full profile + permissions)."
+              empty={t("activityEmpty")}
               actions={
                 <div className="btn-list">
-                  <Link to="/audit">Audit</Link>
-                  <Link to="/logs">Logs</Link>
+                  <Link to="/audit">{t("observability:audit")}</Link>
+                  <Link to="/logs">{t("observability:logs")}</Link>
                 </div>
               }
             />
@@ -425,28 +425,28 @@ export function HomePage() {
         <div className="col-lg-4">
           <div className="card h-100">
             <div className="card-header">
-              <h3 className="card-title">Quick actions</h3>
+              <h3 className="card-title">{t("quickActions")}</h3>
             </div>
             <div className="list-group list-group-flush">
               <Link className="list-group-item list-group-item-action" to="/map">
-                Open Platform Map
+                {t("openPlatformMap")}
               </Link>
               <Link className="list-group-item list-group-item-action" to="/services">
-                Service Center
+                {t("serviceCenter")}
               </Link>
               <Link className="list-group-item list-group-item-action" to="/messaging">
-                Inspect outbox / DLQ
+                {t("inspectOutboxDlq")}
               </Link>
               {can(FrameworkPermissions.RegistrationUsersCreate) ? (
                 <Link className="list-group-item list-group-item-action" to="/users/register">
-                  Register user (saga)
+                  {t("registerUserSaga")}
                 </Link>
               ) : null}
               <Link className="list-group-item list-group-item-action" to="/observability">
-                Observability Hub
+                {t("observabilityHub")}
               </Link>
               <div className="list-group-item">
-                <div className="subheader mb-2">Deep links</div>
+                <div className="subheader mb-2">{t("deepLinks")}</div>
                 <div className="btn-list">
                   <ExternalToolLink id="seq" />
                   <ExternalToolLink id="jaeger" />
@@ -458,25 +458,22 @@ export function HomePage() {
         </div>
       </div>
 
-      <PreviewBanner>
-        Running sagas, inbox pending, latency, queue delay, deployments, and container metrics are UI-only until
-        ops APIs exist.
-      </PreviewBanner>
+      <PreviewBanner>{t("previewBanner")}</PreviewBanner>
       <div className="row row-cards">
         <div className="col-md-3">
-          <MetricCard label="Running sagas" value="—" hint="Preview" tone="info" />
+          <MetricCard label={t("runningSagas")} value="—" hint="Preview" tone="info" />
         </div>
         <div className="col-md-3">
-          <MetricCard label="Inbox pending" value="—" hint="Preview" tone="messaging" />
+          <MetricCard label={t("inboxPending")} value="—" hint="Preview" tone="messaging" />
         </div>
         <div className="col-md-3">
-          <MetricCard label="Avg API latency" value="—" hint="Preview" tone="degraded" />
+          <MetricCard label={t("avgApiLatency")} value="—" hint="Preview" tone="degraded" />
         </div>
         <div className="col-md-3">
           <MetricCard
-            label="Package catalog"
+            label={t("packageCatalog")}
             value={PLATFORM_PACKAGES.length}
-            hint="Static inventory"
+            hint={t("staticInventory")}
             tone="infra"
           />
         </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
 import { getInboxSummary, type OutboxService } from "@/api/ops";
 import type { InboxSummary, OutboxDeadLetter } from "@/api/types";
@@ -45,6 +46,7 @@ function useOutboxServiceParam(): [OutboxService, (s: OutboxService) => void] {
 }
 
 export function MessagingOverviewPage() {
+  const { t } = useTranslation(["messaging", "common", "home"]);
   const [service, setService] = useOutboxServiceParam();
   const { summary, deadLetters, error, loading, load } = useOutboxData(service);
 
@@ -53,7 +55,7 @@ export function MessagingOverviewPage() {
       <div className="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
         <OutboxServiceSelect value={service} onChange={setService} />
         <button type="button" className="btn btn-sm" onClick={() => void load()} disabled={loading}>
-          Refresh outbox
+          {t("refreshOutbox")}
         </button>
       </div>
       <ErrorAlert error={error} />
@@ -68,32 +70,32 @@ export function MessagingOverviewPage() {
       ) : (
         <div className="row row-cards mb-3">
           <div className="col-sm-6 col-lg-3">
-            <MetricCard label="Service" value={summary?.service ?? "—"} tone="messaging" />
+            <MetricCard label={t("service")} value={summary?.service ?? "—"} tone="messaging" />
           </div>
           <div className="col-sm-6 col-lg-3">
-            <MetricCard label="Pending" value={summary?.pendingCount ?? "—"} tone="info" hint="Identity outbox" />
+            <MetricCard label={t("pending")} value={summary?.pendingCount ?? "—"} tone="info" hint={t("identityOutboxHint")} />
           </div>
           <div className="col-sm-6 col-lg-3">
             <MetricCard
-              label="Dead letters"
+              label={t("deadLetters")}
               value={summary?.deadLetterCount ?? deadLetters.length}
               tone={(summary?.deadLetterCount ?? 0) > 0 ? "critical" : "healthy"}
               action={
                 <Link className="btn btn-sm" to="/messaging/dead-letters">
-                  Open
+                  {t("common:open")}
                 </Link>
               }
             />
           </div>
           <div className="col-sm-6 col-lg-3">
             <MetricCard
-              label="Deep links"
+              label={t("home:deepLinks")}
               value={
                 <div className="btn-list flex-wrap">
                   <ExternalToolLink id="rabbitmq" />
                   <ExternalToolLink id="seq" />
                   <Link className="btn btn-sm" to="/workflows">
-                    Sagas
+                    {t("sagas")}
                   </Link>
                 </div>
               }
@@ -101,41 +103,39 @@ export function MessagingOverviewPage() {
           </div>
         </div>
       )}
-      <PreviewBanner>
-        Outbox KPIs are live per service (gateway ops). Queue depth / broker topology remain preview.
-      </PreviewBanner>
+      <PreviewBanner>{t("overviewPreviewBanner")}</PreviewBanner>
       <div className="row row-cards mb-3">
         <div className="col-md-4">
           <QueueCard
-            title="Queues"
+            title={t("queuesTitle")}
             count={PREVIEW_QUEUES.length}
             to="/messaging/queues"
-            hint="Inventory"
+            hint={t("inventory")}
             preview
           />
         </div>
         <div className="col-md-4">
           <QueueCard
-            title="Exchanges"
+            title={t("exchangesTitle")}
             count={PREVIEW_EXCHANGES.length}
             to="/messaging/exchanges"
-            hint="Inventory"
+            hint={t("inventory")}
             preview
           />
         </div>
         <div className="col-md-4">
           <QueueCard
-            title="Bindings"
+            title={t("bindingsTitle")}
             count={PREVIEW_BINDINGS.length}
             to="/messaging/bindings"
-            hint="Inventory"
+            hint={t("inventory")}
             preview
           />
         </div>
       </div>
       {!loading && deadLetters.length > 0 ? (
         <div className="mb-2">
-          <div className="subheader mb-2">Recent dead letters (live)</div>
+          <div className="subheader mb-2">{t("recentDeadLetters")}</div>
           <div className="row g-2">
             {deadLetters.slice(0, 3).map((item) => (
               <div className="col-md-4" key={item.id}>
@@ -146,7 +146,7 @@ export function MessagingOverviewPage() {
                   tone="critical"
                   actions={
                     <Link className="btn btn-sm" to={`/messaging/dead-letters?service=${service}&focus=${item.id}`}>
-                      Inspect
+                      {t("inspectAction")}
                     </Link>
                   }
                 />
@@ -175,9 +175,11 @@ function TopologyTable({
   }[];
   showDepth?: boolean;
 }) {
+  const { t } = useTranslation("messaging");
+
   return (
     <>
-      <PreviewBanner>Rabbit topology is illustrative until a management proxy or inventory API exists.</PreviewBanner>
+      <PreviewBanner>{t("previewBanner")}</PreviewBanner>
       {showDepth ? (
         <div className="row row-cards mb-3">
           {rows.slice(0, 4).map((row) => (
@@ -198,16 +200,16 @@ function TopologyTable({
         <table className="table table-vcenter card-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Consumers</th>
+              <th>{t("colName")}</th>
+              <th>{t("colType")}</th>
+              <th>{t("colConsumers")}</th>
               {showDepth ? (
                 <>
-                  <th>Ready</th>
-                  <th>Unacked</th>
+                  <th>{t("colReady")}</th>
+                  <th>{t("colUnacked")}</th>
                 </>
               ) : null}
-              <th>Note</th>
+              <th>{t("colNote")}</th>
             </tr>
           </thead>
           <tbody>
@@ -237,21 +239,25 @@ function TopologyTable({
 }
 
 export function MessagingQueuesPage() {
-  return <TopologyTable title="Queues" rows={PREVIEW_QUEUES} showDepth />;
+  const { t } = useTranslation("messaging");
+  return <TopologyTable title={t("queuesTitle")} rows={PREVIEW_QUEUES} showDepth />;
 }
 
 export function MessagingExchangesPage() {
-  return <TopologyTable title="Exchanges" rows={PREVIEW_EXCHANGES} />;
+  const { t } = useTranslation("messaging");
+  return <TopologyTable title={t("exchangesTitle")} rows={PREVIEW_EXCHANGES} />;
 }
 
 export function MessagingBindingsPage() {
-  return <TopologyTable title="Bindings" rows={PREVIEW_BINDINGS} />;
+  const { t } = useTranslation("messaging");
+  return <TopologyTable title={t("bindingsTitle")} rows={PREVIEW_BINDINGS} />;
 }
 
 export function MessagingPublishersPage() {
+  const { t } = useTranslation("messaging");
   return (
     <>
-      <PreviewBanner>Publisher registry is UI preview — derived from known integration events.</PreviewBanner>
+      <PreviewBanner>{t("previewBanner")}</PreviewBanner>
       <div className="row g-2 mb-3">
         {PREVIEW_PUBLISHERS.map((row) => (
           <div className="col-md-4" key={row.id}>
@@ -263,13 +269,13 @@ export function MessagingPublishersPage() {
           </div>
         ))}
       </div>
-      <DataTableShell title="Publishers">
+      <DataTableShell title={t("publishersTitle")}>
         <table className="table table-vcenter card-table">
           <thead>
             <tr>
-              <th>Service</th>
-              <th>Exchange</th>
-              <th>Event</th>
+              <th>{t("colService")}</th>
+              <th>{t("colExchange")}</th>
+              <th>{t("colEvent")}</th>
             </tr>
           </thead>
           <tbody>
@@ -292,16 +298,17 @@ export function MessagingPublishersPage() {
 }
 
 export function MessagingConsumersPage() {
+  const { t } = useTranslation("messaging");
   return (
     <>
-      <PreviewBanner>Consumer lag requires inbox/metrics APIs. Values below are placeholders.</PreviewBanner>
-      <DataTableShell title="Consumers">
+      <PreviewBanner>{t("previewBanner")}</PreviewBanner>
+      <DataTableShell title={t("consumersTitle")}>
         <table className="table table-vcenter card-table">
           <thead>
             <tr>
-              <th>Service</th>
-              <th>Queue</th>
-              <th>Lag</th>
+              <th>{t("colService")}</th>
+              <th>{t("colQueue")}</th>
+              <th>{t("colLag")}</th>
             </tr>
           </thead>
           <tbody>
@@ -409,6 +416,7 @@ function DeadLetterDrawer({
 }
 
 export function MessagingDeadLettersPage() {
+  const { t } = useTranslation(["messaging", "common"]);
   const [service, setService] = useOutboxServiceParam();
   const { deadLetters, error, loading, canWrite, load, onRequeue } = useOutboxData(service);
   const [params, setParams] = useSearchParams();
@@ -430,11 +438,11 @@ export function MessagingDeadLettersPage() {
           <p className="text-secondary mb-0">Live outbox dead letters — inspect + requeue when permitted.</p>
         </div>
         <button type="button" className="btn btn-sm" onClick={() => void load()} disabled={loading}>
-          Refresh
+          {t("refresh")}
         </button>
       </div>
       <ErrorAlert error={error} />
-      <DataTableShell title="Dead-lettered messages">
+      <DataTableShell title={t("deadLettersTitle")}>
         <table className="table table-vcenter card-table">
           <thead>
             <tr>
@@ -450,7 +458,7 @@ export function MessagingDeadLettersPage() {
             {!loading && deadLetters.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-secondary">
-                  No dead letters.
+                  {t("emptyDeadLetters")}
                 </td>
               </tr>
             ) : null}
@@ -469,7 +477,7 @@ export function MessagingDeadLettersPage() {
                 <td>
                   <div className="btn-list">
                     <button type="button" className="btn btn-sm" onClick={() => select(item.id)}>
-                      Inspect
+                      {t("inspectAction")}
                     </button>
                     {canWrite ? (
                       <button type="button" className="btn btn-sm" onClick={() => void onRequeue(item.id)}>

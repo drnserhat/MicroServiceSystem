@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { createNotification } from "@/api/notifications";
 import type { IdentityUserItem } from "@/api/types";
@@ -18,6 +19,7 @@ export function NotificationsPage() {
 }
 
 function NotificationsInner() {
+  const { t } = useTranslation(["notifications", "common"]);
   const toast = useToast();
   const [selected, setSelected] = useState<IdentityUserItem | null>(null);
   const [channel, setChannel] = useState("email");
@@ -41,11 +43,11 @@ function NotificationsInner() {
         channel: channel.trim(),
       });
       setSuccess(true);
-      toast.success(`Notification queued for ${selected.email}.`);
+      toast.success(t("queued", { email: selected.email }));
     } catch (err) {
       if (isServiceUnavailable(err)) setUnavailable(true);
       else {
-        const msg = err instanceof ApiClientError ? err.message : "Failed to send.";
+        const msg = err instanceof ApiClientError ? err.message : t("sendFailed");
         setError(msg);
         toast.error(msg);
       }
@@ -55,43 +57,37 @@ function NotificationsInner() {
   }
 
   return (
-    <PageFrame pretitle="Tools" title="Send notification"
-    >
-          {unavailable ? <ServiceUnavailableAlert service="Notification" /> : null}
-          <ErrorAlert error={error} />
-          {success ? <div className="alert alert-success">Notification accepted.</div> : null}
-          <form className="card card-md" onSubmit={onSubmit}>
-            <div className="card-body row g-3">
-              <div className="col-12">
-                <UserPicker
-                  value={selected?.id ?? ""}
-                  onChange={setSelected}
-                  label="Recipient"
-                />
-              </div>
-              {selected ? (
-                <div className="col-12">
-                  <div className="alert alert-info mb-0">
-                    Will notify <strong>{selected.email}</strong> ({selected.userName})
-                  </div>
-                </div>
-              ) : null}
-              <div className="col-md-6">
-                <label className="form-label">Channel</label>
-                <select className="form-select" value={channel} onChange={(e) => setChannel(e.target.value)}>
-                  <option value="email">email</option>
-                  <option value="sms">sms</option>
-                  <option value="push">push</option>
-                </select>
-              </div>
-              <div className="col-12">
-                <button type="submit" className="btn btn-primary" disabled={busy || !selected}>
-                  {busy ? "Sending…" : "Send"}
-                </button>
+    <PageFrame pretitle={t("pretitle")} title={t("title")}>
+      {unavailable ? <ServiceUnavailableAlert service="Notification" /> : null}
+      <ErrorAlert error={error} />
+      {success ? <div className="alert alert-success">{t("accepted")}</div> : null}
+      <form className="card card-md" onSubmit={onSubmit}>
+        <div className="card-body row g-3">
+          <div className="col-12">
+            <UserPicker value={selected?.id ?? ""} onChange={setSelected} label={t("recipient")} />
+          </div>
+          {selected ? (
+            <div className="col-12">
+              <div className="alert alert-info mb-0">
+                {t("willNotify", { email: selected.email, username: selected.userName })}
               </div>
             </div>
-          </form>
+          ) : null}
+          <div className="col-md-6">
+            <label className="form-label">{t("channel")}</label>
+            <select className="form-select" value={channel} onChange={(e) => setChannel(e.target.value)}>
+              <option value="email">{t("channelEmail")}</option>
+              <option value="sms">{t("channelSms")}</option>
+              <option value="push">{t("channelPush")}</option>
+            </select>
+          </div>
+          <div className="col-12">
+            <button type="submit" className="btn btn-primary" disabled={busy || !selected}>
+              {busy ? t("sending") : t("send")}
+            </button>
+          </div>
+        </div>
+      </form>
     </PageFrame>
-
   );
 }

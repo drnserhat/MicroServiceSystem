@@ -1,0 +1,7 @@
+{
+  "pretitle": "Identity",
+  "title": "Roles y permisos",
+  "loadFailed": "Error al cargar roles.",
+  "empty": "No se encontraron roles.",
+  "permissionsLabel": "Permisos"
+}

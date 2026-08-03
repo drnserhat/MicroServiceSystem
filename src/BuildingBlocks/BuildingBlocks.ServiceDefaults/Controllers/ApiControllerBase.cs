@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using MicroServiceSystem.BuildingBlocks.Localization.Abstractions;
 using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Http;
 using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Results;
 using MicroServiceSystem.SharedKernel.Constants;
@@ -68,15 +70,21 @@ public abstract class ApiControllerBase : ControllerBase
         StatusCode(
             StatusCodes.Status428PreconditionRequired,
             ApiResponse<object?>.Failure(
-                Error.Validation(
+                Localize(Error.Validation(
                     FrameworkErrorCodes.Validation,
-                    "If-Match header with the current resource version is required."),
+                    "If-Match header with the current resource version is required.")),
                 HttpContext.TraceIdentifier));
 
     private ObjectResult ToFailureResult<T>(Error error)
     {
         int statusCode = ResultHttpMapper.ToStatusCode(error.Type);
 
-        return StatusCode(statusCode, ApiResponse<T>.Failure(error, HttpContext.TraceIdentifier));
+        return StatusCode(statusCode, ApiResponse<T>.Failure(Localize(error), HttpContext.TraceIdentifier));
+    }
+
+    private Error Localize(Error error)
+    {
+        IErrorLocalizer? localizer = HttpContext.RequestServices.GetService<IErrorLocalizer>();
+        return localizer?.Localize(error) ?? error;
     }
 }

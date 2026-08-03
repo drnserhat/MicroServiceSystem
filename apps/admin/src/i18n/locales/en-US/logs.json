@@ -1,0 +1,14 @@
+{
+  "pretitle": "Observability",
+  "title": "System logs",
+  "levelPlaceholder": "Level",
+  "sourcePlaceholder": "Source",
+  "correlationPlaceholder": "Correlation ID",
+  "filter": "Filter",
+  "empty": "No log entries.",
+  "loadFailed": "Failed to load logs.",
+  "viewerTitle": "Log entries",
+  "colTime": "Time",
+  "colLevel": "Level",
+  "colMessage": "Message"
+}
