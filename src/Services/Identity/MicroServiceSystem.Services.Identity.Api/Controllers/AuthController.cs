@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MicroServiceSystem.BuildingBlocks.Authorization;
 using MicroServiceSystem.BuildingBlocks.MultiTenancy.Abstractions;
-using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Results;
+using MicroServiceSystem.BuildingBlocks.ServiceDefaults.Controllers;
 using MicroServiceSystem.Services.Identity.Application.Auth.Disable;
 using MicroServiceSystem.Services.Identity.Application.Auth.Login;
 using MicroServiceSystem.Services.Identity.Application.Auth.Refresh;
 using MicroServiceSystem.Services.Identity.Application.Auth.Register;
-using MicroServiceSystem.SharedKernel.Models;
 using MicroServiceSystem.SharedKernel.Results;
 
 namespace MicroServiceSystem.Services.Identity.Api.Controllers;
@@ -19,11 +18,10 @@ namespace MicroServiceSystem.Services.Identity.Api.Controllers;
 /// marked tenant-independent at the middleware layer. Catalog membership is still enforced in the
 /// handlers via <see cref="ITenantStore"/>.
 /// </summary>
-[ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
 [TenantIndependent]
-public sealed class AuthController(ISender sender) : ControllerBase
+public sealed class AuthController(ISender sender) : ApiControllerBase
 {
     /// <summary>
     /// Provisioning entry point for the Coordinator registration saga only. It is not anonymous: an
@@ -81,23 +79,10 @@ public sealed class AuthController(ISender sender) : ControllerBase
     /// </summary>
     [AuthorizeInternalService]
     [HttpPost("disable")]
-    public async Task<IActionResult> Disable([FromBody] DisableRequest request, CancellationToken cancellationToken)
-    {
-        Result result = await sender.Send(
+    public async Task<IActionResult> Disable([FromBody] DisableRequest request, CancellationToken cancellationToken) =>
+        ToActionResult(await sender.Send(
             new DisableIdentityUserCommand(request.UserId, request.Reason, request.TenantId),
-            cancellationToken);
-
-        return result.IsSuccess
-            ? Ok(ApiResponse<object?>.Success(null, HttpContext.TraceIdentifier))
-            : StatusCode(ResultHttpMapper.ToStatusCode(result.Error.Type), ApiResponse<object?>.Failure(result.Error, HttpContext.TraceIdentifier));
-    }
-
-    private IActionResult ToActionResult<T>(Result<T> result) =>
-        result.IsSuccess
-            ? Ok(ApiResponse<T>.Success(result.Value, HttpContext.TraceIdentifier))
-            : StatusCode(
-                ResultHttpMapper.ToStatusCode(result.Error.Type),
-                ApiResponse<T>.Failure(result.Error, HttpContext.TraceIdentifier));
+            cancellationToken));
 }
 
 public sealed record RegisterRequest(Guid UserId, string Email, string UserName, string Password, Guid TenantId);

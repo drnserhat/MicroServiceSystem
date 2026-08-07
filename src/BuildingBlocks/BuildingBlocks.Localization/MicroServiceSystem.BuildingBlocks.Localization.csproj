@@ -14,7 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Errors\errors.*.json" />
+    <!-- Culture-suffixed names (errors.tr-TR.json) would otherwise become
+         satellite *.resources.dll and vanish from GetManifestResourceStream. -->
+    <EmbeddedResource Include="Resources\Errors\errors.*.json">
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

@@ -461,13 +461,13 @@ export function HomePage() {
       <PreviewBanner>{t("previewBanner")}</PreviewBanner>
       <div className="row row-cards">
         <div className="col-md-3">
-          <MetricCard label={t("runningSagas")} value="—" hint="Preview" tone="info" />
+          <MetricCard label={t("runningSagas")} value="—" hint={t("common:preview")} tone="info" />
         </div>
         <div className="col-md-3">
-          <MetricCard label={t("inboxPending")} value="—" hint="Preview" tone="messaging" />
+          <MetricCard label={t("inboxPending")} value="—" hint={t("common:preview")} tone="messaging" />
         </div>
         <div className="col-md-3">
-          <MetricCard label={t("avgApiLatency")} value="—" hint="Preview" tone="degraded" />
+          <MetricCard label={t("avgApiLatency")} value="—" hint={t("common:preview")} tone="degraded" />
         </div>
         <div className="col-md-3">
           <MetricCard
