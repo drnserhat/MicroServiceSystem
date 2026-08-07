@@ -3,5 +3,16 @@
   "title": "Roller ve izinler",
   "loadFailed": "Roller yüklenemedi.",
   "empty": "Rol bulunamadı.",
-  "permissionsLabel": "İzinler"
+  "permissionsLabel": "İzinler",
+  "nameLabel": "Rol adı",
+  "createTitle": "Özel rol oluştur",
+  "editTitle": "Rolü düzenle",
+  "builtInBadge": "Yerleşik",
+  "noPermissions": "İzin yok",
+  "createSuccess": "{{name}} rolü oluşturuldu.",
+  "updateSuccess": "{{name}} rolü güncellendi.",
+  "deleteTitle": "Rolü sil",
+  "deleteMessage": "{{name}} rolü silinsin mi? Silme engellenirse önce tüm kullanıcılardan kaldırın.",
+  "deleteSuccess": "{{name}} rolü silindi.",
+  "tokenNote": "İzin değişiklikleri kullanıcının bir sonraki girişinde veya jeton yenilemesinde geçerli olur."
 }

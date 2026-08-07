@@ -38,6 +38,7 @@ public static class FrameworkPermissions
     public const string IdentityUsersDisable = "identity.users.disable";
     public const string IdentityRolesRead = "identity.roles.read";
     public const string IdentityRolesAssign = "identity.roles.assign";
+    public const string IdentityRolesWrite = "identity.roles.write";
 
     public const string OpsHealthRead = "ops.health.read";
     public const string OpsOutboxRead = "ops.outbox.read";
@@ -82,10 +83,49 @@ public static class FrameworkPermissions
         IdentityUsersDisable,
         IdentityRolesRead,
         IdentityRolesAssign,
+        IdentityRolesWrite,
         OpsHealthRead,
         OpsOutboxRead,
         OpsOutboxWrite,
         OpsSagaRead,
         OpsInboxRead
     ];
+
+    /// <summary>
+    /// Canonical permission codes accepted when creating or replacing custom roles.
+    /// </summary>
+    public static IReadOnlySet<string> KnownPermissionCodes { get; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            UsersProfilesRead,
+            UsersProfilesUpdate,
+            AuditEntriesRead,
+            AuditEntriesCreate,
+            NotificationMessagesCreate,
+            FileAssetsUpload,
+            LocationCountriesRead,
+            LocationCountriesCreate,
+            LocationCountriesWrite,
+            SettingsValuesRead,
+            SettingsValuesWrite,
+            LoggingLogsIngest,
+            LoggingLogsRead,
+            RegistrationUsersCreate,
+            IdentityTenantsRead,
+            IdentityTenantsWrite,
+            IdentityUsersRead,
+            IdentityUsersDisable,
+            IdentityRolesRead,
+            IdentityRolesAssign,
+            IdentityRolesWrite,
+            OpsHealthRead,
+            OpsOutboxRead,
+            OpsOutboxWrite,
+            OpsSagaRead,
+            OpsInboxRead
+        };
+
+    public static bool IsBuiltInRoleName(string name) =>
+        string.Equals(name.Trim(), AdminRoleName, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(name.Trim(), MemberRoleName, StringComparison.OrdinalIgnoreCase);
 }

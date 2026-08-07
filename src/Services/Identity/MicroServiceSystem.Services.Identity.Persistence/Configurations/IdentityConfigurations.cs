@@ -41,7 +41,10 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.Property(role => role.Id).ValueGeneratedNever();
         builder.Property(role => role.Name).HasMaxLength(128).IsRequired();
         builder.Property(role => role.NormalizedName).HasMaxLength(128).IsRequired();
-        builder.HasIndex(role => new { role.TenantId, role.NormalizedName }).IsUnique();
+        builder.HasIndex(role => new { role.TenantId, role.NormalizedName })
+            .IsUnique()
+            .HasFilter("NOT is_deleted")
+            .HasDatabaseName("ix_roles_tenant_id_normalized_name");
         builder.Ignore(role => role.DomainEvents);
         builder.Property<List<string>>("_permissions")
             .HasField("_permissions")

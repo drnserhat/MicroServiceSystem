@@ -1,7 +1,18 @@
 {
-  "pretitle": "Identity",
+  "pretitle": "पहचान",
   "title": "भूमिकाएँ और अनुमतियाँ",
-  "loadFailed": "भूमिकाएँ लोड करने में विफल।",
+  "loadFailed": "भूमिकाएँ लोड नहीं हो सकीं।",
   "empty": "कोई भूमिका नहीं मिली।",
-  "permissionsLabel": "अनुमतियाँ"
+  "permissionsLabel": "अनुमतियाँ",
+  "nameLabel": "भूमिका का नाम",
+  "createTitle": "कस्टम भूमिका बनाएँ",
+  "editTitle": "भूमिका संपादित करें",
+  "builtInBadge": "अंतर्निहित",
+  "noPermissions": "कोई अनुमति नहीं",
+  "createSuccess": "भूमिका {{name}} बनाई गई।",
+  "updateSuccess": "भूमिका {{name}} अपडेट की गई।",
+  "deleteTitle": "भूमिका हटाएँ",
+  "deleteMessage": "भूमिका {{name}} हटाएँ? यदि हटाना अवरुद्ध हो तो पहले सभी उपयोगकर्ताओं से अनअसाइन करें।",
+  "deleteSuccess": "भूमिका {{name}} हटाई गई।",
+  "tokenNote": "अनुमति परिवर्तन उपयोगकर्ता के अगले लॉगिन या टोकन रीफ़्रेश पर लागू होते हैं।"
 }

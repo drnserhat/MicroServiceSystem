@@ -1,7 +1,18 @@
 {
-  "pretitle": "Identity",
+  "pretitle": "身份",
   "title": "角色与权限",
   "loadFailed": "加载角色失败。",
   "empty": "未找到角色。",
-  "permissionsLabel": "权限"
+  "permissionsLabel": "权限",
+  "nameLabel": "角色名称",
+  "createTitle": "创建自定义角色",
+  "editTitle": "编辑角色",
+  "builtInBadge": "内置",
+  "noPermissions": "无权限",
+  "createSuccess": "已创建角色 {{name}}。",
+  "updateSuccess": "已更新角色 {{name}}。",
+  "deleteTitle": "删除角色",
+  "deleteMessage": "删除角色 {{name}}？如果删除被阻止，请先从所有用户取消分配。",
+  "deleteSuccess": "已删除角色 {{name}}。",
+  "tokenNote": "权限更改在用户下次登录或刷新令牌时生效。"
 }

@@ -389,7 +389,8 @@ namespace MicroServiceSystem.Services.Identity.Persistence.Migrations
 
                     b.HasIndex("TenantId", "NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("ix_roles_tenant_id_normalized_name");
+                        .HasDatabaseName("ix_roles_tenant_id_normalized_name")
+                        .HasFilter("NOT is_deleted");
 
                     b.ToTable("roles", "identity");
                 });

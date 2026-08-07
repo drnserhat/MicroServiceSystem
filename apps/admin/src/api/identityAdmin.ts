@@ -54,6 +54,29 @@ export function listRoles(): Promise<RoleItem[]> {
   return apiRequest<RoleItem[]>("/identity/api/v1/roles");
 }
 
+export function createRole(body: { name: string; permissions: string[] }): Promise<RoleItem> {
+  return apiRequest<RoleItem>("/identity/api/v1/roles", {
+    method: "POST",
+    body,
+  });
+}
+
+export function replaceRole(
+  roleId: string,
+  body: { name: string; permissions: string[] },
+): Promise<RoleItem> {
+  return apiRequest<RoleItem>(`/identity/api/v1/roles/${roleId}`, {
+    method: "PUT",
+    body,
+  });
+}
+
+export function deleteRole(roleId: string): Promise<null> {
+  return apiRequest<null>(`/identity/api/v1/roles/${roleId}`, {
+    method: "DELETE",
+  });
+}
+
 export function assignUserRole(userId: string, roleId: string): Promise<null> {
   return apiRequest<null>(`/identity/api/v1/users/${userId}/roles/${roleId}`, {
     method: "POST",

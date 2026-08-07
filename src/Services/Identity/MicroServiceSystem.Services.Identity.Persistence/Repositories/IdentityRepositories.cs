@@ -18,6 +18,11 @@ public sealed class IdentityUserRepository(IdentityDbContext context)
         Set.CountAsync(
             user => user.IsActive && EF.Property<List<Guid>>(user, "_roleIds").Contains(roleId),
             cancellationToken);
+
+    public Task<int> CountUsersWithRoleAsync(Guid roleId, CancellationToken cancellationToken = default) =>
+        Set.CountAsync(
+            user => EF.Property<List<Guid>>(user, "_roleIds").Contains(roleId),
+            cancellationToken);
 }
 
 public sealed class RefreshTokenRepository(IdentityDbContext context)

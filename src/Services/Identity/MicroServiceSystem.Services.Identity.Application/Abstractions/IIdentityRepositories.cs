@@ -11,6 +11,9 @@ public interface IIdentityUserRepository : IRepository<IdentityUser, Guid>
 
     /// <summary>Active users that currently hold <paramref name="roleId"/> (tenant-filtered).</summary>
     Task<int> CountActiveUsersWithRoleAsync(Guid roleId, CancellationToken cancellationToken = default);
+
+    /// <summary>Any user (active or not) that currently holds <paramref name="roleId"/>.</summary>
+    Task<int> CountUsersWithRoleAsync(Guid roleId, CancellationToken cancellationToken = default);
 }
 
 public interface IRefreshTokenRepository : IRepository<RefreshToken, Guid>

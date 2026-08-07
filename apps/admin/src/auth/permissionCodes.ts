@@ -19,9 +19,14 @@ export const FrameworkPermissions = {
   IdentityUsersDisable: "identity.users.disable",
   IdentityRolesRead: "identity.roles.read",
   IdentityRolesAssign: "identity.roles.assign",
+  IdentityRolesWrite: "identity.roles.write",
   OpsHealthRead: "ops.health.read",
   OpsOutboxRead: "ops.outbox.read",
   OpsOutboxWrite: "ops.outbox.write",
   OpsSagaRead: "ops.saga.read",
   OpsInboxRead: "ops.inbox.read",
+  LoggingLogsIngest: "logging.logs.ingest",
 } as const;
+
+/** Allowlisted permission codes for custom role create/replace (mirrors FrameworkPermissions.KnownPermissionCodes). */
+export const KnownPermissionCodes: string[] = Object.values(FrameworkPermissions);

@@ -39,3 +39,21 @@ public sealed class RoleNameMustBeUniqueWithinTenantRule(bool exists) : IBusines
 
     public bool IsBroken() => exists;
 }
+
+public sealed class BuiltInRoleMustNotBeMutatedRule(bool isBuiltIn) : IBusinessRule
+{
+    public string Code => "identity.built_in_role_protected";
+
+    public string Message => "Built-in Admin and Member roles cannot be renamed, changed, or deleted.";
+
+    public bool IsBroken() => isBuiltIn;
+}
+
+public sealed class BuiltInRoleNameMustNotBeUsedForCustomRoleRule(bool isReservedName) : IBusinessRule
+{
+    public string Code => "identity.role_name_reserved";
+
+    public string Message => "Admin and Member are reserved role names.";
+
+    public bool IsBroken() => isReservedName;
+}

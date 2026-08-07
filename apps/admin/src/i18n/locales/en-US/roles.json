@@ -3,5 +3,16 @@
   "title": "Roles & permissions",
   "loadFailed": "Failed to load roles.",
   "empty": "No roles found.",
-  "permissionsLabel": "Permissions"
+  "permissionsLabel": "Permissions",
+  "nameLabel": "Role name",
+  "createTitle": "Create custom role",
+  "editTitle": "Edit role",
+  "builtInBadge": "Built-in",
+  "noPermissions": "No permissions",
+  "createSuccess": "Created role {{name}}.",
+  "updateSuccess": "Updated role {{name}}.",
+  "deleteTitle": "Delete role",
+  "deleteMessage": "Delete role {{name}}? Unassign it from all users first if delete is blocked.",
+  "deleteSuccess": "Deleted role {{name}}.",
+  "tokenNote": "Permission changes apply on the user’s next login or token refresh."
 }

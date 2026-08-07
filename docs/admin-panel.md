@@ -38,11 +38,12 @@ After Identity permission changes, **log out and log in again** so the JWT picks
 | Messaging Center | Done | Live per-service outbox/DLQ + inbox counts; topology **UI preview** |
 | Service Center | Done | Catalog + live health; CPU/secrets/restart = preview |
 | Workflow / Architecture / BuildingBlocks / Developer | Done | Live saga ops; Architecture/Blocks/Dev remain design-time |
-| User/role assignment UI | Done | `identity.roles.assign`; last-Admin protected; Roles page remains catalog |
+| User/role assignment UI | Done | `identity.roles.assign`; last-Admin protected |
+| Role catalog CRUD | Done | `identity.roles.write`; custom roles only; Admin/Member immutable; block-if-assigned delete |
 | Multi-language i18n | Done | en-US, tr-TR, zh-CN, es-ES, hi-IN; LanguageSwitcher; Accept-Language + API Error.Code localization |
-| Multi-language i18n | Done | `en-US`, `tr-TR`, `zh-CN`, `es-ES`, `hi-IN`; header LanguageSwitcher; `Accept-Language` on API |
+| Helm production path | Done | Admin SPA + Ingress + msf-migrate + secrets example — [deploy/helm/microservice-system/README.md](../deploy/helm/microservice-system/README.md) |
 | Outbox ops for every service | Done (P0) | Thin per-Api controllers; Gateway catch-all |
-| Helm/K8s operator surface | Not started | Compose-oriented today |
+| Helm/K8s operator UI | Out of scope | Chart deploys apps; admin is not a cluster operator console |
 
 Surfaces without APIs show a clear **“UI preview — awaiting API”** banner. Backend contracts are unchanged.
 
@@ -129,7 +130,7 @@ docker compose -f deploy/docker/docker-compose.yml \
 Phase 11: [phase-11-ops-api-epic.md](phase-11-ops-api-epic.md) — **Architect DECIDED**; P0 outbox + P1 saga/inbox shipped; C5/C6 rejected.
 
 New Admin JWT permissions (in `FrameworkPermissions.AdminDefaults`):  
-`identity.tenants.read|write`, `identity.users.read|disable`, `identity.roles.read|assign`, `ops.health.read`, `ops.outbox.read|write`.
+`identity.tenants.read|write`, `identity.users.read|disable`, `identity.roles.read|assign|write`, `ops.health.read`, `ops.outbox.read|write`.
 
 ---
 
@@ -156,6 +157,10 @@ Admin UI supports **en-US** (default), **tr-TR**, **zh-CN**, **es-ES**, **hi-IN*
 - API calls send `Accept-Language`; services localize `Error.Code` descriptions via `IErrorLocalizer` (fallback English).
 - Key parity check: `npm run check:i18n` in `apps/admin` (fails if a locale is missing an `en-US` key).
 - To add a language: extend `SUPPORTED_LOCALES`, copy `en-US` catalogs, translate, add `errors.<culture>.json` under Localization building block, and include the culture in `Localization:SupportedCultures`.
+
+## Cluster (Helm)
+
+Application deploy (Gateway + Admin + APIs): [deploy/helm/microservice-system/README.md](../deploy/helm/microservice-system/README.md). Compose remains the local SoT. This is not a K8s operator product surface.
 
 ---
 

@@ -49,4 +49,25 @@ public static class IdentityErrors
         Error.Conflict(
             "identity.last_admin_protected",
             "Cannot remove the Admin role from the last active administrator in this tenant.");
+
+    public static readonly Error RoleNameTaken =
+        Error.Conflict("identity.role_name_exists", "A role with the same name already exists for this tenant.");
+
+    public static readonly Error RoleNameReserved =
+        Error.Conflict("identity.role_name_reserved", "Admin and Member are reserved role names.");
+
+    public static readonly Error BuiltInRoleProtected =
+        Error.Conflict(
+            "identity.built_in_role_protected",
+            "Built-in Admin and Member roles cannot be renamed, changed, or deleted.");
+
+    public static readonly Error RoleInUse =
+        Error.Conflict(
+            "identity.role_in_use",
+            "Cannot delete a role that is still assigned to one or more users.");
+
+    public static readonly Error UnknownPermission =
+        Error.Validation(
+            "identity.permission_unknown",
+            "One or more permission codes are not in the framework allowlist.");
 }

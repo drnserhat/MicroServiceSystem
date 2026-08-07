@@ -1,7 +1,18 @@
 {
-  "pretitle": "Identity",
+  "pretitle": "Identidad",
   "title": "Roles y permisos",
-  "loadFailed": "Error al cargar roles.",
+  "loadFailed": "No se pudieron cargar los roles.",
   "empty": "No se encontraron roles.",
-  "permissionsLabel": "Permisos"
+  "permissionsLabel": "Permisos",
+  "nameLabel": "Nombre del rol",
+  "createTitle": "Crear rol personalizado",
+  "editTitle": "Editar rol",
+  "builtInBadge": "Integrado",
+  "noPermissions": "Sin permisos",
+  "createSuccess": "Rol {{name}} creado.",
+  "updateSuccess": "Rol {{name}} actualizado.",
+  "deleteTitle": "Eliminar rol",
+  "deleteMessage": "¿Eliminar el rol {{name}}? Desasígnelo de todos los usuarios si la eliminación se bloquea.",
+  "deleteSuccess": "Rol {{name}} eliminado.",
+  "tokenNote": "Los cambios de permisos se aplican en el próximo inicio de sesión o renovación del token del usuario."
 }
