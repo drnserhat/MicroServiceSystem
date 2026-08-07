@@ -1,6 +1,6 @@
 apiVersion: v2
 name: microservice-system
-description: Minimal Kubernetes deploy for MicroServiceSystem GHCR images (gateway + APIs).
+description: Kubernetes application deploy for MicroServiceSystem (gateway, admin SPA, APIs). External infra required.
 type: application
 version: 0.1.0
 appVersion: "1.0.0"

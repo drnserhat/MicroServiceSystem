@@ -1,12 +1,21 @@
 {{- if .Values.migrate.enabled }}
-# Optional Job: image must contain the repository checkout and deploy/migrate/migrate-all.sh.
-# Prefer running deploy/migrate (or CI) before helm install — apps never auto-migrate in Production.
+{{- $migrateImage := .Values.migrate.image | default (printf "%s/%s/msf-migrate:%s" .Values.image.registry .Values.image.repositoryOwner .Values.image.tag) }}
+{{- $pgPassword := .Values.secrets.migratePostgresPassword | default .Values.migrate.postgresPassword }}
+{{- if not $pgPassword }}
+{{- fail "migrate.enabled requires secrets.migratePostgresPassword (or migrate.postgresPassword)" }}
+{{- end }}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "msf.fullname" . }}-migrate
   labels:
     {{- include "msf.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    # Runs before Deployments so schemas exist; password comes from values (Secret is not yet available to pre-install hooks).
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": {{ .Values.migrate.hookWeight | quote }}
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 1
   template:
@@ -22,8 +31,8 @@ spec:
       {{- end }}
       containers:
         - name: migrate
-          image: {{ .Values.migrate.image | quote }}
-          imagePullPolicy: IfNotPresent
+          image: {{ $migrateImage | quote }}
+          imagePullPolicy: {{ .Values.migrate.imagePullPolicy }}
           workingDir: /src
           command: ["/bin/bash", "deploy/migrate/migrate-all.sh"]
           env:
@@ -34,5 +43,5 @@ spec:
             - name: POSTGRES_USER
               value: {{ .Values.migrate.postgresUser | quote }}
             - name: POSTGRES_PASSWORD
-              value: {{ .Values.migrate.postgresPassword | quote }}
+              value: {{ $pgPassword | quote }}
 {{- end }}

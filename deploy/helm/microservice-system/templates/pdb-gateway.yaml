@@ -1,0 +1,15 @@
+{{- if and .Values.apps.gateway.enabled .Values.podDisruptionBudget.gateway.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "msf.serviceName" (dict "root" . "name" "gateway") }}
+  labels:
+    {{- include "msf.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gateway
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.gateway.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "msf.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gateway
+{{- end }}

@@ -1,0 +1,71 @@
+# Example production overrides — copy and fill; do not commit real secrets.
+#   cp values-production.example.yaml values-production.yaml
+#   helm upgrade --install msf ./deploy/helm/microservice-system -n msf -f values-production.yaml
+#
+# Refuse to install until every REQUIRED field is replaced.
+
+image:
+  repositoryOwner: REQUIRED_GHCR_OWNER
+  tag: REQUIRED_IMAGE_TAG
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: ghcr-pull
+
+aspnetcoreEnvironment: Production
+
+jwt:
+  requireHttpsMetadata: "true"
+
+infrastructure:
+  redisConnection: REQUIRED_REDIS_HOST:6379
+  rabbitmq:
+    host: REQUIRED_RABBITMQ_HOST
+    username: msf
+  mongoConnectionString: mongodb://REQUIRED_MONGO_HOST:27017
+
+secrets:
+  jwtSigningKey: REQUIRED_JWT_SIGNING_KEY_32_PLUS_CHARS
+  internalApiKey: REQUIRED_INTERNAL_API_KEY
+  rabbitmqPassword: REQUIRED_RABBITMQ_PASSWORD
+  connectionStrings:
+    identity: "Host=REQUIRED_PG;Port=5432;Database=identity;Username=msf;Password=REQUIRED"
+    user: "Host=REQUIRED_PG;Port=5432;Database=user;Username=msf;Password=REQUIRED"
+    coordinator: "Host=REQUIRED_PG;Port=5432;Database=coordinator;Username=msf;Password=REQUIRED"
+    audit: "Host=REQUIRED_PG;Port=5432;Database=audit;Username=msf;Password=REQUIRED"
+    file: "Host=REQUIRED_PG;Port=5432;Database=file;Username=msf;Password=REQUIRED"
+    location: "Host=REQUIRED_PG;Port=5432;Database=location;Username=msf;Password=REQUIRED"
+    notification: "Host=REQUIRED_PG;Port=5432;Database=notification;Username=msf;Password=REQUIRED"
+    settings: "Host=REQUIRED_PG;Port=5432;Database=settings;Username=msf;Password=REQUIRED"
+  # Used by migrate Job when migrate.enabled=true
+  migratePostgresPassword: REQUIRED_PG_PASSWORD
+
+migrate:
+  enabled: true
+  postgresHost: REQUIRED_PG
+  postgresPort: "5432"
+  postgresUser: msf
+
+ingress:
+  enabled: true
+  className: nginx
+  host: admin.example.com
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  tls:
+    enabled: true
+    secretName: msf-tls
+
+apps:
+  gateway:
+    service:
+      type: ClusterIP
+  admin:
+    enabled: true
+  # Enable as needed for full profile:
+  # settings.enabled: true
+  # location.enabled: true
+  # audit.enabled: true
+  # notification.enabled: true
+  # file.enabled: true
+  # logging.enabled: true

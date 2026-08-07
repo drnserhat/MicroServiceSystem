@@ -28,12 +28,14 @@ infrastructure:
     # password comes from secrets below
   mongoConnectionString: mongodb://mongodb:27017
 
-# Secrets — override via --set-file / SealedSecrets / ExternalSecrets in real clusters.
-# Never commit production values.
+# Secrets — override via --set / --set-file / SealedSecrets / ExternalSecrets.
+# Never commit production secrets. See values-production.example.yaml.
 secrets:
   jwtSigningKey: "replace-with-at-least-32-random-bytes"
   internalApiKey: "replace-with-a-long-random-internal-api-key"
   rabbitmqPassword: "change-me"
+  # Required when migrate.enabled=true (pre-install hook cannot read the chart Secret yet).
+  migratePostgresPassword: ""
   connectionStrings:
     identity: "Host=postgres;Port=5432;Database=identity;Username=msf;Password=change-me"
     user: "Host=postgres;Port=5432;Database=user;Username=msf;Password=change-me"
@@ -44,16 +46,45 @@ secrets:
     notification: "Host=postgres;Port=5432;Database=notification;Username=msf;Password=change-me"
     settings: "Host=postgres;Port=5432;Database=settings;Username=msf;Password=change-me"
 
-# Apply schemas before install (CI migrate job / deploy/migrate). Apps never auto-migrate in Production.
+# Apply schemas before / during install (apps never auto-migrate in Production).
 migrate:
-  # Optional one-shot Job: requires an image that contains the repo + deploy/migrate/migrate-all.sh
-  # (compose uses mcr.microsoft.com/dotnet/sdk:10.0 with a source mount). Disabled by default.
   enabled: false
-  image: mcr.microsoft.com/dotnet/sdk:10.0
+  # Defaults to chart image tag of msf-migrate when empty.
+  image: ""
+  imagePullPolicy: IfNotPresent
   postgresHost: postgres
   postgresPort: "5432"
   postgresUser: msf
-  postgresPassword: change-me
+  # Prefer secrets.migratePostgresPassword; falls back to this for local experiments only.
+  postgresPassword: ""
+  hookWeight: "-5"
+
+# Optional Ingress (nginx). When enabled, set gateway Service to ClusterIP (see values-production.example.yaml).
+ingress:
+  enabled: false
+  className: nginx
+  host: msf.example.local
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: msf-tls
+  apiPathPrefixes:
+    - identity
+    - settings
+    - user
+    - location
+    - audit
+    - logging
+    - coordinator
+    - registration
+    - notification
+    - file
+    - ops
+
+podDisruptionBudget:
+  gateway:
+    enabled: true
+    minAvailable: 1
 
 resources:
   requests:
@@ -63,7 +94,7 @@ resources:
     cpu: 500m
     memory: 512Mi
 
-# Lite default: gateway + identity + user + coordinator. Enable the rest for full stack.
+# Lite default: gateway + admin + identity + user + coordinator. Enable the rest for full stack.
 apps:
   gateway:
     enabled: true
@@ -72,6 +103,12 @@ apps:
       type: LoadBalancer
       port: 80
     healthPath: /health/live
+  admin:
+    enabled: true
+    replicas: 1
+    service:
+      port: 80
+    healthPath: /
   identity:
     enabled: true
     replicas: 1

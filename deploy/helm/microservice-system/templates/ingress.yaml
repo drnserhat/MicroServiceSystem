@@ -1,0 +1,53 @@
+{{- if .Values.ingress.enabled }}
+{{- $root := . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "msf.fullname" . }}
+  labels:
+    {{- include "msf.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          {{- if .Values.apps.admin.enabled }}
+          {{- range .Values.ingress.apiPathPrefixes }}
+          - path: /{{ . }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "msf.serviceName" (dict "root" $root "name" "gateway") }}
+                port:
+                  number: {{ $root.Values.apps.gateway.service.port }}
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "msf.serviceName" (dict "root" $root "name" "admin") }}
+                port:
+                  number: {{ $root.Values.apps.admin.service.port }}
+          {{- else }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "msf.serviceName" (dict "root" $root "name" "gateway") }}
+                port:
+                  number: {{ $root.Values.apps.gateway.service.port }}
+          {{- end }}
+{{- end }}

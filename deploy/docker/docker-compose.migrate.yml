@@ -3,6 +3,9 @@
 #
 # Usage (repo root):
 #   docker compose -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.migrate.yml run --rm migrate
+#
+# Cluster / GHCR (after CI publish):
+#   docker run --rm -e POSTGRES_HOST=… -e POSTGRES_PASSWORD=… ghcr.io/<owner>/msf-migrate:<tag>
 
 services:
   migrate:

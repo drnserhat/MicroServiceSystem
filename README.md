@@ -122,15 +122,21 @@ docker compose -p microsystem \
 
 With the observability overlay, apps export OTLP to Jaeger (`http://localhost:16686`). Prometheus scrapes `/metrics` on every service (`http://localhost:9090`); Grafana is at `http://localhost:3000` (admin/admin).
 
-On push to `main`/`master`/`develop`, CI publishes container images to GHCR as `ghcr.io/<owner>/msf-<service>:<sha|branch|latest>`.
+On push to `main`/`master`/`develop`, CI publishes container images to GHCR as `ghcr.io/<owner>/msf-<service>:<sha|branch|latest>` (includes **`msf-admin`** and **`msf-migrate`**).
 
-Cluster deploy example: [`deploy/helm/microservice-system`](deploy/helm/microservice-system) (lite: gateway + identity + user + coordinator; external Postgres/Redis/RabbitMQ). Apply migrations first, then:
+Cluster deploy (application chart — not an operator UI): [`deploy/helm/microservice-system`](deploy/helm/microservice-system). Lite default: **gateway + admin SPA + identity + user + coordinator**; external Postgres/Redis/RabbitMQ. Full runbook: [Helm README](deploy/helm/microservice-system/README.md).
 
 ```bash
+# schemas first (or --set migrate.enabled=true with secrets.migratePostgresPassword)
+docker run --rm -e POSTGRES_HOST=… -e POSTGRES_PASSWORD=… \
+  ghcr.io/<owner>/msf-migrate:<tag>
+
 helm upgrade --install msf ./deploy/helm/microservice-system \
   --namespace msf --create-namespace \
   --set image.repositoryOwner=<owner> \
   --set image.tag=<sha-or-latest>
+# Admin: enable ingress (see values-production.example.yaml) or
+#   kubectl -n msf port-forward svc/<release>-admin 5173:80
 ```
 
 Host Postgres is published on **5433** by default (`POSTGRES_HOST_PORT`) so it does not clash with a local/other Postgres on 5432.
