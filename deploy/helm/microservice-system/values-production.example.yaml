@@ -1,11 +1,13 @@
 # Example production overrides — copy and fill; do not commit real secrets.
-#   cp values-production.example.yaml values-production.yaml
-#   helm upgrade --install msf ./deploy/helm/microservice-system -n msf -f values-production.yaml
+#   cp values-production.example.yaml values-production.local.yaml
+#   ../scripts/validate-prod-values.sh values-production.local.yaml
+#   helm upgrade --install msf . -n msf --create-namespace -f values-production.local.yaml
 #
-# Refuse to install until every REQUIRED field is replaced.
+# Refuse to install until validate-prod-values exits 0.
 
 image:
   repositoryOwner: REQUIRED_GHCR_OWNER
+  # Prefer CI git SHA — never "latest" in production.
   tag: REQUIRED_IMAGE_TAG
   pullPolicy: IfNotPresent
 
@@ -15,6 +17,8 @@ imagePullSecrets:
 aspnetcoreEnvironment: Production
 
 jwt:
+  issuer: msf
+  audience: msf
   requireHttpsMetadata: "true"
 
 infrastructure:
@@ -25,7 +29,7 @@ infrastructure:
   mongoConnectionString: mongodb://REQUIRED_MONGO_HOST:27017
 
 secrets:
-  jwtSigningKey: REQUIRED_JWT_SIGNING_KEY_32_PLUS_CHARS
+  jwtSigningKey: REQUIRED_JWT_SIGNING_KEY_32_PLUS_CHARS_MINIMUM_LENGTH_OK
   internalApiKey: REQUIRED_INTERNAL_API_KEY
   rabbitmqPassword: REQUIRED_RABBITMQ_PASSWORD
   connectionStrings:
@@ -52,18 +56,40 @@ ingress:
   host: admin.example.com
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
   tls:
     enabled: true
     secretName: msf-tls
 
+podDisruptionBudget:
+  gateway:
+    enabled: true
+    minAvailable: 1
+
+# Production lite: HA on the control-plane path. Apps never auto-migrate (templates force false).
 apps:
   gateway:
+    enabled: true
+    replicas: 2
     service:
       type: ClusterIP
+      port: 80
   admin:
     enabled: true
-  # Enable as needed for full profile:
-  # settings.enabled: true
+    replicas: 2
+  identity:
+    enabled: true
+    replicas: 2
+  user:
+    enabled: true
+    replicas: 2
+  coordinator:
+    enabled: true
+    replicas: 2
+  settings:
+    enabled: true
+    replicas: 2
+  # Full profile — enable when those services are provisioned:
   # location.enabled: true
   # audit.enabled: true
   # notification.enabled: true

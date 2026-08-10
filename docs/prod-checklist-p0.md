@@ -10,6 +10,28 @@ Go / no-go gate before real customer traffic. Companion docs:
 
 **Minimum bar for a controlled first prod:** sections **1 + 2 + 3 + 6** all green. Sections **4–5** should be green before calling it a durable production; without them treat the environment as internal / staging-prod only.
 
+### Operator scripts (repo)
+
+| Script | Purpose |
+|--------|---------|
+| [`deploy/scripts/validate-prod-values.sh`](../deploy/scripts/validate-prod-values.sh) / [`.ps1`](../deploy/scripts/validate-prod-values.ps1) | Fail if values still contain `REQUIRED_` / `change-me` / `latest` |
+| [`deploy/scripts/smoke-prod.sh`](../deploy/scripts/smoke-prod.sh) / [`.ps1`](../deploy/scripts/smoke-prod.ps1) | Post-deploy health (+ optional login / 401/200 roles) |
+
+```bash
+cp deploy/helm/microservice-system/values-production.example.yaml values-production.local.yaml
+# fill secrets… (file is gitignored)
+./deploy/scripts/validate-prod-values.sh values-production.local.yaml
+# Windows: .\deploy\scripts\validate-prod-values.ps1 values-production.local.yaml
+
+helm upgrade --install msf ./deploy/helm/microservice-system \
+  -n msf --create-namespace -f values-production.local.yaml
+
+MSF_BASE_URL=https://admin.example.com \
+MSF_EMAIL=... MSF_PASSWORD=... MSF_TENANT_ID=... \
+  ./deploy/scripts/smoke-prod.sh
+# Windows: $env:MSF_BASE_URL=...; .\deploy\scripts\smoke-prod.ps1
+```
+
 P1 (later): HPA, NetworkPolicy / mTLS, multi-AZ DR automation, chaos, pen-test report, product domain services.
 
 ---

@@ -95,7 +95,7 @@ docker compose -f deploy/docker/docker-compose.yml \
 | Login | `admin@dev.local` / `DevAdmin!Pass1` |
 | Tenant | `11111111-1111-1111-1111-111111111111` |
 | Status & feature map | **[docs/admin-panel.md](docs/admin-panel.md)** |
-| P0 prod go/no-go | **[docs/prod-checklist-p0.md](docs/prod-checklist-p0.md)** |
+| P0 prod go/no-go | **[docs/prod-checklist-p0.md](docs/prod-checklist-p0.md)** (`validate-prod-values` + `smoke-prod` scripts) |
 | App runbook | [apps/admin/README.md](apps/admin/README.md) |
 
 **Implemented today:** Tabler dark shell; Settings CRUD; Users (directory / register / profile without raw GUID entry); Tenants & Roles; Health aggregate; Identity outbox ops; **Services & packages** catalog (core vs add-on vs observability). Audit / Logs / Countries / Files / Notifications need Compose `--profile full`.

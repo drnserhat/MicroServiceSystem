@@ -14,4 +14,7 @@ coverage/
 .env.*
 !.env.example
 appsettings.Local.json
+values-production.local.yaml
+values-production.yaml
+!deploy/helm/microservice-system/values-production.example.yaml
 node_modules/
