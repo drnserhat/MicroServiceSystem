@@ -42,8 +42,10 @@ After Identity permission changes, **log out and log in again** so the JWT picks
 | Role catalog CRUD | Done | `identity.roles.write`; custom roles only; Admin/Member immutable; block-if-assigned delete |
 | Multi-language i18n | Done | en-US, tr-TR, zh-CN, es-ES, hi-IN; LanguageSwitcher; Accept-Language + API Error.Code localization |
 | Helm production path | Done | Admin SPA + Ingress + msf-migrate + secrets example — [deploy/helm/microservice-system/README.md](../deploy/helm/microservice-system/README.md) |
+| P0 prod checklist | Done | Go/no-go gate — [prod-checklist-p0.md](prod-checklist-p0.md) |
 | Outbox ops for every service | Done (P0) | Thin per-Api controllers; Gateway catch-all |
 | Helm/K8s operator UI | Out of scope | Chart deploys apps; admin is not a cluster operator console |
+| Infra management UIs | Done | Redis Insight / pgAdmin / Mongo Express deep-links — values stay in those consoles (no in-admin key dump) |
 
 Surfaces without APIs show a clear **“UI preview — awaiting API”** banner. Backend contracts are unchanged.
 
@@ -161,6 +163,18 @@ Admin UI supports **en-US** (default), **tr-TR**, **zh-CN**, **es-ES**, **hi-IN*
 ## Cluster (Helm)
 
 Application deploy (Gateway + Admin + APIs): [deploy/helm/microservice-system/README.md](../deploy/helm/microservice-system/README.md). Compose remains the local SoT. This is not a K8s operator product surface.
+
+## Infrastructure consoles (Compose)
+
+Admin is the **control-plane hub**: health, outbox/inbox/saga ops, and deep-links. **Key/value and table browsers live in dedicated UIs** (Architect: no in-admin Redis dump / Rabbit Management proxy).
+
+| Tool | URL | Stack | Notes |
+|------|-----|-------|--------|
+| Redis Insight | http://localhost:5540 | lite | Add DB host `redis`, port `6379` (Compose network) |
+| pgAdmin | http://localhost:5050 | lite | `admin@example.com` / `admin` · server host `postgres`, user/db `msf` |
+| Mongo Express | http://localhost:8081 | profile `full` | Browse Logging Mongo |
+| RabbitMQ Management | http://localhost:15672 | lite | `msf` / `msf` |
+| Seq / Jaeger / Grafana / Prometheus | :5341 / :16686 / :3000 / :9090 | profile `obs` / `full` | Observability |
 
 ---
 

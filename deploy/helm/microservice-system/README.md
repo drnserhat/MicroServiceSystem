@@ -16,6 +16,8 @@ This chart ships Gateway, Admin SPA, and APIs. It is **not** a cluster operator 
 
 ## Refuse placeholders (checklist)
 
+Full go/no-go gate (secrets, migrate, TLS, smoke): **[docs/prod-checklist-p0.md](../../docs/prod-checklist-p0.md)**.
+
 Do **not** install to a real cluster until you have replaced:
 
 - [ ] `image.repositoryOwner` (not `REPLACE_ME`)

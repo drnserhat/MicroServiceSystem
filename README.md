@@ -63,7 +63,7 @@ dotnet test MicroServiceSystem.slnx
 
 ### Local stack (Docker)
 
-Default is a **lite** stack (postgres, redis, rabbitmq, identity, user, coordinator, gateway) with memory caps — suitable for Docker Desktop. Optional services and observability use Compose profiles.
+Default is a **lite** stack (postgres, redis, rabbitmq, redisinsight, pgadmin, identity, user, coordinator, gateway, admin) with memory caps — suitable for Docker Desktop. Optional services and observability use Compose profiles.
 
 ```bash
 # lite (~3–4 GB) — recommended for local work
@@ -95,6 +95,7 @@ docker compose -f deploy/docker/docker-compose.yml \
 | Login | `admin@dev.local` / `DevAdmin!Pass1` |
 | Tenant | `11111111-1111-1111-1111-111111111111` |
 | Status & feature map | **[docs/admin-panel.md](docs/admin-panel.md)** |
+| P0 prod go/no-go | **[docs/prod-checklist-p0.md](docs/prod-checklist-p0.md)** |
 | App runbook | [apps/admin/README.md](apps/admin/README.md) |
 
 **Implemented today:** Tabler dark shell; Settings CRUD; Users (directory / register / profile without raw GUID entry); Tenants & Roles; Health aggregate; Identity outbox ops; **Services & packages** catalog (core vs add-on vs observability). Audit / Logs / Countries / Files / Notifications need Compose `--profile full`.
@@ -121,6 +122,8 @@ docker compose -p microsystem \
 **Local Vite (hot reload):** `cd apps/admin && npm install && npm run dev` (API via Vite proxy to `:8080` or `VITE_API_BASE_URL`).
 
 With the observability overlay, apps export OTLP to Jaeger (`http://localhost:16686`). Prometheus scrapes `/metrics` on every service (`http://localhost:9090`); Grafana is at `http://localhost:3000` (admin/admin).
+
+**Infra browsers (lite Compose):** Redis Insight `http://localhost:5540` (add host `redis:6379`), pgAdmin `http://localhost:5050` (`admin@example.com` / `admin`), RabbitMQ `http://localhost:15672` (`msf` / `msf`). Mongo Express `http://localhost:8081` needs `--profile full`. Admin deep-links these; it does not embed key/table dumps.
 
 On push to `main`/`master`/`develop`, CI publishes container images to GHCR as `ghcr.io/<owner>/msf-<service>:<sha|branch|latest>` (includes **`msf-admin`** and **`msf-migrate`**).
 
