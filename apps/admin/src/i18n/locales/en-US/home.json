@@ -26,6 +26,12 @@
   "coordinator": "Coordinator",
   "runningSagas": "Running sagas",
   "runningSagasPreview": "Preview — awaiting API",
+  "needsSagaRead": "Needs ops.saga.read",
+  "nonTerminalSagas": "Non-terminal RegisterUser sagas",
+  "sagaLoadFailed": "Could not load sagas",
+  "redisInsightHint": "Redis Insight · :5540",
+  "pgAdminHint": "pgAdmin · :5050",
+  "mongoExpressHint": "Mongo Express · :8081 · full",
   "referenceFlow": "Reference flow",
   "startRegistration": "Start registration",
   "recentActivity": "Recent activity",
@@ -37,11 +43,11 @@
   "registerUserSaga": "Register user (saga)",
   "observabilityHub": "Observability Hub",
   "deepLinks": "Deep links",
-  "previewBanner": "Running sagas, inbox pending, latency, queue delay, deployments, and container metrics are UI-only until ops APIs exist.",
+  "previewBanner": "Inbox pending, avg latency, queue delay, deployments, and container metrics remain UI preview. Redis/Postgres/Mongo values open in management UIs.",
   "inboxPending": "Inbox pending",
   "avgApiLatency": "Avg API latency",
   "packageCatalog": "Package catalog",
   "staticInventory": "Static inventory",
   "loadFailed": "Failed to load overview.",
-  "messagingNote": "Live Identity outbox today. Multi-service outbox / inbox remain UI preview in Messaging Center."
+  "messagingNote": "Live Identity outbox today. Multi-service outbox / inbox in Messaging Center. Broker and cache values: RabbitMQ / Redis Insight."
 }

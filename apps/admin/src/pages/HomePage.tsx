@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { listAuditEntries } from "@/api/audit";
 import { ApiClientError, isServiceUnavailable } from "@/api/client";
 import { listLogs } from "@/api/logging";
-import { getHealthAggregate, getOutboxSnapshot } from "@/api/ops";
+import { getHealthAggregate, getOutboxSnapshot, listSagas } from "@/api/ops";
 import type { AuditEntry, OutboxSummary, ServiceHealthItem, SystemLog } from "@/api/types";
 import { useAuth } from "@/auth/AuthContext";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
@@ -46,6 +46,7 @@ export function HomePage() {
   const [health, setHealth] = useState<ServiceHealthItem[]>([]);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [outbox, setOutbox] = useState<OutboxSummary | null>(null);
+  const [runningSagas, setRunningSagas] = useState<number | null>(null);
   const [audits, setAudits] = useState<AuditEntry[]>([]);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +76,17 @@ export function HomePage() {
             getOutboxSnapshot("identity", 5).then((data) => {
               setOutbox(data.summary);
             }),
+          );
+        }
+
+        if (can(FrameworkPermissions.OpsSagaRead)) {
+          tasks.push(
+            listSagas({ take: 100 })
+              .then((data) => {
+                const active = data.items.filter((item) => !item.isTerminal).length;
+                setRunningSagas(active);
+              })
+              .catch(() => setRunningSagas(null)),
           );
         }
 
@@ -184,19 +196,19 @@ export function HomePage() {
       id: "redis",
       label: t("ops:redis"),
       status: t("ops:infra"),
-      hint: "Compose lite always-on",
+      hint: t("redisInsightHint"),
     },
     {
       id: "postgres",
       label: t("ops:postgres"),
       status: t("ops:infra"),
-      hint: "Compose lite always-on",
+      hint: t("pgAdminHint"),
     },
     {
       id: "mongo",
       label: t("ops:mongo"),
       status: t("ops:optional"),
-      hint: "Profile full",
+      hint: t("mongoExpressHint"),
     },
   ];
 
@@ -335,6 +347,12 @@ export function HomePage() {
           </Link>
         </div>
         {loading ? <Skeleton height={88} /> : <HealthSummaryStrip items={infraItems} />}
+        <div className="btn-list mt-2">
+          <ExternalToolLink id="redisinsight" />
+          <ExternalToolLink id="pgadmin" />
+          <ExternalToolLink id="mongoexpress" />
+          <ExternalToolLink id="rabbitmq" />
+        </div>
       </div>
 
       {/* 3. Messaging + Workflow snapshot */}
@@ -384,7 +402,9 @@ export function HomePage() {
                 </div>
                 <div className="datagrid-item">
                   <div className="datagrid-title">{t("runningSagas")}</div>
-                  <div className="datagrid-content text-secondary">{t("runningSagasPreview")}</div>
+                  <div className="datagrid-content">
+                    {runningSagas != null ? runningSagas : can(FrameworkPermissions.OpsSagaRead) ? "—" : t("needsSagaRead")}
+                  </div>
                 </div>
                 <div className="datagrid-item">
                   <div className="datagrid-title">{t("referenceFlow")}</div>
@@ -451,6 +471,8 @@ export function HomePage() {
                   <ExternalToolLink id="seq" />
                   <ExternalToolLink id="jaeger" />
                   <ExternalToolLink id="grafana" />
+                  <ExternalToolLink id="redisinsight" />
+                  <ExternalToolLink id="pgadmin" />
                 </div>
               </div>
             </div>
@@ -461,7 +483,18 @@ export function HomePage() {
       <PreviewBanner>{t("previewBanner")}</PreviewBanner>
       <div className="row row-cards">
         <div className="col-md-3">
-          <MetricCard label={t("runningSagas")} value="—" hint={t("common:preview")} tone="info" />
+          <MetricCard
+            label={t("runningSagas")}
+            value={runningSagas != null ? runningSagas : "—"}
+            hint={
+              runningSagas != null
+                ? t("nonTerminalSagas")
+                : can(FrameworkPermissions.OpsSagaRead)
+                  ? t("sagaLoadFailed")
+                  : t("needsSagaRead")
+            }
+            tone="info"
+          />
         </div>
         <div className="col-md-3">
           <MetricCard label={t("inboxPending")} value="—" hint={t("common:preview")} tone="messaging" />

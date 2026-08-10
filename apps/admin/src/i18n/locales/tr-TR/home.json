@@ -26,6 +26,12 @@
   "coordinator": "Coordinator",
   "runningSagas": "Çalışan Saga'lar",
   "runningSagasPreview": "Önizleme — API bekleniyor",
+  "needsSagaRead": "ops.saga.read gerekir",
+  "nonTerminalSagas": "Terminal olmayan RegisterUser saga'ları",
+  "sagaLoadFailed": "Saga'lar yüklenemedi",
+  "redisInsightHint": "Redis Insight · :5540",
+  "pgAdminHint": "pgAdmin · :5050",
+  "mongoExpressHint": "Mongo Express · :8081 · full",
   "referenceFlow": "Referans akış",
   "startRegistration": "Kaydı başlat",
   "recentActivity": "Son etkinlik",
@@ -37,11 +43,11 @@
   "registerUserSaga": "Kullanıcı kaydet (Saga)",
   "observabilityHub": "Gözlemlenebilirlik Merkezi",
   "deepLinks": "Derin bağlantılar",
-  "previewBanner": "Çalışan Saga'lar, Inbox bekleyen, gecikme, kuyruk gecikmesi, dağıtımlar ve konteyner metrikleri ops API'leri gelene kadar yalnızca UI'dır.",
+  "previewBanner": "Inbox bekleyen, ort. gecikme, kuyruk gecikmesi, dağıtımlar ve konteyner metrikleri UI önizlemesidir. Redis/Postgres/Mongo değerleri yönetim arayüzlerinde açılır.",
   "inboxPending": "Inbox bekleyen",
   "avgApiLatency": "Ort. API gecikmesi",
   "packageCatalog": "Paket kataloğu",
   "staticInventory": "Statik envanter",
   "loadFailed": "Genel bakış yüklenemedi.",
-  "messagingNote": "Bugün canlı Identity Outbox. Çok servisli Outbox / Inbox Mesajlaşma Merkezi'nde UI önizlemesidir."
+  "messagingNote": "Bugün canlı Identity Outbox. Çok servisli Outbox / Inbox Mesajlaşma Merkezi'nde. Broker ve önbellek: RabbitMQ / Redis Insight."
 }

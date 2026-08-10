@@ -26,6 +26,12 @@
   "coordinator": "Coordinator",
   "runningSagas": "Sagas en ejecución",
   "runningSagasPreview": "Vista previa — esperando API",
+  "needsSagaRead": "Requiere ops.saga.read",
+  "nonTerminalSagas": "Sagas RegisterUser no terminales",
+  "sagaLoadFailed": "No se pudieron cargar las sagas",
+  "redisInsightHint": "Redis Insight · :5540",
+  "pgAdminHint": "pgAdmin · :5050",
+  "mongoExpressHint": "Mongo Express · :8081 · full",
   "referenceFlow": "Flujo de referencia",
   "startRegistration": "Iniciar registro",
   "recentActivity": "Actividad reciente",
@@ -37,11 +43,11 @@
   "registerUserSaga": "Registrar usuario (Saga)",
   "observabilityHub": "Centro de observabilidad",
   "deepLinks": "Enlaces profundos",
-  "previewBanner": "Sagas en ejecución, Inbox pendiente, latencia, retraso de cola, despliegues y métricas de contenedor son solo UI hasta que existan API de ops.",
+  "previewBanner": "Inbox pendiente, latencia media, retraso de cola, despliegues y métricas de contenedor siguen en vista previa. Valores Redis/Postgres/Mongo se abren en UIs de gestión.",
   "inboxPending": "Inbox pendiente",
   "avgApiLatency": "Latencia API media",
   "packageCatalog": "Catálogo de paquetes",
   "staticInventory": "Inventario estático",
   "loadFailed": "Error al cargar resumen.",
-  "messagingNote": "Outbox Identity en vivo hoy. Outbox / Inbox multi-servicio siguen siendo vista previa UI en el Centro de mensajería."
+  "messagingNote": "Outbox Identity en vivo hoy. Outbox / Inbox multi-servicio en el Centro de mensajería. Broker y caché: RabbitMQ / Redis Insight."
 }

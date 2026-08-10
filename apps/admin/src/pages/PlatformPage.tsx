@@ -43,6 +43,9 @@ function statusFor(pkg: PlatformPackage, health: ServiceHealthItem[]): ServiceHe
 
 const TOOL_BY_PACKAGE: Record<string, string> = {
   rabbitmq: "rabbitmq",
+  redis: "redisinsight",
+  postgres: "pgadmin",
+  mongodb: "mongoexpress",
   seq: "seq",
   jaeger: "jaeger",
   grafana: "grafana",

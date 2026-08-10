@@ -6,7 +6,7 @@ export type ExternalTool = {
   note?: string;
 };
 
-/** Single source for Seq / Jaeger / Grafana / Prometheus / Rabbit deep links */
+/** Single source for observability + infra management deep links (Compose local SoT). */
 export const EXTERNAL_TOOLS: ExternalTool[] = [
   {
     id: "seq",
@@ -41,7 +41,28 @@ export const EXTERNAL_TOOLS: ExternalTool[] = [
     name: "RabbitMQ",
     url: "http://localhost:15672",
     summary: "Broker management UI",
-    note: "guest / guest (dev)",
+    note: "msf / msf (dev)",
+  },
+  {
+    id: "redisinsight",
+    name: "Redis Insight",
+    url: "http://localhost:5540",
+    summary: "Browse Redis keys and values",
+    note: "Add DB host redis · port 6379",
+  },
+  {
+    id: "pgadmin",
+    name: "pgAdmin",
+    url: "http://localhost:5050",
+    summary: "PostgreSQL browser",
+    note: "admin@example.com / admin · host postgres",
+  },
+  {
+    id: "mongoexpress",
+    name: "Mongo Express",
+    url: "http://localhost:8081",
+    summary: "MongoDB browser",
+    note: "profile full",
   },
 ];
 
@@ -67,10 +88,13 @@ export function ExternalToolLink({
   );
 }
 
+/** Infra/broker tools are omitted from the default obs card grid unless explicitly requested. */
+const DEFAULT_CARD_EXCLUDE = new Set(["rabbitmq", "redisinsight", "pgadmin", "mongoexpress"]);
+
 export function ExternalToolCards({ ids }: { ids?: string[] }) {
   const tools = ids
     ? EXTERNAL_TOOLS.filter((tool) => ids.includes(tool.id))
-    : EXTERNAL_TOOLS.filter((tool) => tool.id !== "rabbitmq");
+    : EXTERNAL_TOOLS.filter((tool) => !DEFAULT_CARD_EXCLUDE.has(tool.id));
 
   return (
     <div className="row row-cards">

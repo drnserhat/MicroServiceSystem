@@ -26,6 +26,12 @@
   "coordinator": "Coordinator",
   "runningSagas": "चल रहे Saga",
   "runningSagasPreview": "पूर्वावलोकन — API की प्रतीक्षा",
+  "needsSagaRead": "ops.saga.read आवश्यक",
+  "nonTerminalSagas": "गैर-टर्मिनल RegisterUser saga",
+  "sagaLoadFailed": "Saga लोड नहीं हो सके",
+  "redisInsightHint": "Redis Insight · :5540",
+  "pgAdminHint": "pgAdmin · :5050",
+  "mongoExpressHint": "Mongo Express · :8081 · full",
   "referenceFlow": "संदर्भ प्रवाह",
   "startRegistration": "पंजीकरण शुरू करें",
   "recentActivity": "हाल की गतिविधि",
@@ -37,11 +43,11 @@
   "registerUserSaga": "उपयोगकर्ता पंजीकृत करें (Saga)",
   "observabilityHub": "अवलोकन केंद्र",
   "deepLinks": "डीप लिंक",
-  "previewBanner": "चल रहे Saga, Inbox लंबित, विलंब, कतार विलंब, डिप्लॉयमेंट और कंटेनर मेट्रिक्स ops API आने तक केवल UI हैं।",
+  "previewBanner": "Inbox लंबित, औसत विलंब, कतार विलंब, डिप्लॉयमेंट और कंटेनर मेट्रिक्स UI पूर्वावलोकन हैं। Redis/Postgres/Mongo मान प्रबंधन UI में खुलते हैं।",
   "inboxPending": "Inbox लंबित",
   "avgApiLatency": "औसत API विलंब",
   "packageCatalog": "पैकेज कैटलॉग",
   "staticInventory": "स्थिर सूची",
   "loadFailed": "अवलोकन लोड करने में विफल।",
-  "messagingNote": "आज लाइव Identity Outbox। मल्टी-सर्विस Outbox / Inbox संदेश केंद्र में UI पूर्वावलोकन हैं।"
+  "messagingNote": "आज लाइव Identity Outbox। मल्टी-सर्विस Outbox / Inbox संदेश केंद्र में। ब्रोकर और कैश: RabbitMQ / Redis Insight।"
 }

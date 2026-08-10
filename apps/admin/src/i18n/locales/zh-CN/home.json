@@ -26,6 +26,12 @@
   "coordinator": "Coordinator",
   "runningSagas": "运行中的 Saga",
   "runningSagasPreview": "预览 — 等待 API",
+  "needsSagaRead": "需要 ops.saga.read",
+  "nonTerminalSagas": "非终态 RegisterUser Saga",
+  "sagaLoadFailed": "无法加载 Saga",
+  "redisInsightHint": "Redis Insight · :5540",
+  "pgAdminHint": "pgAdmin · :5050",
+  "mongoExpressHint": "Mongo Express · :8081 · full",
   "referenceFlow": "参考流程",
   "startRegistration": "开始注册",
   "recentActivity": "最近活动",
@@ -37,11 +43,11 @@
   "registerUserSaga": "注册用户 (Saga)",
   "observabilityHub": "可观测性中心",
   "deepLinks": "深度链接",
-  "previewBanner": "运行中的 Saga、Inbox 待处理、延迟、队列延迟、部署和容器指标在 ops API 可用之前仅为 UI 展示。",
+  "previewBanner": "Inbox 待处理、平均延迟、队列延迟、部署和容器指标仍为 UI 预览。Redis/Postgres/Mongo 数据在管理界面中打开。",
   "inboxPending": "Inbox 待处理",
   "avgApiLatency": "平均 API 延迟",
   "packageCatalog": "包目录",
   "staticInventory": "静态清单",
   "loadFailed": "加载概览失败。",
-  "messagingNote": "当前 Identity Outbox 为实时数据。多服务 Outbox / Inbox 在消息中心仍为 UI 预览。"
+  "messagingNote": "当前 Identity Outbox 为实时数据。多服务 Outbox / Inbox 在消息中心。代理与缓存：RabbitMQ / Redis Insight。"
 }

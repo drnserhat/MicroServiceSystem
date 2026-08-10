@@ -2,8 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ApiClientError } from "@/api/client";
-import { getHealthAggregate, getOutboxSnapshot, OUTBOX_SERVICES, type OutboxService } from "@/api/ops";
-import type { OutboxSummary, ServiceHealthItem } from "@/api/types";
+import {
+  getHealthAggregate,
+  getInboxSummary,
+  getOutboxSnapshot,
+  OUTBOX_SERVICES,
+  type OutboxService,
+} from "@/api/ops";
+import type { InboxSummary, OutboxSummary, ServiceHealthItem } from "@/api/types";
 import { FrameworkPermissions } from "@/auth/permissionCodes";
 import { RequirePermission } from "@/auth/RequirePermission";
 import { useAuth } from "@/auth/AuthContext";
@@ -76,6 +82,7 @@ function ServicesInner() {
 
   const [health, setHealth] = useState<ServiceHealthItem[]>([]);
   const [outboxByService, setOutboxByService] = useState<Partial<Record<OutboxService, OutboxSummary>>>({});
+  const [inboxByService, setInboxByService] = useState<Partial<Record<OutboxService, InboxSummary>>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -108,6 +115,19 @@ function ServicesInner() {
                 .then((data) => {
                   if (!cancelled) {
                     setOutboxByService((prev) => ({ ...prev, [service]: data.summary }));
+                  }
+                })
+                .catch(() => undefined),
+            );
+          }
+        }
+        if (can(FrameworkPermissions.OpsInboxRead)) {
+          for (const service of OUTBOX_SERVICES) {
+            tasks.push(
+              getInboxSummary(service)
+                .then((data) => {
+                  if (!cancelled) {
+                    setInboxByService((prev) => ({ ...prev, [service]: data }));
                   }
                 })
                 .catch(() => undefined),
@@ -301,6 +321,11 @@ function ServicesInner() {
               ? (outboxByService[selected.id as OutboxService] ?? null)
               : null
           }
+          inbox={
+            (OUTBOX_SERVICES as readonly string[]).includes(selected.id)
+              ? (inboxByService[selected.id as OutboxService] ?? null)
+              : null
+          }
           outboxService={
             (OUTBOX_SERVICES as readonly string[]).includes(selected.id)
               ? (selected.id as OutboxService)
@@ -322,6 +347,7 @@ function ServiceDetail({
   pkg,
   live,
   outbox,
+  inbox,
   outboxService,
   pinned,
   onTogglePin,
@@ -333,6 +359,7 @@ function ServiceDetail({
   pkg: PlatformPackage;
   live?: ServiceHealthItem;
   outbox: OutboxSummary | null;
+  inbox: InboxSummary | null;
   outboxService: OutboxService | null;
   pinned: boolean;
   onTogglePin: () => void;
@@ -380,7 +407,18 @@ function ServiceDetail({
       </ul>
 
       <div className="card">
-        <div className="card-body">{renderTab(activeTab, { pkg, live, outbox, outboxService, openApi, dependsOn, downstream })}</div>
+        <div className="card-body">
+          {renderTab(activeTab, {
+            pkg,
+            live,
+            outbox,
+            inbox,
+            outboxService,
+            openApi,
+            dependsOn,
+            downstream,
+          })}
+        </div>
       </div>
     </>
   );
@@ -401,13 +439,14 @@ function renderTab(
     pkg: PlatformPackage;
     live?: ServiceHealthItem;
     outbox: OutboxSummary | null;
+    inbox: InboxSummary | null;
     outboxService: OutboxService | null;
     openApi?: string;
     dependsOn: string[];
     downstream: string[];
   },
 ) {
-  const { pkg, live, outbox, outboxService, openApi, dependsOn, downstream } = ctx;
+  const { pkg, live, outbox, inbox, outboxService, openApi, dependsOn, downstream } = ctx;
 
   switch (tab) {
     case "overview":
@@ -490,29 +529,47 @@ function renderTab(
       );
     case "database":
       return (
-        <PreviewPanel title="Database ownership / connection pool">
-          <p className="mb-0 text-secondary">
+        <div>
+          <p className="text-secondary">
             Database-per-service. Expected store:{" "}
-            <strong>{pkg.id === "logging" ? "MongoDB" : "PostgreSQL"}</strong> (catalog heuristic).
+            <strong>{pkg.id === "logging" || pkg.id === "mongodb" ? "MongoDB" : "PostgreSQL"}</strong>{" "}
+            (catalog heuristic). Browse data in the management UI — Admin does not proxy queries.
           </p>
-        </PreviewPanel>
+          <div className="btn-list">
+            {pkg.id === "logging" || pkg.id === "mongodb" ? (
+              <ExternalToolLink id="mongoexpress" className="btn" />
+            ) : (
+              <ExternalToolLink id="pgadmin" className="btn" />
+            )}
+          </div>
+        </div>
       );
     case "redis":
       return (
-        <PreviewPanel title="Redis usage">
-          <p className="mb-0 text-secondary">Cache / distributed primitives — no Redis ops API in admin yet.</p>
-        </PreviewPanel>
+        <div>
+          <p className="text-secondary">
+            Cache and distributed primitives. Key/value inspection opens in Redis Insight (Compose),
+            not inside this console.
+          </p>
+          <div className="btn-list">
+            <ExternalToolLink id="redisinsight" className="btn" />
+          </div>
+        </div>
       );
     case "rabbitmq":
       return (
-        <PreviewPanel title="RabbitMQ bindings">
+        <div>
+          <p className="text-secondary mb-2">
+            Broker topology and queue depths live in RabbitMQ Management. Outbox/inbox counts are
+            Postgres-backed ops APIs in Messaging Center.
+          </p>
           <div className="btn-list">
             <ExternalToolLink id="rabbitmq" className="btn" />
             <Link className="btn" to="/messaging">
               Messaging Center
             </Link>
           </div>
-        </PreviewPanel>
+        </div>
       );
     case "outbox":
       return outboxService && outbox ? (
@@ -548,9 +605,53 @@ function renderTab(
         </PreviewPanel>
       );
     case "inbox":
-      return (
+      return outboxService && inbox ? (
+        <div className="datagrid">
+          <div className="datagrid-item">
+            <div className="datagrid-title">Service</div>
+            <div className="datagrid-content">
+              <code>{inbox.service}</code>
+            </div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Processed</div>
+            <div className="datagrid-content">{inbox.processedCount}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Open</div>
+            <div className="datagrid-content">{inbox.openCount}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">In flight</div>
+            <div className="datagrid-content">{inbox.inFlightCount}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Failed</div>
+            <div className="datagrid-content">{inbox.failedCount}</div>
+          </div>
+          <div className="datagrid-item">
+            <div className="datagrid-title">Actions</div>
+            <div className="datagrid-content">
+              <Link className="btn btn-sm" to={`/messaging/inbox?service=${outboxService}`}>
+                Open Messaging Center
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : (
         <PreviewPanel title="Inbox / idempotent consumers">
-          <p className="mb-0 text-secondary">Inbox metrics are not exposed via gateway yet.</p>
+          <p className="mb-0 text-secondary">
+            {outboxService
+              ? "Inbox summary unavailable (needs ops.inbox.read or service offline)."
+              : "This package has no inbox ops surface."}
+          </p>
+          {outboxService ? (
+            <div className="btn-list mt-2">
+              <Link className="btn btn-sm" to={`/messaging/inbox?service=${outboxService}`}>
+                Messaging Center
+              </Link>
+            </div>
+          ) : null}
         </PreviewPanel>
       );
     case "metrics":

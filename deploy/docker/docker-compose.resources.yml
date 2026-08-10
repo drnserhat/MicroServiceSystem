@@ -58,6 +58,18 @@ services:
     mem_limit: 512m
     mem_reservation: 256m
 
+  redisinsight:
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  pgadmin:
+    mem_limit: 256m
+    mem_reservation: 128m
+
+  mongo-express:
+    mem_limit: 128m
+    mem_reservation: 64m
+
   seq:
     mem_limit: 512m
     mem_reservation: 256m

@@ -335,6 +335,11 @@ export function MapNodeInspector({
             </>
           ) : null}
           {node.id === "rabbitmq" ? <ExternalToolLink id="rabbitmq" className="btn" /> : null}
+          {node.id === "redis" ? <ExternalToolLink id="redisinsight" className="btn" /> : null}
+          {node.id === "postgres" ? <ExternalToolLink id="pgadmin" className="btn" /> : null}
+          {node.id === "mongodb" || node.id === "mongo" ? (
+            <ExternalToolLink id="mongoexpress" className="btn" />
+          ) : null}
           {node.healthService ? (
             <Link className="btn" to={`/services/${node.id}`}>
               Service Center
