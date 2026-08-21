@@ -1,4 +1,6 @@
-import { OUTBOX_SERVICES, type OutboxService } from "@/api/ops";
+import { LITE_OUTBOX_SERVICES, OUTBOX_SERVICES, type OutboxService } from "@/api/ops";
+
+const LITE_SET = new Set<string>(LITE_OUTBOX_SERVICES);
 
 export function parseOutboxService(value: string | null): OutboxService {
   if (value && (OUTBOX_SERVICES as readonly string[]).includes(value)) {
@@ -24,7 +26,7 @@ export function OutboxServiceSelect({
     >
       {OUTBOX_SERVICES.map((service) => (
         <option key={service} value={service}>
-          {service}
+          {LITE_SET.has(service) ? service : `${service} (full)`}
         </option>
       ))}
     </select>

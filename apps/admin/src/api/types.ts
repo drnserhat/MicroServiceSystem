@@ -104,6 +104,25 @@ export type TenantItem = {
   isActive: boolean;
 };
 
+export type TenantDatabaseBindingItem = {
+  id: string;
+  tenantId: string;
+  serviceKey: string;
+  clusterId: string;
+  clusterSlug: string;
+  databaseName: string;
+  username: string;
+  status: string;
+  schemaVersion?: string | null;
+  lastError?: string | null;
+};
+
+export type TenantDatabaseHealthResult = {
+  healthy: boolean;
+  status: string;
+  detail?: string | null;
+};
+
 export type IdentityUserItem = {
   id: string;
   email: string;

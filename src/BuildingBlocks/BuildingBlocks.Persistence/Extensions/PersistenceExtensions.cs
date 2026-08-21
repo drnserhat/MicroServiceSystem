@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MicroServiceSystem.BuildingBlocks.Messaging.Abstractions;
 using MicroServiceSystem.BuildingBlocks.Persistence.Abstractions;
 using MicroServiceSystem.BuildingBlocks.Persistence.Configuration;
@@ -10,11 +11,13 @@ using MicroServiceSystem.BuildingBlocks.Persistence.Inbox;
 using MicroServiceSystem.BuildingBlocks.Persistence.Interceptors;
 using MicroServiceSystem.BuildingBlocks.Persistence.Mongo;
 using MicroServiceSystem.BuildingBlocks.Persistence.Outbox;
+using MicroServiceSystem.BuildingBlocks.Persistence.Tenancy;
 using MicroServiceSystem.SharedKernel.Abstractions;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
+using Npgsql;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 using ContextsCompat = MicroServiceSystem.BuildingBlocks.Persistence.Contexts;
 
@@ -41,7 +44,45 @@ public static class PersistenceExtensions
             ?? throw new InvalidOperationException(
                 $"Configuration section '{PostgresOptions.SectionName}' is missing.");
 
-        // Contexts facade is what templates inject; EntityFramework type is what real services inject.
+        if (string.Equals(postgresOptions.Mode, PostgresOptions.ModeTenantScoped, StringComparison.OrdinalIgnoreCase))
+        {
+            return services.AddPostgresDbContextTenantScoped<TContext>(configuration, configureNpgsql);
+        }
+
+        RegisterSharedInfrastructure<TContext>(services, postgresOptions, configureNpgsql);
+        return services;
+    }
+
+    /// <summary>
+    /// Tenant-scoped DbContext: connection is resolved from ambient <see cref="ICurrentTenant"/> +
+    /// <see cref="ITenantConnectionStringProvider"/> and pooled via <see cref="INpgsqlDataSourceCache"/>.
+    /// </summary>
+    public static IServiceCollection AddPostgresDbContextTenantScoped<TContext>(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<NpgsqlDbContextOptionsBuilder>? configureNpgsql = null)
+        where TContext : FrameworkDbContext
+    {
+        services.AddOptions<PostgresOptions>()
+            .Bind(configuration.GetSection(PostgresOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<NpgsqlDataSourceCacheOptions>()
+            .Bind(configuration.GetSection(NpgsqlDataSourceCacheOptions.SectionName));
+
+        PostgresOptions postgresOptions = configuration.GetSection(PostgresOptions.SectionName).Get<PostgresOptions>()
+            ?? throw new InvalidOperationException(
+                $"Configuration section '{PostgresOptions.SectionName}' is missing.");
+
+        if (string.IsNullOrWhiteSpace(postgresOptions.ServiceKey))
+        {
+            throw new InvalidOperationException(
+                $"{PostgresOptions.SectionName}:ServiceKey is required when Mode=TenantScoped.");
+        }
+
+        services.AddSingleton<INpgsqlDataSourceCache, LruNpgsqlDataSourceCache>();
+
         services.AddScoped<ContextsCompat.DbContextDependencies>();
         services.AddScoped<DbContextDependencies>(
             serviceProvider => serviceProvider.GetRequiredService<ContextsCompat.DbContextDependencies>());
@@ -49,34 +90,70 @@ public static class PersistenceExtensions
         services.AddScoped<SoftDeleteInterceptor>();
         services.AddScoped<TenantAssignmentInterceptor>();
 
+        string serviceKey = postgresOptions.ServiceKey;
+
         services.AddDbContext<TContext>((serviceProvider, builder) =>
         {
-            builder.UseNpgsql(postgresOptions.ConnectionString, npgsqlOptions =>
-            {
-                npgsqlOptions.CommandTimeout(postgresOptions.CommandTimeoutSeconds);
-                npgsqlOptions.EnableRetryOnFailure(
-                    postgresOptions.MaxRetryCount,
-                    TimeSpan.FromSeconds(postgresOptions.MaxRetryDelaySeconds),
-                    errorCodesToAdd: null);
-                npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history", postgresOptions.Schema);
+            PostgresOptions options = serviceProvider.GetRequiredService<IOptions<PostgresOptions>>().Value;
+            ICurrentTenant currentTenant = serviceProvider.GetRequiredService<ICurrentTenant>();
 
-                configureNpgsql?.Invoke(npgsqlOptions);
-            });
+            if (currentTenant.Id is null)
+            {
+                // Background outbox/inbox processors and [TenantIndependent] ops use the bootstrap
+                // connection (Compose template DB). Branch OLTP still requires ambient tenant.
+                builder.UseNpgsql(options.ConnectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.CommandTimeout(options.CommandTimeoutSeconds);
+                    npgsqlOptions.EnableRetryOnFailure(
+                        options.MaxRetryCount,
+                        TimeSpan.FromSeconds(options.MaxRetryDelaySeconds),
+                        errorCodesToAdd: null);
+                    npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history", options.Schema);
+
+                    configureNpgsql?.Invoke(npgsqlOptions);
+                });
+            }
+            else
+            {
+                ITenantConnectionStringProvider connectionProvider =
+                    serviceProvider.GetRequiredService<ITenantConnectionStringProvider>();
+                string connectionString = connectionProvider
+                    .ResolveAsync(currentTenant.Id.Value, serviceKey)
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult();
+
+                INpgsqlDataSourceCache cache = serviceProvider.GetRequiredService<INpgsqlDataSourceCache>();
+                NpgsqlDataSource dataSource = cache.GetOrAdd(currentTenant.Id.Value, serviceKey, connectionString);
+
+                builder.UseNpgsql(dataSource, npgsqlOptions =>
+                {
+                    npgsqlOptions.CommandTimeout(options.CommandTimeoutSeconds);
+                    npgsqlOptions.EnableRetryOnFailure(
+                        options.MaxRetryCount,
+                        TimeSpan.FromSeconds(options.MaxRetryDelaySeconds),
+                        errorCodesToAdd: null);
+                    npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history", options.Schema);
+
+                    configureNpgsql?.Invoke(npgsqlOptions);
+                });
+            }
 
             builder.AddInterceptors(
                 serviceProvider.GetRequiredService<SoftDeleteInterceptor>(),
                 serviceProvider.GetRequiredService<AuditableEntityInterceptor>(),
                 serviceProvider.GetRequiredService<TenantAssignmentInterceptor>());
 
-            builder.EnableSensitiveDataLogging(postgresOptions.EnableSensitiveDataLogging);
-            builder.EnableDetailedErrors(postgresOptions.EnableDetailedErrors);
+            builder.EnableSensitiveDataLogging(options.EnableSensitiveDataLogging);
+            builder.EnableDetailedErrors(options.EnableDetailedErrors);
         });
 
         services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<TContext>());
 
+        // Bootstrap migrations still target Persistence:Postgres:ConnectionString (shared template DB).
         if (postgresOptions.ApplyMigrationsOnStartup)
         {
-            services.AddHostedService<DatabaseMigrationService<TContext>>();
+            services.AddHostedService<SharedConnectionMigrationService<TContext>>();
         }
 
         return services;
@@ -143,5 +220,49 @@ public static class PersistenceExtensions
         services.AddSingleton<IMongoContext, MongoContext>();
 
         return services;
+    }
+
+    private static void RegisterSharedInfrastructure<TContext>(
+        IServiceCollection services,
+        PostgresOptions postgresOptions,
+        Action<NpgsqlDbContextOptionsBuilder>? configureNpgsql)
+        where TContext : FrameworkDbContext
+    {
+        services.AddScoped<ContextsCompat.DbContextDependencies>();
+        services.AddScoped<DbContextDependencies>(
+            serviceProvider => serviceProvider.GetRequiredService<ContextsCompat.DbContextDependencies>());
+        services.AddScoped<AuditableEntityInterceptor>();
+        services.AddScoped<SoftDeleteInterceptor>();
+        services.AddScoped<TenantAssignmentInterceptor>();
+
+        services.AddDbContext<TContext>((serviceProvider, builder) =>
+        {
+            builder.UseNpgsql(postgresOptions.ConnectionString, npgsqlOptions =>
+            {
+                npgsqlOptions.CommandTimeout(postgresOptions.CommandTimeoutSeconds);
+                npgsqlOptions.EnableRetryOnFailure(
+                    postgresOptions.MaxRetryCount,
+                    TimeSpan.FromSeconds(postgresOptions.MaxRetryDelaySeconds),
+                    errorCodesToAdd: null);
+                npgsqlOptions.MigrationsHistoryTable("__ef_migrations_history", postgresOptions.Schema);
+
+                configureNpgsql?.Invoke(npgsqlOptions);
+            });
+
+            builder.AddInterceptors(
+                serviceProvider.GetRequiredService<SoftDeleteInterceptor>(),
+                serviceProvider.GetRequiredService<AuditableEntityInterceptor>(),
+                serviceProvider.GetRequiredService<TenantAssignmentInterceptor>());
+
+            builder.EnableSensitiveDataLogging(postgresOptions.EnableSensitiveDataLogging);
+            builder.EnableDetailedErrors(postgresOptions.EnableDetailedErrors);
+        });
+
+        services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<TContext>());
+
+        if (postgresOptions.ApplyMigrationsOnStartup)
+        {
+            services.AddHostedService<DatabaseMigrationService<TContext>>();
+        }
     }
 }

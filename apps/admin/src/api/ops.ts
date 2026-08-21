@@ -1,12 +1,12 @@
 import { apiRequest } from "./client";
 import type { HealthAggregate, InboxSummary, OutboxSnapshot, SagaItem, SagaList } from "./types";
 
+/** Lite-stack services that expose outbox/inbox ops without --profile full. */
+export const LITE_OUTBOX_SERVICES = ["identity", "user", "settings", "coordinator"] as const;
+
 /** Gateway path prefixes that expose Identity-shaped outbox/inbox ops (Phase 11). */
 export const OUTBOX_SERVICES = [
-  "identity",
-  "user",
-  "settings",
-  "coordinator",
+  ...LITE_OUTBOX_SERVICES,
   "audit",
   "notification",
   "file",
@@ -14,6 +14,7 @@ export const OUTBOX_SERVICES = [
 ] as const;
 
 export type OutboxService = (typeof OUTBOX_SERVICES)[number];
+export type LiteOutboxService = (typeof LITE_OUTBOX_SERVICES)[number];
 
 export function getHealthAggregate(): Promise<HealthAggregate> {
   return apiRequest<HealthAggregate>("/ops/api/v1/health/services");

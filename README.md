@@ -63,7 +63,7 @@ dotnet test MicroServiceSystem.slnx
 
 ### Local stack (Docker)
 
-Default is a **lite** stack (postgres, redis, rabbitmq, redisinsight, pgadmin, identity, user, coordinator, gateway, admin) with memory caps — suitable for Docker Desktop. Optional services and observability use Compose profiles.
+Default is a **lite** stack (postgres, redis, rabbitmq, identity, user, coordinator, settings, gateway, admin) with memory caps — suitable for Docker Desktop. Optional services, observability, and DB GUIs use Compose profiles.
 
 ```bash
 # lite (~3–4 GB) — recommended for local work
@@ -71,6 +71,10 @@ docker compose -f deploy/docker/docker-compose.yml \
   -f deploy/docker/docker-compose.apps.yml \
   -f deploy/docker/docker-compose.resources.yml \
   up -d --build
+
+# optional DB GUIs only (pgAdmin, Redis Insight) — not part of lite
+docker compose -f deploy/docker/docker-compose.yml \
+  --profile tools up -d
 
 # full stack (~8–12 GB): all services + mongo + Seq/Prometheus/Grafana
 docker compose -f deploy/docker/docker-compose.yml \
@@ -123,7 +127,7 @@ docker compose -p microsystem \
 
 With the observability overlay, apps export OTLP to Jaeger (`http://localhost:16686`). Prometheus scrapes `/metrics` on every service (`http://localhost:9090`); Grafana is at `http://localhost:3000` (admin/admin).
 
-**Infra browsers (lite Compose):** Redis Insight `http://localhost:5540` (add host `redis:6379`), pgAdmin `http://localhost:5050` (`admin@example.com` / `admin`), RabbitMQ `http://localhost:15672` (`msf` / `msf`). Mongo Express `http://localhost:8081` needs `--profile full`. Admin deep-links these; it does not embed key/table dumps.
+**Infra browsers (optional):** Redis Insight / pgAdmin need `--profile tools` (`:5540` / `:5050`). RabbitMQ Management stays with the broker (`:15672`). Mongo Express / Seq / Jaeger / Grafana need `--profile full` or `--profile obs`. Admin may deep-link these; it does not embed key/table dumps.
 
 On push to `main`/`master`/`develop`, CI publishes container images to GHCR as `ghcr.io/<owner>/msf-<service>:<sha|branch|latest>` (includes **`msf-admin`** and **`msf-migrate`**).
 
@@ -231,6 +235,7 @@ commands, queries, validators, handlers, mappings, EF configuration and the vers
 
 ## Multi tenancy
 
-Tenant isolation is shared database per service with a `TenantId` discriminator. The tenant is resolved
-from the access token first and from the gateway forwarded header second, then applied by EF Core global
-query filters and tenant scoped cache keys.
+**Control plane (Identity):** shared catalog database.  
+**User data plane (Phase 1):** physical **database per branch (şube/tenant)** on a Postgres fleet — see [docs/adr-branch-db-fleet.md](docs/adr-branch-db-fleet.md).
+
+JWT claim `tenant_id` is the routing key. User pods resolve Host/Database/Username + `SecretRef` via Identity’s internal binding API (no passwords on the wire). EF `TenantId` filters remain as a second safety belt. Other services still use shared DB + discriminator until migrated to the same pattern.

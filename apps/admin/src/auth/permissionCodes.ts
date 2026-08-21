@@ -15,6 +15,8 @@ export const FrameworkPermissions = {
   RegistrationUsersCreate: "registration.users.create",
   IdentityTenantsRead: "identity.tenants.read",
   IdentityTenantsWrite: "identity.tenants.write",
+  IdentityTenantDatabasesRead: "identity.tenant-databases.read",
+  IdentityTenantDatabasesWrite: "identity.tenant-databases.write",
   IdentityUsersRead: "identity.users.read",
   IdentityUsersDisable: "identity.users.disable",
   IdentityRolesRead: "identity.roles.read",

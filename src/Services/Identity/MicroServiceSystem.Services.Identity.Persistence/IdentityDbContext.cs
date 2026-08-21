@@ -17,6 +17,10 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
 
+    public DbSet<PostgresCluster> PostgresClusters => Set<PostgresCluster>();
+
+    public DbSet<TenantDatabaseBinding> TenantDatabaseBindings => Set<TenantDatabaseBinding>();
+
     protected override string Schema => DefaultSchema;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

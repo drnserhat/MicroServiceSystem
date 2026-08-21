@@ -34,6 +34,8 @@ public static class FrameworkPermissions
 
     public const string IdentityTenantsRead = "identity.tenants.read";
     public const string IdentityTenantsWrite = "identity.tenants.write";
+    public const string IdentityTenantDatabasesRead = "identity.tenant-databases.read";
+    public const string IdentityTenantDatabasesWrite = "identity.tenant-databases.write";
     public const string IdentityUsersRead = "identity.users.read";
     public const string IdentityUsersDisable = "identity.users.disable";
     public const string IdentityRolesRead = "identity.roles.read";
@@ -79,6 +81,8 @@ public static class FrameworkPermissions
         RegistrationUsersCreate,
         IdentityTenantsRead,
         IdentityTenantsWrite,
+        IdentityTenantDatabasesRead,
+        IdentityTenantDatabasesWrite,
         IdentityUsersRead,
         IdentityUsersDisable,
         IdentityRolesRead,
@@ -113,6 +117,8 @@ public static class FrameworkPermissions
             RegistrationUsersCreate,
             IdentityTenantsRead,
             IdentityTenantsWrite,
+            IdentityTenantDatabasesRead,
+            IdentityTenantDatabasesWrite,
             IdentityUsersRead,
             IdentityUsersDisable,
             IdentityRolesRead,

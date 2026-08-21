@@ -40,3 +40,27 @@ public interface ITenantRepository : IRepository<Tenant, Guid>
 {
     Task<Tenant?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default);
 }
+
+public interface IPostgresClusterRepository : IRepository<PostgresCluster, Guid>
+{
+    Task<PostgresCluster?> FindDefaultAsync(CancellationToken cancellationToken = default);
+
+    Task<PostgresCluster?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default);
+}
+
+public interface ITenantDatabaseBindingRepository : IRepository<TenantDatabaseBinding, Guid>
+{
+    Task<TenantDatabaseBinding?> FindByTenantAndServiceAsync(
+        Guid tenantId,
+        string serviceKey,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TenantDatabaseBinding>> ListByTenantAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TenantDatabaseBinding>> ListByTenantStatusAsync(
+        Guid tenantId,
+        TenantDatabaseStatus status,
+        CancellationToken cancellationToken = default);
+}

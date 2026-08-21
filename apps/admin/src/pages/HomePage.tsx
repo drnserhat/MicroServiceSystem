@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { listAuditEntries } from "@/api/audit";
-import { ApiClientError, isServiceUnavailable } from "@/api/client";
+import { ApiClientError } from "@/api/client";
 import { listLogs } from "@/api/logging";
 import { getHealthAggregate, getOutboxSnapshot, listSagas } from "@/api/ops";
 import type { AuditEntry, OutboxSummary, ServiceHealthItem, SystemLog } from "@/api/types";
@@ -61,10 +61,12 @@ export function HomePage() {
       setError(null);
       try {
         const tasks: Promise<void>[] = [];
+        let healthItems: ServiceHealthItem[] = [];
 
         if (can(FrameworkPermissions.OpsHealthRead)) {
           tasks.push(
             getHealthAggregate().then((data) => {
+              healthItems = data.services;
               setHealth(data.services);
               setCheckedAt(data.checkedAtUtc);
             }),
@@ -90,27 +92,37 @@ export function HomePage() {
           );
         }
 
-        if (can(FrameworkPermissions.AuditEntriesRead)) {
-          tasks.push(
+        // Resolve health first so lite stacks do not hammer full-profile APIs (502 noise).
+        await Promise.allSettled(tasks);
+
+        const auditReachable = healthItems.some((s) => s.service === "audit" && s.reachable);
+        const loggingReachable = healthItems.some((s) => s.service === "logging" && s.reachable);
+
+        const feedTasks: Promise<void>[] = [];
+        if (can(FrameworkPermissions.AuditEntriesRead) && auditReachable) {
+          feedTasks.push(
             listAuditEntries(1, 8)
               .then((data) => setAudits([...data.items]))
-              .catch((err) => {
-                if (!isServiceUnavailable(err)) {
-                  /* keep empty */
-                }
-              }),
+              .catch(() => setAudits([])),
           );
+        } else {
+          setAudits([]);
         }
 
-        if (can(FrameworkPermissions.LoggingLogsRead)) {
-          tasks.push(
+        if (can(FrameworkPermissions.LoggingLogsRead) && loggingReachable) {
+          feedTasks.push(
             listLogs({ pageNumber: 1, pageSize: 8 })
               .then((data) => setLogs([...data.items]))
-              .catch(() => undefined),
+              .catch(() => setLogs([])),
           );
+        } else {
+          setLogs([]);
         }
 
-        await Promise.allSettled(tasks);
+        if (feedTasks.length > 0) {
+          await Promise.allSettled(feedTasks);
+        }
+
         setUpdatedAt(new Date());
       } catch (err) {
         setError(err instanceof ApiClientError ? err.message : t("loadFailed"));
@@ -240,6 +252,9 @@ export function HomePage() {
     }));
     return [...fromAudit, ...fromLogs].slice(0, 10);
   }, [audits, logs]);
+
+  const auditReachable = health.some((s) => s.service === "audit" && s.reachable);
+  const loggingReachable = health.some((s) => s.service === "logging" && s.reachable);
 
   const lastUpdatedLabel = updatedAt
     ? t("updated", { time: updatedAt.toLocaleTimeString() })
@@ -435,8 +450,8 @@ export function HomePage() {
               empty={t("activityEmpty")}
               actions={
                 <div className="btn-list">
-                  <Link to="/audit">{t("observability:audit")}</Link>
-                  <Link to="/logs">{t("observability:logs")}</Link>
+                  {auditReachable ? <Link to="/audit">{t("observability:audit")}</Link> : null}
+                  {loggingReachable ? <Link to="/logs">{t("observability:logs")}</Link> : null}
                 </div>
               }
             />

@@ -14,6 +14,12 @@ This chart ships Gateway, Admin SPA, and APIs. It is **not** a cluster operator 
 - GHCR pull access (`imagePullSecrets` if packages are private)
 - Optional: Ingress controller when `ingress.enabled=true`
 
+## Branch database fleet (Phase 1)
+
+Physical User DB per tenant (şube) is documented in **[docs/adr-branch-db-fleet.md](../../docs/adr-branch-db-fleet.md)**.
+
+Compose SoT: one Postgres host, many databases (`user`, `user_<slug>`, …). Identity needs `Persistence__Postgres__AdminConnection` + `AppPassword`; User runs `Persistence__Postgres__Mode=TenantScoped`. At 1000+ connections, put **PgBouncer / RDS Proxy** in front of the fleet when churn is measured.
+
 ## Refuse placeholders (checklist)
 
 Full go/no-go gate (secrets, migrate, TLS, smoke): **[docs/prod-checklist-p0.md](../../docs/prod-checklist-p0.md)**.

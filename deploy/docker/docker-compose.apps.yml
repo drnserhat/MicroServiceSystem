@@ -59,7 +59,11 @@
       Authentication__InternalService__Enabled: "true"
       Authentication__InternalService__ApiKey: dev-internal-api-key-change-me
       Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=identity;Username=msf;Password=msf
+      Persistence__Postgres__AdminConnection: Host=postgres;Port=5432;Database=postgres;Username=msf;Password=msf
+      Persistence__Postgres__AppPassword: msf
       Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Services__User__BaseUrl: http://user:8080/
+      BranchDatabase__DefaultHost: postgres
       Cache__ConnectionString: redis:6379
       Messaging__RabbitMq__Host: rabbitmq
       Messaging__RabbitMq__UserName: msf
@@ -93,7 +97,11 @@
       Authentication__InternalService__Enabled: "true"
       Authentication__InternalService__ApiKey: dev-internal-api-key-change-me
       Persistence__Postgres__ConnectionString: Host=postgres;Port=5432;Database=user;Username=msf;Password=msf
+      Persistence__Postgres__Mode: TenantScoped
+      Persistence__Postgres__ServiceKey: user
+      Persistence__Postgres__AppPassword: msf
       Persistence__Postgres__ApplyMigrationsOnStartup: "true"
+      Services__Identity__BaseUrl: http://identity:8080/
       Cache__ConnectionString: redis:6379
       Messaging__RabbitMq__Host: rabbitmq
       Messaging__RabbitMq__UserName: msf
@@ -106,6 +114,8 @@
       retries: 8
       start_period: 40s
     depends_on:
+      identity:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:

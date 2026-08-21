@@ -103,13 +103,18 @@ function ServicesInner() {
       setLoading(true);
       setError(null);
       try {
-        const tasks: Promise<void>[] = [
-          getHealthAggregate().then((data) => {
-            if (!cancelled) setHealth(data.services);
-          }),
-        ];
+        const healthData = await getHealthAggregate();
+        if (cancelled) return;
+        setHealth(healthData.services);
+
+        const reachable = new Set(
+          healthData.services.filter((s) => s.reachable).map((s) => s.service),
+        );
+
+        const tasks: Promise<void>[] = [];
         if (can(FrameworkPermissions.OpsOutboxRead)) {
           for (const service of OUTBOX_SERVICES) {
+            if (!reachable.has(service)) continue;
             tasks.push(
               getOutboxSnapshot(service, 5)
                 .then((data) => {
@@ -123,6 +128,7 @@ function ServicesInner() {
         }
         if (can(FrameworkPermissions.OpsInboxRead)) {
           for (const service of OUTBOX_SERVICES) {
+            if (!reachable.has(service)) continue;
             tasks.push(
               getInboxSummary(service)
                 .then((data) => {

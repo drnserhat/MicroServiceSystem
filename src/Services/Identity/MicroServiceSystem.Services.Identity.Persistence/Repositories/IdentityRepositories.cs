@@ -68,3 +68,44 @@ public sealed class TenantRepository(IdentityDbContext context)
             tenant => tenant.Slug == Tenant.NormalizeSlug(slug),
             cancellationToken);
 }
+
+public sealed class PostgresClusterRepository(IdentityDbContext context)
+    : EfRepository<PostgresCluster, Guid>(context), IPostgresClusterRepository
+{
+    public Task<PostgresCluster?> FindDefaultAsync(CancellationToken cancellationToken = default) =>
+        Set.FirstOrDefaultAsync(cluster => cluster.IsDefault && cluster.IsActive, cancellationToken);
+
+    public Task<PostgresCluster?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default) =>
+        Set.FirstOrDefaultAsync(
+            cluster => cluster.Slug == PostgresCluster.NormalizeSlug(slug),
+            cancellationToken);
+}
+
+public sealed class TenantDatabaseBindingRepository(IdentityDbContext context)
+    : EfRepository<TenantDatabaseBinding, Guid>(context), ITenantDatabaseBindingRepository
+{
+    public Task<TenantDatabaseBinding?> FindByTenantAndServiceAsync(
+        Guid tenantId,
+        string serviceKey,
+        CancellationToken cancellationToken = default)
+    {
+        string key = KnownServiceKeys.Normalize(serviceKey);
+        return Set.FirstOrDefaultAsync(
+            binding => binding.TenantId == tenantId && binding.ServiceKey == key,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<TenantDatabaseBinding>> ListByTenantAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default) =>
+        await Set.Where(binding => binding.TenantId == tenantId)
+            .OrderBy(binding => binding.ServiceKey)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<TenantDatabaseBinding>> ListByTenantStatusAsync(
+        Guid tenantId,
+        TenantDatabaseStatus status,
+        CancellationToken cancellationToken = default) =>
+        await Set.Where(binding => binding.TenantId == tenantId && binding.Status == status)
+            .ToListAsync(cancellationToken);
+}

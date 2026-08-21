@@ -70,4 +70,25 @@ public static class IdentityErrors
         Error.Validation(
             "identity.permission_unknown",
             "One or more permission codes are not in the framework allowlist.");
+
+    public static readonly Error ServiceKeyNotAllowed =
+        Error.Validation(
+            "identity.service_key_not_allowed",
+            "Service key is not allow-listed for branch databases.");
+
+    public static readonly Error PostgresClusterNotFound =
+        Error.NotFound("identity.postgres_cluster_not_found", "Postgres cluster was not found.");
+
+    public static readonly Error TenantDatabaseBindingNotFound =
+        Error.NotFound("identity.tenant_database_not_found", "Tenant database binding was not found.");
+
+    public static readonly Error TenantDatabaseNotReady =
+        Error.Conflict(
+            "identity.tenant_database_not_ready",
+            "Tenant database binding is not in Ready status.");
+
+    public static readonly Error TenantDatabaseProvisionFailed =
+        Error.Failure(
+            "identity.tenant_database_provision_failed",
+            "Failed to provision the tenant database.");
 }

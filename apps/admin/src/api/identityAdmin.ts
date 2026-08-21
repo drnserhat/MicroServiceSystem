@@ -1,5 +1,12 @@
 import { apiRequest } from "./client";
-import type { IdentityUserItem, PagedResult, RoleItem, TenantItem } from "./types";
+import type {
+  IdentityUserItem,
+  PagedResult,
+  RoleItem,
+  TenantDatabaseBindingItem,
+  TenantDatabaseHealthResult,
+  TenantItem,
+} from "./types";
 
 export function listTenants(pageNumber = 1, pageSize = 20, search = ""): Promise<PagedResult<TenantItem>> {
   const query = new URLSearchParams({
@@ -27,6 +34,40 @@ export function setTenantActive(tenantId: string, isActive: boolean): Promise<Te
     method: "POST",
     body: { isActive },
   });
+}
+
+export function listTenantDatabases(tenantId: string): Promise<TenantDatabaseBindingItem[]> {
+  return apiRequest<TenantDatabaseBindingItem[]>(`/identity/api/v1/tenants/${tenantId}/databases`);
+}
+
+export function provisionTenantDatabase(
+  tenantId: string,
+  serviceKey = "user",
+): Promise<TenantDatabaseBindingItem> {
+  return apiRequest<TenantDatabaseBindingItem>(
+    `/identity/api/v1/tenants/${tenantId}/databases/${serviceKey}/provision`,
+    { method: "POST" },
+  );
+}
+
+export function retryTenantDatabase(
+  tenantId: string,
+  serviceKey = "user",
+): Promise<TenantDatabaseBindingItem> {
+  return apiRequest<TenantDatabaseBindingItem>(
+    `/identity/api/v1/tenants/${tenantId}/databases/${serviceKey}/retry`,
+    { method: "POST" },
+  );
+}
+
+export function healthTenantDatabase(
+  tenantId: string,
+  serviceKey = "user",
+): Promise<TenantDatabaseHealthResult> {
+  return apiRequest<TenantDatabaseHealthResult>(
+    `/identity/api/v1/tenants/${tenantId}/databases/${serviceKey}/health`,
+    { method: "POST" },
+  );
 }
 
 export function listIdentityUsers(

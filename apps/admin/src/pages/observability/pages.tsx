@@ -16,8 +16,8 @@ export function ObservabilityOverviewPage() {
   return (
     <>
       <PreviewBanner>
-        Latency/throughput charts require Prometheus queries — use Grafana until a metrics BFF exists.
-        Audit and system logs below the hub tabs are live.
+        Lite stack: Prometheus/Grafana/Seq/Jaeger are optional (`--profile obs`). Audit and system logs
+        need `--profile full`. This hub is navigation only until those profiles are up.
       </PreviewBanner>
 
       <div className="row row-cards mb-3">

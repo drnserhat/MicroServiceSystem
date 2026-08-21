@@ -32,6 +32,7 @@ After Identity permission changes, **log out and log in again** so the JWT picks
 | Settings CRUD + ETag | Done | Lite stack |
 | Users directory / register / profile | Done | No raw GUID entry — pick from list / UserPicker |
 | Tenants list / create / activate | Done | JWT admin APIs |
+| Branch DB bindings (User Phase 1) | Done | Provision / retry / health — [adr-branch-db-fleet.md](adr-branch-db-fleet.md) |
 | Roles & permissions (read) | Done | Catalog view |
 | Audit / Logs / Countries / Files / Notify | Done | Need Docker **profile `full`** for backends |
 | Service health aggregate | Done | Gateway `GET /ops/api/v1/health/services` |
@@ -98,7 +99,9 @@ REFERENCE & CONFIG
 
 **Lite (default compose):** postgres, redis, rabbitmq, identity, user, coordinator, settings, gateway, **admin**.
 
-**Add-ons (`--profile full`):** audit, logging, location, file, notification, mongodb.
+**Dev tools (`--profile tools`):** Redis Insight, pgAdmin (optional; not started with lite).
+
+**Add-ons (`--profile full`):** audit, logging, location, file, notification, mongodb (+ Mongo Express).
 
 **Observability (`--profile obs` or with full):** Seq, Jaeger, Prometheus, Grafana.
 
@@ -124,6 +127,8 @@ docker compose -f deploy/docker/docker-compose.yml \
 | Register user | `POST /registration` |
 | Profile | `/user/api/v1/users/profiles/{id}` |
 | Tenants (JWT admin) | `GET /identity/api/v1/tenants`, `POST .../tenants/admin`, `POST .../activation` |
+| Tenant databases | `GET .../tenants/{id}/databases`, `POST .../databases/{serviceKey}/provision|retry|health` |
+| Tenant DB resolve (internal) | `GET .../tenants/{id}/databases/{serviceKey}/binding` |
 | Users directory | `GET /identity/api/v1/users`, `POST .../users/{id}/disable`, `POST\|DELETE .../users/{id}/roles/{roleId}` |
 | Roles | `GET /identity/api/v1/roles` (catalog; assign/unassign is on Users) |
 | Health aggregate | `GET /ops/api/v1/health/services` |
@@ -170,11 +175,11 @@ Admin is the **control-plane hub**: health, outbox/inbox/saga ops, and deep-link
 
 | Tool | URL | Stack | Notes |
 |------|-----|-------|--------|
-| Redis Insight | http://localhost:5540 | lite | Add DB host `redis`, port `6379` (Compose network) |
-| pgAdmin | http://localhost:5050 | lite | `admin@example.com` / `admin` · server host `postgres`, user/db `msf` |
+| Redis Insight | http://localhost:5540 | profile `tools` | Add DB host `redis`, port `6379` |
+| pgAdmin | http://localhost:5050 | profile `tools` | `admin@example.com` / `admin` · host `postgres` |
 | Mongo Express | http://localhost:8081 | profile `full` | Browse Logging Mongo |
-| RabbitMQ Management | http://localhost:15672 | lite | `msf` / `msf` |
-| Seq / Jaeger / Grafana / Prometheus | :5341 / :16686 / :3000 / :9090 | profile `obs` / `full` | Observability |
+| RabbitMQ Management | http://localhost:15672 | lite | `msf` / `msf` (broker image) |
+| Seq / Jaeger / Grafana / Prometheus | :5341 / :16686 / :3000 / :9090 | profile `obs` / `full` | Observability — not for daily Admin |
 
 ---
 

@@ -20,21 +20,21 @@ export const EXTERNAL_TOOLS: ExternalTool[] = [
     name: "Jaeger",
     url: "http://localhost:16686",
     summary: "Distributed traces",
-    note: "OTLP from services",
+    note: "profile obs / full",
   },
   {
     id: "grafana",
     name: "Grafana",
     url: "http://localhost:3000",
     summary: "Dashboards",
-    note: "admin / admin",
+    note: "profile obs / full · admin / admin",
   },
   {
     id: "prometheus",
     name: "Prometheus",
     url: "http://localhost:9090",
     summary: "Metrics scrape",
-    note: "/metrics on each service",
+    note: "profile obs / full",
   },
   {
     id: "rabbitmq",
@@ -48,14 +48,14 @@ export const EXTERNAL_TOOLS: ExternalTool[] = [
     name: "Redis Insight",
     url: "http://localhost:5540",
     summary: "Browse Redis keys and values",
-    note: "Add DB host redis · port 6379",
+    note: "profile tools · host redis:6379",
   },
   {
     id: "pgadmin",
     name: "pgAdmin",
     url: "http://localhost:5050",
     summary: "PostgreSQL browser",
-    note: "admin@example.com / admin · host postgres",
+    note: "profile tools · admin@example.com / admin",
   },
   {
     id: "mongoexpress",
@@ -88,8 +88,17 @@ export function ExternalToolLink({
   );
 }
 
-/** Infra/broker tools are omitted from the default obs card grid unless explicitly requested. */
-const DEFAULT_CARD_EXCLUDE = new Set(["rabbitmq", "redisinsight", "pgadmin", "mongoexpress"]);
+/** Optional tool UIs omitted from the default card grid (lite Admin does not run them). */
+const DEFAULT_CARD_EXCLUDE = new Set([
+  "rabbitmq",
+  "redisinsight",
+  "pgadmin",
+  "mongoexpress",
+  "seq",
+  "jaeger",
+  "grafana",
+  "prometheus",
+]);
 
 export function ExternalToolCards({ ids }: { ids?: string[] }) {
   const tools = ids

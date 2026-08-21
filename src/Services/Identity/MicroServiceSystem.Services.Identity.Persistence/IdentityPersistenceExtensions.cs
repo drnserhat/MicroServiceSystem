@@ -21,6 +21,8 @@ public static class IdentityPersistenceExtensions
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<IPostgresClusterRepository, PostgresClusterRepository>();
+        services.AddScoped<ITenantDatabaseBindingRepository, TenantDatabaseBindingRepository>();
         services.AddScoped<ITenantStore, EfTenantStore>();
 
         return services;

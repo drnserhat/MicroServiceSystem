@@ -1,7 +1,9 @@
 using FluentValidation;
+using MicroServiceSystem.BuildingBlocks.Application.Abstractions;
 using MicroServiceSystem.BuildingBlocks.Application.Messaging;
 using MicroServiceSystem.BuildingBlocks.MultiTenancy;
 using MicroServiceSystem.BuildingBlocks.MultiTenancy.Abstractions;
+using MicroServiceSystem.Contracts.Events.Identity;
 using MicroServiceSystem.Services.Identity.Application.Abstractions;
 using MicroServiceSystem.Services.Identity.Domain.Aggregates;
 using MicroServiceSystem.SharedKernel.Pagination;
@@ -117,7 +119,10 @@ public sealed class ListTenantsQueryHandler(ITenantRepository tenants)
     }
 }
 
-public sealed class SetTenantActivationCommandHandler(ITenantRepository tenants)
+public sealed class SetTenantActivationCommandHandler(
+    ITenantRepository tenants,
+    ITenantDatabaseBindingRepository bindings,
+    IIntegrationEventPublisher integrationEvents)
     : ICommandHandler<SetTenantActivationCommand, TenantResponse>
 {
     public async Task<Result<TenantResponse>> Handle(
@@ -138,6 +143,29 @@ public sealed class SetTenantActivationCommandHandler(ITenantRepository tenants)
         else
         {
             tenant.Deactivate();
+
+            IReadOnlyList<TenantDatabaseBinding> tenantBindings =
+                await bindings.ListByTenantAsync(command.TenantId, cancellationToken);
+
+            foreach (TenantDatabaseBinding binding in tenantBindings)
+            {
+                if (binding.Status == TenantDatabaseStatus.Disabled)
+                {
+                    continue;
+                }
+
+                binding.Disable();
+
+                await integrationEvents.PublishAsync(
+                    new TenantDatabaseAccessChangedIntegrationEvent
+                    {
+                        BindingTenantId = binding.TenantId,
+                        ServiceKey = binding.ServiceKey,
+                        Status = binding.Status.ToString(),
+                        TenantId = binding.TenantId
+                    },
+                    cancellationToken);
+            }
         }
 
         tenants.Update(tenant);
